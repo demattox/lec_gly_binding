@@ -4,6 +4,8 @@
 Created on Tue Sep 22 10:31:33 2020
 
 @author: dmattox
+
+Read in a PDB file [arg 1] and write out the chain seqeunces to a FASTA file [arg2]
 """
 
 import sys
@@ -28,7 +30,7 @@ d = {'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q', 'LYS': 'K',
      'ILE': 'I', 'PRO': 'P', 'THR': 'T', 'PHE': 'F', 'ASN': 'N', 
      'GLY': 'G', 'HIS': 'H', 'LEU': 'L', 'ARG': 'R', 'TRP': 'W', 
      'ALA': 'A', 'VAL': 'V', 'GLU': 'E', 'TYR': 'Y', 'MET': 'M',
-     'MSE': 'M', 'UNK': 'X', 'ASX': 'B', 'GLX': 'Z'}
+     'MSE': 'M', 'UNK': 'X', 'XAA': 'X', 'ASX': 'B', 'GLX': 'Z', 'XLE': 'J'}
 
 pdbFile = sys.argv[1]
 
@@ -37,29 +39,25 @@ if pdbFile[-4:] == '.pdb':
 else:
     sys.exit('ERROR: unrecognized file extenion, must be a .pdb file')
 
+outF = sys.argv[2]
 
-seqOut = []
-chainID = ''
-chain = ''
-for l in pro:
-    if l.AtomName == 'CA':
-        r = d[l.ResName] if l.ResName in d.keys() else 'X' # Get one letter code if available, else use "X"
-        if l.Chain != chainID:              # end of a chain
-            if chain != '':                 # Save out old chain
-                if chain not in seqOut:     # Only keep chain if not a repeat of a previous chain
-                    seqOut.append(chain)
-            chain = r                       # Start storing new chain sequence
-            chainID = l.Chain
-        else:                               # Continue current chain
-            chain += r
+with open(outF, 'w') as outFH:
+    chainID = ''
+    chain = ''
+    for l in pro:
+        if l.AtomName == 'CA':
+            r = d[l.ResName] if l.ResName in d.keys() else 'X' # Get one letter code if available, else use "X"
+            if l.Chain != chainID:              # end of a chain
+                if chain != '':                 # Save out old chain
+                    outFH.write('>'+chainID+'\n')
+                    outFH.write(chain+'\n')
+                chain = r                       # Start storing new chain sequence
+                chainID = l.Chain
+            else:                               # Continue current chain
+                chain += r
 
-if chain not in seqOut: seqOut.append(chain) # store last cahin (if unique)
+    outFH.write('>'+chainID+'\n')
+    outFH.write(chain+'\n')
 
-        
 
-    
-pdbID = pdbFile.split('/')[-1] # Get the PDB ID from the file name
-pdbID = pdbID[:-4]
-
-print('>' + pdbID)
-print(''.join(set(seqOut)))
+exit(0)
