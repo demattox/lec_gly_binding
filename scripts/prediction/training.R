@@ -38,7 +38,7 @@ pdbInRowNames <- function(df, pdbID){
 }
 
 readCDHIT <- function(cdhitDir){
-  FH = dir(cdhitDir)[grepl('*.fas.1.clstr.sorted$', dir(cdhitDir))]
+  FH = dir(cdhitDir)[grepl('*.clstr$', dir(cdhitDir))]
   cdhit = read.csv(paste(cdhitDir, FH, sep = ''), sep = "\t", row.names = NULL, header = FALSE, stringsAsFactors = FALSE)
   prev =""
   for (i in 1:nrow(cdhit)){ # Clean up CD-HIT cluster input
@@ -66,7 +66,7 @@ countClustMembers <- function(cdhit){
 }
 
 colfunc = colorRampPalette(c("red","goldenrod","forestgreen","royalblue","darkviolet"))
-threshColors = c('magenta', 'firebrick 1', 'orange1', 'gold')
+threshColors = c('firebrick3', 'darkorange2', 'darkgoldenrod2', 'gold2')
 
 
 ###########################
@@ -135,51 +135,65 @@ row.names(zern10) = gsub('_10$', '', row.names(zern10))
 # Read in clusters of sequences from CD-HIT at varied identity thresholds (sequences are unique sequences extracted from PDBs, ie only one copy of identical chains)
 ###########################
 
-write(unique(bsResiDat$pdb), file = paste("./data2/structures/holo/seqs/pdbList.txt", sep = ""), ncol = length(unique(bsResiDat$pdb)), sep = " ") # Space delimited list of PDB IDs to get seqeunces for (cp & paste into ./scripts/misc/getSeqs.sh)
+# write(unique(bsResiDat$pdb), file = paste("./data/structures/holo/seqs/pdbList.txt", sep = ""), ncol = length(unique(bsResiDat$pdb)), sep = " ") # Space delimited list of PDB IDs to get seqeunces for (cp & paste into ./scripts/misc/getSeqs.sh)
 
 clusterDir = './analysis/seqClustering/'
 
 id50 = readCDHIT(cdhitDir = "./analysis/seqClustering/id50/")
-cntID50 = countClustMembers(id50)
+cntID50 = sort(countClustMembers(id50))
 id60 = readCDHIT(cdhitDir = "./analysis/seqClustering/id60/")
-cntID60 = countClustMembers(id60)
+cntID60 = sort(countClustMembers(id60))
 id70 = readCDHIT(cdhitDir = "./analysis/seqClustering/id70/")
-cntID70 = countClustMembers(id70)
+cntID70 = sort(countClustMembers(id70))
 id80 = readCDHIT(cdhitDir = "./analysis/seqClustering/id80/")
-cntID80 = countClustMembers(id80)
+cntID80 = sort(countClustMembers(id80))
+id90 = readCDHIT(cdhitDir = "./analysis/seqClustering/id90/")
+cntID90 = sort(countClustMembers(id90))
 
-mycol =  colorRampPalette(c("dodgerblue3","cyan3","green4"))(4)
+mycol =  colorRampPalette(c("navy","cyan3","darkgreen"))(5)
 jitFact = 0.0001
 alph = 0.9
 
-par(mfrow=c(2,2))
-plot(0,0, xlim = c(0,max(c(length(cntID50), length(cntID60), length(cntID70), length(cntID80)))), ylim = c(0,max(c(cntID50, cntID60, cntID70, cntID80))), pch = '', xlab = '', ylab = 'Number of members in cluster', main = "50% id")
+# par(mfrow=c(2,2))
+plot(0,0, xlim = c(0,400), ylim = c(0,max(c(cntID50, cntID60, cntID70, cntID80, cntID90))), pch = '', cex = 1.3, xlab = '', ylab = '')
+title(xlab = 'Cluster (sorted by size)', ylab = 'Number of members in cluster', main = "Distributions of cluster sizes",
+      cex.lab = 1.4, cex.main = 1.25)
 lines(x = sort(rep(1:length(cntID50),3)), y = c(rbind(rep(0,length(cntID50)), cntID50, rep(0,length(cntID50)))), col = alpha(mycol[1],alph))
 # points(x = 1:length(cntID50), y = jitter(cntID50,amount = jitFact), pch = 19, col = alpha(mycol[1],alph))
-plot(0,0, xlim = c(0,max(c(length(cntID50), length(cntID60), length(cntID70), length(cntID80)))), ylim = c(0,max(c(cntID50, cntID60, cntID70, cntID80))), pch = '', xlab = '', ylab = '', main = "60% id")
-lines(x = sort(rep(1.25:(length(cntID60)+0.25),3)), y = c(rbind(rep(0,length(cntID60)), cntID60, rep(0,length(cntID60)))), col = alpha(mycol[2],alph))
+# plot(0,0, xlim = c(0,max(c(length(cntID50), length(cntID60), length(cntID70), length(cntID80)))), ylim = c(0,max(c(cntID50, cntID60, cntID70, cntID80))), pch = '', xlab = '', ylab = '', main = "60% id")
+lines(x = sort(rep(1.2:(length(cntID60)+0.2),3)), y = c(rbind(rep(0,length(cntID60)), cntID60, rep(0,length(cntID60)))), col = alpha(mycol[2],alph))
 # points(x = 1:length(cntID60), y = jitter(cntID60,amount = jitFact), pch = 19, col = alpha(mycol[2],alph))
-plot(0,0, xlim = c(0,max(c(length(cntID50), length(cntID60), length(cntID70), length(cntID80)))), ylim = c(0,max(c(cntID50, cntID60, cntID70, cntID80))), pch = '', xlab = 'Cluster ID (sorted)', ylab = 'Number of members in cluster', main = "70% id")
-lines(x = sort(rep(1.5:(length(cntID70)+0.5),3)), y = c(rbind(rep(0,length(cntID70)), cntID70, rep(0,length(cntID70)))), col = alpha(mycol[3],alph))
+# plot(0,0, xlim = c(0,max(c(length(cntID50), length(cntID60), length(cntID70), length(cntID80)))), ylim = c(0,max(c(cntID50, cntID60, cntID70, cntID80))), pch = '', xlab = 'Cluster ID (sorted)', ylab = 'Number of members in cluster', main = "70% id")
+lines(x = sort(rep(1.4:(length(cntID70)+0.4),3)), y = c(rbind(rep(0,length(cntID70)), cntID70, rep(0,length(cntID70)))), col = alpha(mycol[3],alph))
 # points(x = 1:length(cntID70), y = jitter(cntID70,amount = jitFact), pch = 19, col = alpha(mycol[3],alph))
-plot(0,0, xlim = c(0,max(c(length(cntID50), length(cntID60), length(cntID70), length(cntID80)))), ylim = c(0,max(c(cntID50, cntID60, cntID70, cntID80))), pch = '', xlab = 'Cluster ID (sorted)', ylab = '', main = "80% id")
-lines(x = sort(rep(1.75:(length(cntID80)+0.75),3)), y = c(rbind(rep(0,length(cntID80)), cntID80, rep(0,length(cntID80)))), col = alpha(mycol[4],alph))
+# plot(0,0, xlim = c(0,max(c(length(cntID50), length(cntID60), length(cntID70), length(cntID80)))), ylim = c(0,max(c(cntID50, cntID60, cntID70, cntID80))), pch = '', xlab = 'Cluster ID (sorted)', ylab = '', main = "80% id")
+lines(x = sort(rep(1.6:(length(cntID80)+0.6),3)), y = c(rbind(rep(0,length(cntID80)), cntID80, rep(0,length(cntID80)))), col = alpha(mycol[4],alph))
 # points(x = 1:length(cntID80), y = jitter(cntID80,amount = jitFact), pch = 19, col = alpha(mycol[4],alph))
+lines(x = sort(rep(1.8:(length(cntID90)+0.8),3)), y = c(rbind(rep(0,length(cntID90)), cntID90, rep(0,length(cntID90)))), col = alpha(mycol[5],alph))
+legend(x = 'topleft', 
+       legend = c('50% Identity', '60% Identity', '70% Identity', '80% Identity', '90% Identity'),
+       cex = 1.3,
+       col = mycol,
+       pch = 19, pt.cex = 2)
+
+dev.off()
+
 
 # hist(clustCnts, breaks = 40, xlim = c(0,40), col = "dodgerblue", xlab = "Number of sequences in a cluster", main = "Cluster sizes")
 # plot(density(clustCnts), col = "dodgerblue", lwd = 2, xlab = "Number of sequences in a cluster", main = "Cluster sizes")
 
-clustDF = as.data.frame(matrix('', nrow = length(unique(bsResiDat$pdb)), ncol = 7), stringsAsFactors = F)
-colnames(clustDF) = c('pdb','uniprot','fold','clus50','clus60','clus70','clus80')
+clustDF = as.data.frame(matrix('', nrow = length(unique(bsResiDat$pdb)), ncol = 8), stringsAsFactors = F)
+colnames(clustDF) = c('pdb','uniprot','fold','clus50','clus60','clus70','clus80','clus90')
 clustDF$pdb = unique(bsResiDat$pdb) 
 for (i in 1:nrow(clustDF)){
   pdb = clustDF$pdb[i]
   clustDF$uniprot[i] = unique(bsResiDat$uniparc[bsResiDat$pdb == pdb])
   clustDF$fold[i] = unique(bsResiDat$new_fold.Not.Published[bsResiDat$pdb == pdb])
   clustDF$clus50[i] = id50$clusterID[id50$pdbID == pdb]
-  clustDF$clus60[i] = id50$clusterID[id60$pdbID == pdb]
-  clustDF$clus70[i] = id50$clusterID[id70$pdbID == pdb]
-  clustDF$clus80[i] = id50$clusterID[id80$pdbID == pdb]
+  clustDF$clus60[i] = id60$clusterID[id60$pdbID == pdb]
+  clustDF$clus70[i] = id70$clusterID[id70$pdbID == pdb]
+  clustDF$clus80[i] = id80$clusterID[id80$pdbID == pdb]
+  clustDF$clus90[i] = id90$clusterID[id90$pdbID == pdb]
 }
 
 #uniprot ids per cluster
@@ -191,11 +205,48 @@ upc70 = rep(0,length(unique(clustDF$clus70)))
 for (i in 1:length(upc70)){upc70[i] = length(unique(clustDF$uniprot[clustDF$clus70 == unique(clustDF$clus70)[i]]))}
 upc80 = rep(0,length(unique(clustDF$clus80)))
 for (i in 1:length(upc80)){upc80[i] = length(unique(clustDF$uniprot[clustDF$clus80 == unique(clustDF$clus80)[i]]))}
+upc90 = rep(0,length(unique(clustDF$clus90)))
+for (i in 1:length(upc90)){upc90[i] = length(unique(clustDF$uniprot[clustDF$clus90 == unique(clustDF$clus90)[i]]))}
 
-plot(density(upc50), col = mycol[1], lwd = 3,  main = 'UniProt IDs per Cluster - 50%')
-plot(density(upc60), col = mycol[2], lwd = 3,  main = 'UniProt IDs per Cluster - 60%')
-plot(density(upc70), col = mycol[3], lwd = 3,  main = 'UniProt IDs per Cluster - 70%')
-plot(density(upc80), col = mycol[4], lwd = 3,  main = 'UniProt IDs per Cluster - 80%')
+# xLim = c(0,28)
+# yLim = c(0,1.1)
+# plot(density(upc50), col = mycol[1], lwd = 1.5,  main = 'UniProt IDs per Cluster', xlab = 'Number of unique UniProt IDs',
+#      xlim = xLim, ylim = yLim)
+# par(new=T)
+# plot(density(upc60), col = mycol[2], lwd = 1.5,  main = '', xlab = '', ylab = '', axes = F,
+#      xlim = xLim, ylim = yLim)
+# par(new=T)
+# plot(density(upc70), col = mycol[3], lwd = 1.5,  main = '', xlab = '', ylab = '', axes = F,
+#      xlim = xLim, ylim = yLim)
+# par(new=T)
+# plot(density(upc80), col = mycol[4], lwd = 1.5,  main = '', xlab = '', ylab = '', axes = F,
+#      xlim = xLim, ylim = yLim)
+# par(new=T)
+# plot(density(upc90), col = mycol[5], lwd = 1.5,  main = '', xlab = '', ylab = '', axes = F,
+#      xlim = xLim, ylim = yLim)
+
+xLim = c(0,20)
+yLim = c(0,1)
+
+par(mfrow=c(2,3),oma = c(4, 4, 0.2, 0.2), mai = c(0.5, 0.1, 0.1, 0.5))
+hist(upc50,probability = T, breaks = max(upc50), col = mycol[1], main = '', xlab = '',
+     xlim = xLim, ylim = yLim)
+hist(upc60,probability = T, breaks = max(upc60), col = mycol[2], main = '', xlab = '',
+     xlim = xLim, ylim = yLim)
+hist(upc70,probability = T, breaks = max(upc70), col = mycol[3], main = '', xlab = '',
+     xlim = xLim, ylim = yLim)
+hist(upc80,probability = T, breaks = max(upc80), col = mycol[4], main = '', xlab = '',
+     xlim = xLim, ylim = yLim)
+hist(upc90,probability = T, breaks = max(upc90), col = mycol[5], main = '', xlab = '',
+     xlim = xLim, ylim = yLim)
+plot(0,0, col = 'white',
+     axes =F, xlab = '', ylab ='')
+legend(x='center', col = mycol, legend = c('50% Identity', '60% Identity', '70% Identity', '80% Identity', '90% Identity'), cex = 3, pch = 19, pt.cex = 4.5, bty = 'n')
+mtext('Histograms of counts of unique UniProt IDs in each cluster', side = 3, line = -1.5, outer = TRUE, cex = 1.5)
+mtext('Number of unique UniProt IDs', side = 1, line = 0, outer = TRUE, cex = 1.25)
+mtext('Density', side = 2, line = 2, outer = TRUE, cex = 1.25)
+
+dev.off()
 
 #clusters per uniprot ID???
 cpu50 = rep(0,length(unique(clustDF$uniprot)))
@@ -206,105 +257,157 @@ cpu70 = rep(0,length(unique(clustDF$uniprot)))
 for (i in 1:length(cpu70)){cpu70[i] = length(unique(clustDF$clus70[clustDF$uniprot == unique(clustDF$uniprot)[i]]))}
 cpu80 = rep(0,length(unique(clustDF$uniprot)))
 for (i in 1:length(cpu80)){cpu80[i] = length(unique(clustDF$clus80[clustDF$uniprot == unique(clustDF$uniprot)[i]]))}
+cpu90 = rep(0,length(unique(clustDF$uniprot)))
+for (i in 1:length(cpu90)){cpu90[i] = length(unique(clustDF$clus90[clustDF$uniprot == unique(clustDF$uniprot)[i]]))}
+
+# par(mfrow=c(2,3),oma = c(4, 4, 0.2, 0.2), mai = c(0.5, 0.1, 0.1, 0.5))
+# plot(density(cpu50), col = mycol[1], lwd = 3,  main = '')
+# plot(density(cpu60), col = mycol[2], lwd = 3,  main = '')
+# plot(density(cpu70), col = mycol[3], lwd = 3,  main = '')
+# plot(density(cpu80), col = mycol[4], lwd = 3,  main = '')
+# plot(density(cpu90), col = mycol[5], lwd = 3,  main = '')
+# dev.off()
+
+xLim = c(1,3)
+yLim = c(0,2)
+
+par(mfrow=c(2,3),oma = c(4, 4, 0.2, 0.2), mai = c(0.5, 0.1, 0.1, 0.5))
+hist(cpu50,probability = T, breaks = 3, col = mycol[1], main = '', xlab = '',
+     xlim = xLim, ylim = yLim)
+hist(cpu60,probability = T, breaks = 3, col = mycol[2], main = '', xlab = '',
+     xlim = xLim, ylim = yLim)
+hist(cpu70,probability = T, breaks = 3, col = mycol[3], main = '', xlab = '',
+     xlim = xLim, ylim = yLim)
+hist(cpu80,probability = T, breaks = 3, col = mycol[4], main = '', xlab = '',
+     xlim = xLim, ylim = yLim)
+hist(cpu90,probability = T, breaks = 3, col = mycol[5], main = '', xlab = '',
+     xlim = xLim, ylim = yLim)
+plot(0,0, col = 'white',
+     axes =F, xlab = '', ylab ='')
+legend(x='center', col = mycol, legend = c('50% Identity', '60% Identity', '70% Identity', '80% Identity', '90% Identity'), cex = 3, pch = 19, pt.cex = 4.5, bty = 'n')
+mtext('Histograms of numbers of clusters each UniprotID can be found in', side = 3, line = -2, outer = TRUE, cex = 1.5)
+mtext('Number of clusters per UniProt ID', side = 1, line = 0, outer = TRUE, cex = 1.25)
+mtext('Density', side = 2, line = 2, outer = TRUE, cex = 1.25)
+
+dev.off()
 
 
-plot(density(cpu50), col = mycol[1], lwd = 3,  main = '# of clusts. each UniProt ID is found in - 50%')
-plot(density(cpu60), col = mycol[2], lwd = 3,  main = '# of clusts. each UniProt ID is found in - 60%')
-plot(density(cpu70), col = mycol[3], lwd = 3,  main = '# of clusts. each UniProt ID is found in - 70%')
-plot(density(cpu80), col = mycol[4], lwd = 3,  main = '# of clusts. each UniProt ID is found in - 80%')
+# unique(clustDF$uniprot)[cpu80 == 3]
+# unique(clustDF$uniprot)[cpu90 == 3]
 
+# clustDF[clustDF$pdb %in% c('4MBZ', '4FMI', '4FMH','4FMJ'),c(1,2,4:8)]
 
-# clustFams = rep("", length(unique(cdhit$V1)))
-# for (i in 1:length(unique(cdhit$V1))) {
-#   clustFams[i] = unique(bsResiDat$uniparc[bsResiDat$pdb %in% cdhit$V2[cdhit$V1 == unique(cdhit$V1)[i]]])
-# }
-# tmp = cbind(unique(cdhit$V1), clustCnts, clustFams)
-# 
-# 
-# all(cdhit$V2 %in% bsResiDat$pdb)
-# 
-# tmp = rep("",nrow(bsResiDat))
-# for (i in 1:length(unique(cdhit$V1))){
-#   clus = unique(cdhit$V1)[i]
-#   uniIDs = cdhit$V2[cdhit$V1 == unique(cdhit$V1)[i]]
-#   tmp[bsResiDat$pdb %in% uniIDs] = clus
-# }
-# 
-# all(unique(cdhit$V1) %in% tmp) # All clusters represented in bsResiDat
-# 
-# bsClustCnts = rep(0,length(unique(cdhit$V1)))
-# for (i in 1:length(unique(cdhit$V1))){
-#   bsClustCnts[i] = sum(tmp == unique(cdhit$V1)[i])
-# }
-# hist(bsClustCnts, breaks = 20, xlim = c(0,200), col = "dodgerblue", xlab = "Number of binding sites in a cluster", main = "Cluster sizes")
-# plot(density(bsClustCnts), col = "dodgerblue", lwd = 2, xlab = "Number of binding sites  in a cluster", main = "Cluster sizes")
-# 
-
-bsResiDat$seqClust = 0
+bsResiDat$seqClust50 = bsResiDat$seqClust80 = 0
 for (i in 1:nrow(bsResiDat)){
-  bsResiDat$seqClust[i] = id60$clusterID[id60$pdbID == bsResiDat$pdb[i]]
+  bsResiDat$seqClust50[i] = id50$clusterID[id50$pdbID == bsResiDat$pdb[i]]
+  bsResiDat$seqClust80[i] = id80$clusterID[id80$pdbID == bsResiDat$pdb[i]]
 }
 
-clusLst = unique(bsResiDat$seqClust)
+clusLst50 = unique(bsResiDat$seqClust50)
+clusLst80 = unique(bsResiDat$seqClust80)
 
 ###########################
 # Find ligands well represented in clusters
 ###########################
 
 # For each cluster, how many different ligands are present?
-lpc60 = rep(0, length(clusLst))
-lpc60Len = rep(0, length(clusLst))
-for (i in 1:length(lpc60)){
-  lpc60[i] = length(unique(bsResiDat$iupac[bsResiDat$seqClust == clusLst[i]]))
-  lpc60Len[i] = sum(id60$clusterID == clusLst[i])
+lpc50 = lpc50Len = rep(0, length(clusLst50))
+lpc80 = lpc80Len = rep(0, length(clusLst80))
+
+for (i in 1:length(lpc50)){
+  lpc50[i] = length(unique(bsResiDat$iupac[bsResiDat$seqClust50 == clusLst50[i]]))
+  lpc50Len[i] = sum(id50$clusterID == clusLst50[i])
+}
+for (i in 1:length(lpc80)){
+  lpc80[i] = length(unique(bsResiDat$iupac[bsResiDat$seqClust80 == clusLst80[i]]))
+  lpc80Len[i] = sum(id80$clusterID == clusLst80[i])
 }
 
-# hist(lpc60, col = mycol[2], breaks = 12, xlim = c(0,12))
-tag = (lpc60 < 3 & lpc60Len >15)
-clusLst[tag]
-bsResiDat[bsResiDat$seqClust == 2,c(1,2,3,4,5,7,8,9,175)]
-bsResiDat[bsResiDat$seqClust == 5,c(1,2,3,4,5,7,8,9,175)]
+par(mfrow=c(1,2))
+hist(lpc50, col = mycol[1], breaks = 12, xlim = c(0,20), probability = T, ylim = c(0,0.8), xlab = 'ligands per cluster', main = '50% id cutoff')
+hist(lpc80, col = mycol[4], breaks = 12, xlim = c(0,20), probability = T, ylim = c(0,0.8), xlab = 'ligands per cluster', main = '80% id cutoff')
+mtext('Histograms of numbers of unique ligands in each cluster', side = 3, line = -1, outer = TRUE, cex = 1.5)
 
-lpc60Len = lpc60Len[order(lpc60, decreasing = T)]
-lpc60 = sort(lpc60, decreasing = T)
-for (i in 1:length(unique(lpc60))){
-  tag = lpc60 == unique(lpc60)[i]
-  lpc60Len[tag] = sort(lpc60Len[tag], decreasing = T)
+dev.off()
+
+
+# tag = (lpc50 < 3 & lpc50Len >15)
+# clusLst50[tag]
+# bsResiDat[bsResiDat$seqClust50 == 14,c(1,2,3,4,5,7,8,9,176)]
+# bsResiDat[bsResiDat$seqClust50 == 30,c(1,2,3,4,5,7,8,9,176)]
+
+lpc50Len = lpc50Len[order(lpc50, decreasing = T)]
+lpc50 = sort(lpc50, decreasing = T)
+for (i in 1:length(unique(lpc50))){
+  tag = lpc50 == unique(lpc50)[i]
+  lpc50Len[tag] = sort(lpc50Len[tag], decreasing = T)
+}
+lpc80Len = lpc80Len[order(lpc80, decreasing = T)]
+lpc80 = sort(lpc80, decreasing = T)
+for (i in 1:length(unique(lpc80))){
+  tag = lpc80 == unique(lpc80)[i]
+  lpc80Len[tag] = sort(lpc80Len[tag], decreasing = T)
 }
 
-par(mar = c(5, 4, 4, 4) + 0.3)              # Additional space for second y-axis
-plot(0,0,pch='', xlim = c(0,400), ylim = c(0,15), xlab = '', ylab = '')
+
+par(mfrow=c(2,1), mar = c(5, 4, 4, 4) + 0.3)              # Additional space for second y-axis
+plot(0,0,pch='', xlim = c(0,250), ylim = c(0,17), xlab = '', ylab = '')
 title(main="Number of ligands per cluster (with cluster size)", col.main="black", cex.main = 2,
       xlab='Individual clusters (sorted)',
       col.lab='black', cex.lab=1.5)
 title(ylab='Number of unique ligands in cluster',
-      col.lab = 'mediumblue', cex.lab = 1.5)
-lines(x = sort(rep(1:length(lpc60),3)), y = c(rbind(rep(0,length(lpc60)), lpc60, rep(0,length(lpc60)))), col = 'dodgerblue')
+      col.lab = mycol[1], cex.lab = 1.5)
+lines(x = sort(rep(1:length(lpc50),3)), y = c(rbind(rep(0,length(lpc50)), lpc50, rep(0,length(lpc50)))), col = mycol[1], lwd = 2)
 par(new=T)
-plot(0,0,pch='', xlim = c(0,400), ylim = c(0,60),
+plot(0,0,pch='', xlim = c(0,250), ylim = c(0,60),
      xlab = '', ylab = '', main = '', axes = F)
-lines(x = sort(rep(1.5:(length(lpc60Len)+0.5),3)), y = c(rbind(rep(0,length(lpc60Len)), lpc60Len, rep(0,length(lpc60Len)))), col = 'firebrick')
+lines(x = sort(rep(1.5:(length(lpc50Len)+0.5),3)), y = c(rbind(rep(0,length(lpc50Len)), lpc50Len, rep(0,length(lpc50Len)))), col = 'firebrick', lwd = 2)
 axis(side = 4, at = pretty(c(0,60)))      # Add second axis
 mtext("Number of structures per cluster", side = 4, line = 3, cex = 1.5, col = 'firebrick')             # Add second axis label
+legend(x= 'topright', legend = '50% Identity', pch = 15, col = mycol[1], bty = 'n', cex = 2, pt.cex = 3)
+
+plot(0,0,pch='', xlim = c(0,350), ylim = c(0,17), xlab = '', ylab = '')
+title(main="", col.main="black", cex.main = 2,
+      xlab='Individual clusters (sorted)',
+      col.lab='black', cex.lab=1.5)
+title(ylab='Number of unique ligands in cluster',
+      col.lab = mycol[4], cex.lab = 1.5)
+lines(x = sort(rep(1:length(lpc80),3)), y = c(rbind(rep(0,length(lpc80)), lpc80, rep(0,length(lpc80)))), col = mycol[4], lwd = 2)
+par(new=T)
+plot(0,0,pch='', xlim = c(0,350), ylim = c(0,60),
+     xlab = '', ylab = '', main = '', axes = F)
+lines(x = sort(rep(1.5:(length(lpc80Len)+0.5),3)), y = c(rbind(rep(0,length(lpc80Len)), lpc80Len, rep(0,length(lpc80Len)))), col = 'firebrick', lwd = 2)
+axis(side = 4, at = pretty(c(0,60)))      # Add second axis
+mtext("Number of structures per cluster", side = 4, line = 3, cex = 1.5, col = 'firebrick')             # Add second axis label
+legend(x= 'topright', legend = '80% Identity', pch = 15, col = mycol[4], bty = 'n', cex = 2, pt.cex = 3)
+
+dev.off()
+
+
+
 
 # For each ligand, how many different clusters can it be found in?
 uniLigs = unique(bsResiDat$iupac)
-length(uniLigs)
-cpl60 = rep(0, length(uniLigs))
-for (i in 1:length(cpl60)){
-  cpl60[i] = length(unique(bsResiDat$seqClust[bsResiDat$iupac == uniLigs[i]]))
+# length(uniLigs)
+cpl50  = cpl80 = rep(0, length(uniLigs))
+for (i in 1:length(uniLigs)){
+  cpl50[i] = length(unique(bsResiDat$seqClust50[bsResiDat$iupac == uniLigs[i]]))
+  cpl80[i] = length(unique(bsResiDat$seqClust80[bsResiDat$iupac == uniLigs[i]]))
 }
-# plot(density(cpl60))
 
-ligSort = uniLigs[order(cpl60, decreasing = T)]
-cpl60 = sort(cpl60/length(clusLst)*100, decreasing = T)
+plot(density(cpl50))
+plot(density(cpl80))
 
-parenCnt = rep(0,length(ligSort))
-bracCnt = rep(0, length(ligSort))
-manCnt = rep(0, length(ligSort))
-neuCnt = rep(0, length(ligSort))
-for (i in 1:length(ligSort)){
-  lig = ligSort[i]
+ligSort50 = uniLigs[order(cpl50, decreasing = T)]
+cpl50 = sort(cpl50/length(clusLst50)*100, decreasing = T)
+ligSort80 = uniLigs[order(cpl80, decreasing = T)]
+cpl80 = sort(cpl80/length(clusLst80)*100, decreasing = T)
+
+## 50% id
+
+parenCnt = bracCnt = manCnt = neuCnt = bracCnt = rep(0,length(ligSort50))
+for (i in 1:length(ligSort50)){
+  lig = ligSort50[i]
   parenCnt[i] = lengths(regmatches(lig, gregexpr("\\(", lig)))
   bracCnt[i] = lengths(regmatches(lig, gregexpr("\\[", lig)))
   manCnt[i] = lengths(regmatches(lig, gregexpr("Man", lig)))
@@ -322,49 +425,49 @@ hist(manCnt)
 
 manTag = manCnt > 3 # High mannose
 neuTag = neuCnt >= 1 # Has sialic acid
-fucTag = grepl('^Fuc',ligSort) # Has a terminal fucose
+fucTag = grepl('^Fuc',ligSort50) # Has a terminal fucose
 
-# ligSort[mTag]
-# ligSort[dTag]
-# ligSort[tTag]
-# ligSort[qTag]
-# ligSort[pTag]
+# ligSort50[mTag]
+# ligSort50[dTag]
+# ligSort50[tTag]
+# ligSort50[qTag]
+# ligSort50[pTag]
 # 
-# ligSort[bTag]
+# ligSort50[bTag]
+# 
+# ligSort50[manTag]
+# ligSort50[neuTag]
+# ligSort50[fucTag]
 
-# ligSort[manTag]
-# ligSort[neuTag]
-# ligSort[fucTag]
+sacc_col =  colorRampPalette(c("plum1","tomato", "firebrick4"))(5)
 
-mycol =  colorRampPalette(c("plum1","tomato", "firebrick4"))(5)
-
-plot(0,0,pch='', xlim = c(0.5,230), ylim = c(-1,18), xlab = '', ylab = '')
-title(main="Number of clusters with any binding for each unique ligand", col.main="black", cex.main = 2,
+plot(0,0,pch='', xlim = c(0.5,230), ylim = c(-1,20), xlab = '', ylab = '')
+title(main="Number of clusters with any binding for each unique ligand (50% id)", col.main="black", cex.main = 2,
       xlab='Individual ligands (sorted)',
       col.lab='black', cex.lab=1.5)
 title(ylab='Clusters containing ligand (%)',
       col.lab = 'black', cex.lab = 1.5)
-lines(x = sort(rep(1:length(cpl60),3)), y = c(rbind(rep(0,length(cpl60)), cpl60, rep(0,length(cpl60)))), col = 'black', lwd = 2.2)
-points(x=(1:length(mTag))[mTag], y = -0.25* mTag[mTag], pch = 15, col = mycol[1])
-points(x=(1:length(dTag))[dTag], y = -0.25* dTag[dTag], pch = 15, col = mycol[2])
-points(x=(1:length(tTag))[tTag], y = -0.25* tTag[tTag], pch = 15, col = mycol[3])
-points(x=(1:length(qTag))[qTag], y = -0.25* qTag[qTag], pch = 15, col = mycol[4])
-points(x=(1:length(pTag))[pTag], y = -0.25* pTag[pTag], pch = 15, col = mycol[5])
-text(x = 232, y =0, labels = '# of sugars', cex =1.1)
+lines(x = sort(rep(1:length(cpl50),3)), y = c(rbind(rep(0,length(cpl50)), cpl50, rep(0,length(cpl50)))), col = mycol[1], lwd = 5)
+points(x=(1:length(mTag))[mTag], y = -0.25* mTag[mTag], pch = 15, col = sacc_col[1])
+points(x=(1:length(dTag))[dTag], y = -0.25* dTag[dTag], pch = 15, col = sacc_col[2])
+points(x=(1:length(tTag))[tTag], y = -0.25* tTag[tTag], pch = 15, col = sacc_col[3])
+points(x=(1:length(qTag))[qTag], y = -0.25* qTag[qTag], pch = 15, col = sacc_col[4])
+points(x=(1:length(pTag))[pTag], y = -0.25* pTag[pTag], pch = 15, col = sacc_col[5])
+# text(x = 232, y =0, labels = '# of sugars', cex =1.1)
 points(x=(1:length(bTag))[bTag], y = -0.5* bTag[bTag], pch = 15, col = 'navy')
 points(x=(1:length(bTag))[!bTag], y = -0.5+ bTag[!bTag], pch = 15, col = 'gray85')
-text(x = 232, y =-0.75, labels = 'Branching?', cex =1.1)
+# text(x = 232, y =-0.75, labels = 'Branching?', cex =1.1)
 points(x=(1:length(manTag))[manTag], y = -0.75* manTag[manTag], pch = 21, bg = 'forestgreen', col ='forestgreen')
 points(x=(1:length(neuTag))[neuTag], y = -0.75* neuTag[neuTag], pch = 23, bg = 'darkorchid', col ='darkorchid')
 points(x=(1:length(fucTag))[fucTag], y = -0.75* fucTag[fucTag], pch = 24, bg = 'firebrick1', col ='firebrick1')
-text(x = 232, y =-1.5, labels = 'Composition', cex =1.1)
+# text(x = 232, y =-1.5, labels = 'Composition', cex =1.1)
 legend(x = 'topright', pch = c(rep(15,9),21,23, 24),
        legend = c('Monosacc.','Disacc.','Trisacc.','Tetasacc.','5+ sugars',
                   '',
                   'Branching','No Branching',
                   '',
                   'High Mannose', 'NeuAc', 'Terminal Fucose'),
-       col = c(mycol,
+       col = c(sacc_col,
                'white',
                'navy', 'grey85',
                'white',
@@ -373,13 +476,71 @@ legend(x = 'topright', pch = c(rep(15,9),21,23, 24),
               'forestgreen', 'darkorchid', 'firebrick1'),
        pt.cex =1.8)
 
+## 80% id
 
-
-
-for (i in 1:length(ligSort[cpl60 > 5])){
-  print(ligSort[cpl60 > 5][i])
+parenCnt = bracCnt = manCnt = neuCnt = bracCnt = rep(0,length(ligSort80))
+for (i in 1:length(ligSort80)){
+  lig = ligSort80[i]
+  parenCnt[i] = lengths(regmatches(lig, gregexpr("\\(", lig)))
+  bracCnt[i] = lengths(regmatches(lig, gregexpr("\\[", lig)))
+  manCnt[i] = lengths(regmatches(lig, gregexpr("Man", lig)))
+  neuCnt[i] = lengths(regmatches(lig, gregexpr("Neu", lig)))
 }
 
+mTag = parenCnt == 0 & bracCnt == 0 # Monosaccharides
+dTag = parenCnt == 1 & bracCnt == 0 # Disaccharides
+tTag = (parenCnt == 2 & bracCnt == 0) | (parenCnt == 2 & bracCnt == 1) # Trisaccharides
+qTag = (parenCnt == 3 & bracCnt == 0) | (parenCnt == 3 & bracCnt == 1) | (parenCnt == 1 & bracCnt == 2) # Tetrasaccharides
+pTag = !(mTag | dTag | tTag | qTag) # 5+ sugars
+bTag = bracCnt >= 1 # Branched glycans
+
+hist(manCnt)
+
+manTag = manCnt > 3 # High mannose
+neuTag = neuCnt >= 1 # Has sialic acid
+fucTag = grepl('^Fuc',ligSort80) # Has a terminal fucose
+
+plot(0,0,pch='', xlim = c(0.5,230), ylim = c(-1,20), xlab = '', ylab = '')
+title(main="Number of clusters with any binding for each unique ligand (80% id)", col.main="black", cex.main = 2,
+      xlab='Individual ligands (sorted)',
+      col.lab='black', cex.lab=1.5)
+title(ylab='Clusters containing ligand (%)',
+      col.lab = 'black', cex.lab = 1.5)
+lines(x = sort(rep(1:length(cpl80),3)), y = c(rbind(rep(0,length(cpl80)), cpl80, rep(0,length(cpl80)))), col = mycol[4], lwd = 5)
+points(x=(1:length(mTag))[mTag], y = -0.25* mTag[mTag], pch = 15, col = sacc_col[1])
+points(x=(1:length(dTag))[dTag], y = -0.25* dTag[dTag], pch = 15, col = sacc_col[2])
+points(x=(1:length(tTag))[tTag], y = -0.25* tTag[tTag], pch = 15, col = sacc_col[3])
+points(x=(1:length(qTag))[qTag], y = -0.25* qTag[qTag], pch = 15, col = sacc_col[4])
+points(x=(1:length(pTag))[pTag], y = -0.25* pTag[pTag], pch = 15, col = sacc_col[5])
+# text(x = 232, y =0, labels = '# of sugars', cex =1.1)
+points(x=(1:length(bTag))[bTag], y = -0.5* bTag[bTag], pch = 15, col = 'navy')
+points(x=(1:length(bTag))[!bTag], y = -0.5+ bTag[!bTag], pch = 15, col = 'gray85')
+# text(x = 232, y =-0.75, labels = 'Branching?', cex =1.1)
+points(x=(1:length(manTag))[manTag], y = -0.75* manTag[manTag], pch = 21, bg = 'forestgreen', col ='forestgreen')
+points(x=(1:length(neuTag))[neuTag], y = -0.75* neuTag[neuTag], pch = 23, bg = 'darkorchid', col ='darkorchid')
+points(x=(1:length(fucTag))[fucTag], y = -0.75* fucTag[fucTag], pch = 24, bg = 'firebrick1', col ='firebrick1')
+# text(x = 232, y =-1.5, labels = 'Composition', cex =1.1)
+legend(x = 'topright', pch = c(rep(15,9),21,23, 24),
+       legend = c('Monosacc.','Disacc.','Trisacc.','Tetasacc.','5+ sugars',
+                  '',
+                  'Branching','No Branching',
+                  '',
+                  'High Mannose', 'NeuAc', 'Terminal Fucose'),
+       col = c(sacc_col,
+               'white',
+               'navy', 'grey85',
+               'white',
+               'white', 'white', 'white'),
+       pt.bg = c(rep(NA,9),
+                 'forestgreen', 'darkorchid', 'firebrick1'),
+       pt.cex =1.8)
+
+
+top50 = ligSort50[cpl50 > 5]
+top80 = ligSort80[cpl80 > 5]
+
+all(top50 %in% top80)
+all(top80 %in% top50)
 
 ###########################
 # McCaldon analysis
