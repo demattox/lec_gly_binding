@@ -29,7 +29,12 @@ setwd(homeDir)
 # functions
 ###########################
 invarNorm <- function(invarVec){
-  return(invarVec/sum(invarVec))
+  if (sum(invarVec) > 0){
+    return(invarVec/sum(invarVec))
+  }
+  else{
+    return(invarVec)
+  }
 }
 
 pdbInRowNames <- function(df, pdbID){
@@ -403,6 +408,10 @@ cpl50 = sort(cpl50/length(clusLst50)*100, decreasing = T)
 ligSort80 = uniLigs[order(cpl80, decreasing = T)]
 cpl80 = sort(cpl80/length(clusLst80)*100, decreasing = T)
 
+topLigOccurences = as.data.frame(matrix(0,nrow = 2, ncol = 16))
+colnames(topLigOccurences) = c('id_cutoff', 'High_Mannose', 'Sialic_Acid', 'Terminal_Fucose', rep('', 12))
+topLigOccurences$id_cutoff = c('50%', '80%')
+
 ## 50% id
 
 parenCnt = bracCnt = manCnt = neuCnt = bracCnt = rep(0,length(ligSort50))
@@ -476,6 +485,13 @@ legend(x = 'topright', pch = c(rep(15,9),21,23, 24),
               'forestgreen', 'darkorchid', 'firebrick1'),
        pt.cex =1.8)
 
+# ligSort50[manTag]
+topLigOccurences$High_Mannose[1] = sum(cpl50[manTag])
+# ligSort50[neuTag]
+topLigOccurences$Sialic_Acid[1] = sum(cpl50[neuTag])
+# ligSort50[fucTag]
+topLigOccurences$Terminal_Fucose[1] = sum(cpl50[fucTag])
+
 ## 80% id
 
 parenCnt = bracCnt = manCnt = neuCnt = bracCnt = rep(0,length(ligSort80))
@@ -535,12 +551,45 @@ legend(x = 'topright', pch = c(rep(15,9),21,23, 24),
                  'forestgreen', 'darkorchid', 'firebrick1'),
        pt.cex =1.8)
 
+# ligSort80[manTag]
+topLigOccurences$High_Mannose[2] = sum(cpl80[manTag])
+# ligSort80[neuTag]
+topLigOccurences$Sialic_Acid[2] = sum(cpl80[neuTag])
+# ligSort80[fucTag]
+topLigOccurences$Terminal_Fucose[2] = sum(cpl80[fucTag])
 
 top50 = ligSort50[cpl50 > 5]
 top80 = ligSort80[cpl80 > 5]
 
-all(top50 %in% top80)
-all(top80 %in% top50)
+# # Ligands present in >5% of clusters are consistent between ID thresholds
+# all(top50 %in% top80)
+# all(top80 %in% top50)
+
+colnames(topLigOccurences)[5:16] = top50
+topLigOccurences[1, 5:16] = cpl50[cpl50 > 5]
+
+for (i in 5:16){
+  lig = colnames(topLigOccurences)[i]
+  lig = gsub('\\(', '\\\\(', lig)
+  lig = gsub('\\)', '\\\\)', lig)
+  lig = gsub('\\[', '\\\\]', lig)
+  lig = gsub('\\[', '\\\\]', lig)
+  lig = gsub('^', '\\^', lig)
+  lig = gsub('$', '\\$', lig)
+  topLigOccurences[2,i] = cpl80[grepl(lig, ligSort80)]
+}
+
+melt_ligOccur = melt(data =topLigOccurences, id.vars = 'id_cutoff')
+colnames(melt_ligOccur) = c('Clust_ID', 'Ligand', 'Cluster_Percent_w_ligand')
+
+
+ggplot(melt_ligOccur, aes(fill = Clust_ID, x = Ligand, y = Cluster_Percent_w_ligand)) + geom_bar(stat="identity", color="black", position=position_dodge())+
+  scale_fill_manual(values=mycol[c(1,4)]) +
+  geom_hline(yintercept = c(5)) +
+  theme_linedraw(base_size = 14) +
+  labs(title = "Well-represented ligands in lectin clusters", x = "IUPAC Ligands", y = "Percent of clusters with ligand") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
+
 
 ###########################
 # McCaldon analysis
@@ -555,17 +604,17 @@ mccaldon$freq_bin4 = 0
 
 for (i in 1:nrow(mccaldon)){
   b1 = b2 = b3 = b4 = 0
-  for (j in 1:length(clusLst)){
-    tag = bsResiDat$seqClust == clusLst[j]
+  for (j in 1:length(clusLst50)){
+    tag = bsResiDat$seqClust50 == clusLst50[j]
     b1 = b1 + mean( bsResiDat[,grepl( paste('^',mccaldon$aa[i][[1]],'_bin1$', sep = ''), colnames(bsResiDat))] ) # Running sum of the average frequency for each cluster
     b2 = b2 + mean( bsResiDat[,grepl( paste('^',mccaldon$aa[i][[1]],'_bin2$', sep = ''), colnames(bsResiDat))] )
     b3 = b3 + mean( bsResiDat[,grepl( paste('^',mccaldon$aa[i][[1]],'_bin3$', sep = ''), colnames(bsResiDat))] )
     b4 = b4 + mean( bsResiDat[,grepl( paste('^',mccaldon$aa[i][[1]],'_bin4$', sep = ''), colnames(bsResiDat))] )
   }
-  mccaldon$freq_bin1[i] = b1/length(clusLst) # Take average across the clusters s.t. each cluster gets equal weight
-  mccaldon$freq_bin2[i] = b2/length(clusLst)
-  mccaldon$freq_bin3[i] = b3/length(clusLst)
-  mccaldon$freq_bin4[i] = b4/length(clusLst)
+  mccaldon$freq_bin1[i] = b1/length(clusLst50) # Take average across the clusters s.t. each cluster gets equal weight
+  mccaldon$freq_bin2[i] = b2/length(clusLst50)
+  mccaldon$freq_bin3[i] = b3/length(clusLst50)
+  mccaldon$freq_bin4[i] = b4/length(clusLst50)
 }
 
 mcFreqs = mccaldon[,grep('[Ff]req', colnames(mccaldon))]
@@ -629,7 +678,10 @@ colnames(meltMc) = c("Amino_acid", "Bin_Number", "PercentDiff_McCaldon")
 ggplot(meltMc, aes(fill = Bin_Number, x = Amino_acid, y = PercentDiff_McCaldon)) + geom_bar(stat="identity", color="black", position=position_dodge())+
   geom_hline(yintercept = c(0)) +
   scale_fill_manual(values=c(threshColors)) +
-  theme_dark(base_size = 22)
+  theme_dark(base_size = 22) + 
+  labs(title = 'Lectin binding site deviations from McCaldon frequency', x = "Amino Acids", y = "Percent change from McCaldon") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
+
 ###########################
 # Extract features from d2Dists and d2Feats
 ###########################
@@ -689,9 +741,8 @@ pdb = '2WGC'
 points(pca.d2Dists$x[grepl(pdb,row.names(d2Dists)), 1], pca.d2Dists$x[grepl(pdb,row.names(d2Dists)), 2], col = alpha('blue',0.7), pch=19) # two 0 pockets only
 legend(x ="topright", legend = c('mGRFT', '2CL8', '2WGC', '4URR', '1HJV'), col = c('green','orange2', 'blue', 'red', 'purple'), pch = 19)
 
-volMod = lm(d2Feats$vol_4Ang ~ pca.d2Dists$x[,1] + pca.d2Dists$x[,2])
-summary(volMod)
-volMod$xlevels
+# volMod = lm(d2Feats$vol_4Ang ~ pca.d2Dists$x[,1] + pca.d2Dists$x[,2])
+# summary(volMod)
 
 
 # PCA of d2 distribution features
@@ -711,21 +762,17 @@ plot(pca$x, main = 'PCA of d2Feats', xlab = 'PC1 (56.96% of var.)', ylab = 'PC2 
 # Explore predictive feature set
 ###########################
 
-colors = colfunc(length(unique(bsResiDat$seqClust)))
-labels = bsResiDat$seqClust
-labels.u = sort(unique(labels))
-labels.int = rep(0,length(labels))
-for (i in 1:length(labels.u)){
-  labels.int[labels == labels.u[i]] = i
-}
-
-
 row.names(zern8)[ ! (row.names(zern8) %in% row.names(zern4)) ]
-d2Feats[grepl('2WBW',row.names((d2Feats))),] # No volume in smallest pocket threshold (probably below 15 Ang^3), drop from other zern matrices
+d2Feats[grepl('2WBW',row.names((d2Feats))),] # No volume in smallest pocket threshold (probably below 15 Ang^3)
 
-zern6 = zern6[!grepl('2WBW', row.names(zern6)),]
-zern8 = zern8[!grepl('2WBW', row.names(zern8)),]
-zern10 = zern10[!grepl('2WBW', row.names(zern10)),]
+zern4 = rbind(zern4, rep(0,ncol(zern4))) # Add a row of zeros to Zern4 for the missing pocket at 4Ang threshold
+row.names(zern4)[nrow(zern4)] = row.names(zern8)[ ! (row.names(zern8) %in% row.names(zern4)) ] # Name the row of zeros
+zern4 = zern4[row.names(zern8),] # Re-order zern4 to match other zerns
+
+
+# zern6 = zern6[!grepl('2WBW', row.names(zern6)),]
+# zern8 = zern8[!grepl('2WBW', row.names(zern8)),]
+# zern10 = zern10[!grepl('2WBW', row.names(zern10)),]
 
 all(row.names(zern4) == row.names(zern6))
 all(row.names(zern4) == row.names(zern8))
@@ -738,6 +785,14 @@ zern10Norm = t(apply(zern10, 1, invarNorm))
 
 allZernNorm = as.data.frame(cbind(zern4Norm, zern6Norm, zern8Norm, zern10Norm))
 
+all(row.names(allZernNorm) %in% row.names(bsResiDat))
+colors = colfunc(length(unique(bsResiDat$seqClust50)))
+labels = bsResiDat[row.names(allZernNorm), 'seqClust50']
+labels.u = sort(unique(labels))
+labels.int = rep(0,length(labels))
+for (i in 1:length(labels.u)){
+  labels.int[labels == labels.u[i]] = i
+}
 
 
 pca = prcomp(x = allZernNorm, scale. = T)
@@ -749,15 +804,15 @@ for( i in 1:10){ # How much variance is captured by the top principle components
 }
 print( paste('Top 10 PCs account for a total of ', as.character(runSum), '% of the total variance', sep = '') )
 
-plot(pca$x, xlab = 'PC1 (13.88% of variance)', ylab = 'PC2 (7.75% of variance)', main = 'PCA of 3DZDs colored by cluster membership', pch = 19, col = alpha(colors[labels.int], 0.6))
+plot(pca$x, xlab = 'PC1 (13.88% of variance)', ylab = 'PC2 (7.75% of variance)', main = 'PCA of 3DZDs colored by cluster membership (50% id)', pch = 19, col = alpha(colors[labels.int], 0.6))
 
-# corrplot(cor(pca.d2Dists$x[row.names(d2Dists) %in% row.names(allZernNorm),1:10],pca$x[row.names(d2Dists)[row.names(d2Dists) %in% row.names(allZernNorm)],1:10]))
+corrplot(cor(pca.d2Dists$x[row.names(d2Dists) %in% row.names(allZernNorm),1:10],pca$x[row.names(d2Dists)[row.names(d2Dists) %in% row.names(allZernNorm)],1:10]))
 
-zern.umap = umap(allZernNorm)
+# zern.umap = umap(allZernNorm)
 
-plot(x = zern.umap$layout[,1], y = zern.umap$layout[,2], xlim = c(-6,8), ylim = c(-8,8),
+plot(x = zern.umap$layout[,1], y = zern.umap$layout[,2], xlim = c(-8,6), ylim = c(-8,6),
      pch = 19, col = alpha(colors[labels.int], 0.6),
-     xlab = 'UMAP 1', ylab = 'UMAP 2', main = 'UMAP vis for 3DZDs')
+     xlab = 'UMAP 1', ylab = 'UMAP 2', main = 'UMAP vis for 3DZDs (colored by 50% id clusters)')
 pdb = '3LL2'
 points(zern.umap$layout[grepl(pdb,row.names(allZernNorm)), 1], zern.umap$layout[grepl(pdb,row.names(allZernNorm)), 2], bg = alpha('green',0.9),col='white', pch=22, cex=3)
 pdb = '2CL8'
@@ -767,7 +822,11 @@ points(zern.umap$layout[grepl(pdb,row.names(allZernNorm)), 1], zern.umap$layout[
 pdb = '1HJV'
 points(zern.umap$layout[grepl(pdb,row.names(allZernNorm)), 1], zern.umap$layout[grepl(pdb,row.names(allZernNorm)), 2], bg = alpha('purple',0.9),col='white', pch=22, cex=3) # half large deep, half very shallow 
 
+plot(x = zern.umap$layout[,1], y = zern.umap$layout[,2],# xlim = c(-8,6), ylim = c(-8,6),
+     pch = 19, col = alpha(colors[labels.int], 0.6),
+     xlab = 'UMAP 1', ylab = 'UMAP 2', main = 'UMAP vis for 3DZDs (colored by 50% id clusters)')
 
+zern.umap$layout[(zern.umap$layout[,2] < -6),]
 
 # tag = (zern.umap$layout[,1] < -20) & (zern.umap$layout[,2] < -20)
 # zern.umap$layout[tag,]
