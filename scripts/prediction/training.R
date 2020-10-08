@@ -70,6 +70,21 @@ countClustMembers <- function(cdhit){
   return(clustCnts)
 }
 
+outlierPlots <- function(df, tag){
+  for (i in (1:ncol(df))){
+    df[,i] = (df[,i] - min(df[,i])) / (max(df[,i]) - min(df[,i]))
+  }
+  df$outlier = 'other'
+  df$outlier[tag] = 'outlier'
+  mdf = melt(df, id.vars = 'outlier')
+  ggplot(data = mdf, aes(x = variable, y = value, color = outlier, fill = variable)) +
+    geom_boxplot() + 
+    scale_color_manual(values=c("black", "magenta")) + 
+    labs(title = 'Outlier investigation', x = 'variables', y = 'Values (scaled from [0,1])') + 
+    guides(fill=FALSE) +
+    theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = 'bold.italic', color = 'black'))
+}
+
 colfunc = colorRampPalette(c("red","goldenrod","forestgreen","royalblue","darkviolet"))
 threshColors = c('firebrick3', 'darkorange2', 'darkgoldenrod2', 'gold2')
 
@@ -883,26 +898,15 @@ plot(x = zern.umap$layout[,1], y = zern.umap$layout[,2],#xlim = c(-5.5,7), ylim 
 
 out1tag = unname((zern.umap$layout[,2] < -7) & (zern.umap$layout[,2] > -15))
 zern.umap$layout[out1tag,]
+outlierPlots(d2Feats, out1tag)
+outlierPlots(allZernNorm, out1tag)
 
-outlierPlots <- function(df, tag){
-  norm = apply(X = df, MARGIN = 2, FUN = mean)
-  out = apply(X = df[tag,], MARGIN = 2, FUN = mean, na.rm = T)
-  barplot((out-norm)/norm)
-  for (i in 1:ncol(df)){
-    df[,i] = df[,i]/max(df[,i])
-  }
-  norm = apply(X = df, MARGIN = 2, FUN = mean)
-  out = apply(X = df[tag,], MARGIN = 2, FUN = mean, na.rm = T)
-  barplot(out-norm)
-}
 
-plot(apply(X = d2Feats[!out1tag,], MARGIN = 2, FUN = mean), apply(X = d2Feats[out1tag,], MARGIN = 2, FUN = mean))
-d2Feats[out1tag,]
-
-allZernNorm[out1tag,1:5]
-
-out2tag = (zern.umap$layout[,] > 15)
+out2tag = (zern.umap$layout[,1] > 15)
 zern.umap$layout[out2tag ,]
+outlierPlots(d2Feats, out2tag)
+outlierPlots(allZernNorm, out2tag)
+
 
 zern.umap$layout[(zern.umap$layout[,2] < 7) & (zern.umap$layout[,1] > 10),]
 

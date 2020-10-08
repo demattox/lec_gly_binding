@@ -1,9 +1,11 @@
 #!/bin/bash
 
-outF='/Users/dmattox/cbk/lec_gly_binding/analysis/3DZDs_20thOrder.tsv'
+cd /dartfs-hpc/rc/home/y/f002tsy/cbklab/Mattox/lec_gly_binding/
+
+outF='./analysis/3DZDs_20thOrder.tsv'
 touch ${outF}
-cd /Users/dmattox/cbk/lec_gly_binding/data/structures/bsites/zernPolys
-for fn in *; do [ -f $fn ] || continue
-    echo ${fn%.inv}'\t\c' >> ${outF}
+
+for fn in ./data/structures/bsites/zernPolys/*; do [ -f $fn ] || continue
+    echo $(basename "${fn%.inv}")'\t\c' >> ${outF}
     sed '1'd ${fn} >> ${outF}
 done
