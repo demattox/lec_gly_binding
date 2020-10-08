@@ -41,6 +41,8 @@ os.chdir(LecGly.homeDir)
 #     t = (np.dot(norm, planePnt) - np.dot(norm, mvingPnt)) / np.linalg.norm(norm)        
 #     return mvingPnt + t*norm
 
+NUM_SCALED_BINS = 40
+
 ############################################
 
 if __name__ == '__main__':
@@ -53,6 +55,7 @@ if __name__ == '__main__':
     
     distributionFeatsOut = oWD + 'd2DistributionFeatures.csv'
     allDistsOut = oWD + 'allD2Distances.csv'
+    scaledDistsOut = oWD + 'scaledBins_D2Distances.csv'
         
     ############################################
         
@@ -75,7 +78,8 @@ if __name__ == '__main__':
         print("warning, more pocket thresholds than expected")
     
     allDistsDict = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(list))) # three level dict to store lists of all pairwise distances [PDB][BS][Threshold] : [distances]
-    binnedAllDists = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(lambda: collections.Counter())))
+    binnedAllDists = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(lambda: collections.Counter()))) # Store binned D2 measurments
+    scaled_binnedAllDists = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(dict))) # Scale bins for D2 measurments s.t. there are always 40 bins evenly divided b/w the min & max observed distances
     
     pocketMeasures = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(dict)))
     
@@ -162,7 +166,7 @@ if __name__ == '__main__':
                             #     if d%1 >= 0.5:
                             #         binD += 0.5
                             #     binnedCLdists[pdb][bs][binThresh][binD]+= 1
-                                                    
+                                                        
                             for i,p1 in enumerate(surfacePnts):
                                 for j in range(i+1, len(surfacePnts)):
                                     d = LecGly.eucDist(p1,surfacePnts[j])
@@ -171,6 +175,12 @@ if __name__ == '__main__':
                                     if d%1 >= 0.5:
                                         binD += 0.5
                                     binnedAllDists[pdb][bs][binThresh][binD]+= 1
+                            
+                            binVals = np.linspace(min(allDistsDict[pdb][bs][binThresh]),  max(allDistsDict[pdb][bs][binThresh])+0.01, NUM_SCALED_BINS + 1)  # Create scaled bin values to have the same number of bins for each shape
+                            allDists = np.array(allDistsDict[pdb][bs][binThresh])  # Create a new array object form the list of all D2 measurements for faster binning
+                            for i in range(len(binVals)-1):
+                                scaled_binnedAllDists[pdb][bs][binThresh][i] = sum((binVals[i] <= allDists) & (allDists < binVals[i+1]))
+                            # print(sum(scaled_binnedAllDists[pdb][bs][binThresh].values()))
                             
                             pocketMeasures[pdb][bs][binThresh]['var'] = np.var(allDistsDict[pdb][bs][binThresh])
                             pocketMeasures[pdb][bs][binThresh]['med'] = np.median(allDistsDict[pdb][bs][binThresh])
@@ -225,6 +235,21 @@ if __name__ == '__main__':
             
     end = time.time()
     print(round(end-start,2),'seconds for', len(runList), 'PDB files')
+    
+    with open(scaledDistsOut, 'w') as outFH:
+        outFH.write('bsite')
+        for k in colDict.keys():
+            outFH.write(',' +','.join([str(d)+'_'+str(k)+'Ang' for d in range(NUM_SCALED_BINS)]))
+        outFH.write('\n')
+        for pdb in scaled_binnedAllDists.keys():
+            for bs in scaled_binnedAllDists[pdb].keys():
+                outFH.write(pdb + '_' + bs)
+                for binThresh in colDict.keys():
+                    if binThresh in scaled_binnedAllDists[pdb][bs].keys():
+                        outFH.write(',' + ','.join([ str(scaled_binnedAllDists[pdb][bs][binThresh][d]) for d in range(NUM_SCALED_BINS) ]) )
+                    else:
+                        outFH.write(',' + ','.join([ str(0) for d in range(NUM_SCALED_BINS) ]) )
+                outFH.write('\n')
     
     # with open("binnedAllDists.p", "wb")as pickleFH:
     #     dill.dump(binnedAllDists, pickleFH)

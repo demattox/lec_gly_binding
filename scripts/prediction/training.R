@@ -86,6 +86,32 @@ bsResiDat = read.delim('./analysis/bsiteResiFeatures.tsv', header = T, sep ='\t'
 
 # Load general voxelized pocket features & D2 measurement distribution features
 d2Feats = read.delim('./analysis/d2_distributionFeats.csv', header = T, sep =',', stringsAsFactors = F, row.names = 1)
+# Separate skew into postive and negative
+tag4 = d2Feats$skew_4Ang < 0
+tag6 = d2Feats$skew_6Ang < 0
+tag8 = d2Feats$skew_8Ang < 0
+tag10 = d2Feats$skew_10Ang < 0
+
+d2Feats$leftskew_4Ang = d2Feats$skew_4Ang # Copy skew column to negative skew
+d2Feats$leftskew_4Ang[!tag4] = 0 # Zero out non-negative skew values in left skew column
+d2Feats$leftskew_4Ang = d2Feats$leftskew_4Ang*-1 # # Set left skew values to postive
+d2Feats$skew_4Ang[tag4] = 0 # zero out left skewed values in the original skew column
+
+d2Feats$leftskew_6Ang = d2Feats$skew_6Ang
+d2Feats$leftskew_6Ang[!tag6] = 0
+d2Feats$leftskew_6Ang = d2Feats$leftskew_6Ang*-1
+d2Feats$skew_6Ang[tag6] = 0
+
+d2Feats$leftskew_8Ang = d2Feats$skew_8Ang
+d2Feats$leftskew_8Ang[!tag8] = 0
+d2Feats$leftskew_8Ang = d2Feats$leftskew_8Ang*-1
+d2Feats$skew_8Ang[tag8] = 0
+
+d2Feats$leftskew_10Ang = d2Feats$skew_10Ang
+d2Feats$leftskew_10Ang[!tag10] = 0
+d2Feats$leftskew_10Ang = d2Feats$leftskew_10Ang*-1
+d2Feats$skew_10Ang[tag10] = 0
+
 
 # load binned D2 measurements
 if (dir.exists('./analysis/allD2binnedDists/')){
@@ -586,7 +612,8 @@ colnames(melt_ligOccur) = c('Clust_ID', 'Ligand', 'Cluster_Percent_w_ligand')
 ggplot(melt_ligOccur, aes(fill = Clust_ID, x = Ligand, y = Cluster_Percent_w_ligand)) + geom_bar(stat="identity", color="black", position=position_dodge())+
   scale_fill_manual(values=mycol[c(1,4)]) +
   geom_hline(yintercept = c(5)) +
-  theme_linedraw(base_size = 14) +
+  geom_vline(xintercept = c(3.5), lty = 2) +
+  theme_linedraw(base_size = 22) +
   labs(title = "Well-represented ligands in lectin clusters", x = "IUPAC Ligands", y = "Percent of clusters with ligand") +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
 
@@ -755,7 +782,7 @@ for( i in 1:10){ # How much variance is captured by the top principle components
 }
 print( paste('Top 10 PCs account for a total of ', as.character(runSum), '% of the total variance', sep = '') )
 
-plot(pca$x, main = 'PCA of d2Feats', xlab = 'PC1 (56.96% of var.)', ylab = 'PC2 (14.03% of var.)')
+plot(pca$x, main = 'PCA of d2Feats', xlab = 'PC1 (51.56% of var.)', ylab = 'PC2 (13.41% of var.)')
 
 
 ###########################
@@ -778,6 +805,7 @@ all(row.names(zern4) == row.names(zern6))
 all(row.names(zern4) == row.names(zern8))
 all(row.names(zern4) == row.names(zern10))
 
+# Normalize each shape s.t. each descriptor becomes the percentage of the sum of all descriptors for that shape
 zern4Norm = t(apply(zern4, 1, invarNorm))
 zern6Norm = t(apply(zern6, 1, invarNorm))
 zern8Norm = t(apply(zern8, 1, invarNorm))
@@ -785,7 +813,24 @@ zern10Norm = t(apply(zern10, 1, invarNorm))
 
 allZernNorm = as.data.frame(cbind(zern4Norm, zern6Norm, zern8Norm, zern10Norm))
 
-all(row.names(allZernNorm) %in% row.names(bsResiDat))
+# Add rows of zeros for the pockets with no volume
+missingRows = row.names(bsResiDat)[!(row.names(bsResiDat) %in% row.names(allZernNorm))]
+zeroes2Zern = as.data.frame(matrix(0,nrow = length(missingRows), ncol = ncol(allZernNorm)))
+row.names(zeroes2Zern) = missingRows
+colnames(zeroes2Zern) = colnames(allZernNorm)
+
+allZernNorm = rbind(allZernNorm, zeroes2Zern)
+
+# All dataframes have the smae row names
+all(row.names(allZernNorm) %in% row.names(bsResiDat)) & all(row.names(bsResiDat) %in% row.names(allZernNorm))
+
+# order 3DZDs df to match others
+allZernNorm = allZernNorm[row.names(bsResiDat),]
+
+# All dataframes have the smae row names and are in the same order
+all(row.names(bsResiDat) == row.names(allZernNorm)) & all(row.names(bsResiDat) == row.names(d2Feats)) & all(row.names(bsResiDat) == row.names(pca.d2Dists$x))
+
+# Plot the 3DZDs
 colors = colfunc(length(unique(bsResiDat$seqClust50)))
 labels = bsResiDat[row.names(allZernNorm), 'seqClust50']
 labels.u = sort(unique(labels))
@@ -804,29 +849,64 @@ for( i in 1:10){ # How much variance is captured by the top principle components
 }
 print( paste('Top 10 PCs account for a total of ', as.character(runSum), '% of the total variance', sep = '') )
 
-plot(pca$x, xlab = 'PC1 (13.88% of variance)', ylab = 'PC2 (7.75% of variance)', main = 'PCA of 3DZDs colored by cluster membership (50% id)', pch = 19, col = alpha(colors[labels.int], 0.6))
+plot(pca$x, xlab = 'PC1 (15.99% of variance)', ylab = 'PC2 (7.24% of variance)', main = 'PCA of 3DZDs colored by cluster membership (50% id)', pch = 19, col = alpha(colors[labels.int], 0.6))
 
 corrplot(cor(pca.d2Dists$x[row.names(d2Dists) %in% row.names(allZernNorm),1:10],pca$x[row.names(d2Dists)[row.names(d2Dists) %in% row.names(allZernNorm)],1:10]))
 
-# zern.umap = umap(allZernNorm)
 
-plot(x = zern.umap$layout[,1], y = zern.umap$layout[,2], xlim = c(-8,6), ylim = c(-8,6),
+##
+zern.umap = umap(allZernNorm)
+##
+
+
+plot(x = zern.umap$layout[,1], y = zern.umap$layout[,2], xlim = c(-5.5,7), ylim = c(-6.5,6.5),
      pch = 19, col = alpha(colors[labels.int], 0.6),
      xlab = 'UMAP 1', ylab = 'UMAP 2', main = 'UMAP vis for 3DZDs (colored by 50% id clusters)')
 pdb = '3LL2'
-points(zern.umap$layout[grepl(pdb,row.names(allZernNorm)), 1], zern.umap$layout[grepl(pdb,row.names(allZernNorm)), 2], bg = alpha('green',0.9),col='white', pch=22, cex=3)
+points(zern.umap$layout[grepl(pdb,row.names(allZernNorm)), 1], zern.umap$layout[grepl(pdb,row.names(allZernNorm)), 2], bg = alpha('green',0.75),col='white', pch=22, cex=3)
 pdb = '2CL8'
-points(zern.umap$layout[grepl(pdb,row.names(allZernNorm)), 1], zern.umap$layout[grepl(pdb,row.names(allZernNorm)), 2], bg = alpha('orange2',0.9),col='white', pch=22, cex=3) # 1 deep medium sized pockets only
+points(zern.umap$layout[grepl(pdb,row.names(allZernNorm)), 1], zern.umap$layout[grepl(pdb,row.names(allZernNorm)), 2], bg = alpha('orange2',0.75),col='white', pch=22, cex=3) # 1 deep medium sized pockets only
 pdb = '4URR'
-points(zern.umap$layout[grepl(pdb,row.names(allZernNorm)), 1], zern.umap$layout[grepl(pdb,row.names(allZernNorm)), 2], bg = alpha('red',0.9),col='white', pch=22, cex=3) # deep long pocket
+points(zern.umap$layout[grepl(pdb,row.names(allZernNorm)), 1], zern.umap$layout[grepl(pdb,row.names(allZernNorm)), 2], bg = alpha('red',0.75),col='white', pch=22, cex=3) # deep long pocket
 pdb = '1HJV'
-points(zern.umap$layout[grepl(pdb,row.names(allZernNorm)), 1], zern.umap$layout[grepl(pdb,row.names(allZernNorm)), 2], bg = alpha('purple',0.9),col='white', pch=22, cex=3) # half large deep, half very shallow 
+points(zern.umap$layout[grepl(pdb,row.names(allZernNorm)), 1], zern.umap$layout[grepl(pdb,row.names(allZernNorm)), 2], bg = alpha('purple',0.75),col='white', pch=22, cex=3) # half large deep, half very shallow 
+pdb = '2WGC'
+points(zern.umap$layout[grepl(pdb,row.names(allZernNorm)), 1], zern.umap$layout[grepl(pdb,row.names(allZernNorm)), 2], bg = alpha('blue',0.75),col='white', pch=22, cex=3) # 2 zero volume pockets
+pdb = '2WBW'
+points(zern.umap$layout[grepl(pdb,row.names(allZernNorm)), 1], zern.umap$layout[grepl(pdb,row.names(allZernNorm)), 2], bg = alpha('pink',0.5),col='white', pch=22, cex=3) # 2 zero volume pockets 
 
-plot(x = zern.umap$layout[,1], y = zern.umap$layout[,2],# xlim = c(-8,6), ylim = c(-8,6),
+
+# Checking outliers
+plot(x = zern.umap$layout[,1], y = zern.umap$layout[,2],#xlim = c(-5.5,7), ylim = c(-6.5,6.5),
      pch = 19, col = alpha(colors[labels.int], 0.6),
      xlab = 'UMAP 1', ylab = 'UMAP 2', main = 'UMAP vis for 3DZDs (colored by 50% id clusters)')
 
-zern.umap$layout[(zern.umap$layout[,2] < -6),]
+out1tag = unname((zern.umap$layout[,2] < -7) & (zern.umap$layout[,2] > -15))
+zern.umap$layout[out1tag,]
+
+outlierPlots <- function(df, tag){
+  norm = apply(X = df, MARGIN = 2, FUN = mean)
+  out = apply(X = df[tag,], MARGIN = 2, FUN = mean, na.rm = T)
+  barplot((out-norm)/norm)
+  for (i in 1:ncol(df)){
+    df[,i] = df[,i]/max(df[,i])
+  }
+  norm = apply(X = df, MARGIN = 2, FUN = mean)
+  out = apply(X = df[tag,], MARGIN = 2, FUN = mean, na.rm = T)
+  barplot(out-norm)
+}
+
+plot(apply(X = d2Feats[!out1tag,], MARGIN = 2, FUN = mean), apply(X = d2Feats[out1tag,], MARGIN = 2, FUN = mean))
+d2Feats[out1tag,]
+
+allZernNorm[out1tag,1:5]
+
+out2tag = (zern.umap$layout[,] > 15)
+zern.umap$layout[out2tag ,]
+
+zern.umap$layout[(zern.umap$layout[,2] < 7) & (zern.umap$layout[,1] > 10),]
+
+
 
 # tag = (zern.umap$layout[,1] < -20) & (zern.umap$layout[,2] < -20)
 # zern.umap$layout[tag,]
@@ -837,20 +917,6 @@ zern.umap$layout[(zern.umap$layout[,2] < -6),]
 # abline(a = 0, b =1)
 # summary(d2Feats)
 
-missingRows = row.names(bsResiDat)[!(row.names(bsResiDat) %in% row.names(allZernNorm))]
-zeroes2Zern = as.data.frame(matrix(0,nrow = length(missingRows), ncol = ncol(allZernNorm)))
-row.names(zeroes2Zern) = missingRows
-colnames(zeroes2Zern) = colnames(allZernNorm)
-
-allZernNorm = rbind(allZernNorm, zeroes2Zern)
-
-all(row.names(allZernNorm) %in% row.names(bsResiDat)) & all(row.names(bsResiDat) %in% row.names(allZernNorm))
-
-allZernNorm = allZernNorm[row.names(bsResiDat),]
-
-all(row.names(bsResiDat) == row.names(allZernNorm))
-all(row.names(bsResiDat) == row.names(d2Feats))
-all(row.names(bsResiDat) == row.names(pca.d2Dists$x))
 
 
 # Clean up residue based features
