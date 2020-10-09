@@ -6,6 +6,7 @@ outF='./analysis/3DZDs_20thOrder.tsv'
 touch ${outF}
 
 for fn in ./data/structures/bsites/zernPolys/*; do [ -f $fn ] || continue
-    echo $(basename "${fn%.inv}")'\t\c' >> ${outF}
+    name=$(basename "${fn%.inv}")
+    echo -e ${name}'\t\c' >> ${outF}
     sed '1'd ${fn} >> ${outF}
 done
