@@ -9,4 +9,5 @@ for fn in ./data/structures/bsites/zernPolys/*; do [ -f $fn ] || continue
     name=$(basename "${fn%.inv}")
     echo -e ${name}'\t\c' >> ${outF}
     sed '1'd ${fn} >> ${outF}
+    echo ''
 done
