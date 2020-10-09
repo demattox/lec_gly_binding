@@ -2,7 +2,7 @@
 #PBS -N d2Feats 
 #PBS -q default
 #PBS -l nodes=1:ppn=8
-#PBS -l walltime=5:00:00
+#PBS -l walltime=25:00:00
 cd $PBS_O_WORKDIR
 source /optnfs/common/miniconda3/etc/profile.d/conda.sh
 conda activate py3
