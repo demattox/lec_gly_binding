@@ -1,0 +1,10 @@
+#!/bin/bash
+#PBS -N exZern 
+#PBS -q default
+#PBS -l nodes=1:ppn=16
+#PBS -l walltime=24:00:00
+cd $PBS_O_WORKDIR
+
+sh /dartfs-hpc/rc/home/y/f002tsy/cbklab/Mattox/lec_gly_binding/scripts/misc/zernikeExamples.sh
+
+exit 0

@@ -152,14 +152,27 @@ if (dir.exists('./analysis/allD2binnedDists/')){
   colnames(d2Dists) = gsub('^X','',colnames(d2Dists))
 }
 
-all(row.names(bsResiDat) %in% row.names(d2Feats)) & nrow(d2Feats) == nrow(bsResiDat) # All three dataframes have the same rows names
+# Read in D2 distances binned into an equal number of bins for each shape
+d2ScaledBins = read.delim('./analysis/d2_scaled_bins.csv', header = T, sep =',', stringsAsFactors = F, row.names = 1)
+row.names(bsResiDat)[!(row.names(bsResiDat) %in% row.names(d2ScaledBins))] # Rows missing from d2ScaledBins
+d2Feats[row.names(bsResiDat)[!(row.names(bsResiDat) %in% row.names(d2ScaledBins))],] # Zero volume binding sites
+
+zeroRows = as.data.frame(matrix(0,nrow = sum(! row.names(bsResiDat) %in% row.names(d2ScaledBins) ), ncol = ncol(d2ScaledBins)))
+row.names(zeroRows) = row.names(bsResiDat)[!(row.names(bsResiDat) %in% row.names(d2ScaledBins))]
+colnames(zeroRows) = colnames(d2ScaledBins)
+d2ScaledBins =  rbind(d2ScaledBins, zeroRows)
+
+all(row.names(bsResiDat) %in% row.names(d2Feats)) & nrow(d2Feats) == nrow(bsResiDat) # All dataframes have the same rows names
 all(row.names(bsResiDat) %in% row.names(d2Dists)) & nrow(d2Dists) == nrow(bsResiDat)
+all(row.names(bsResiDat) %in% row.names(d2ScaledBins)) & nrow(d2ScaledBins) == nrow(bsResiDat)
 
 # Get dataframes in the same order
 d2Feats = d2Feats[row.names(bsResiDat),]
 d2Dists = d2Dists[row.names(bsResiDat),]
+d2ScaledBins = d2ScaledBins[row.names(bsResiDat),]
 
-all(row.names(bsResiDat) == row.names(d2Feats)) & all(row.names(bsResiDat) == row.names(d2Dists)) # double check
+
+all(row.names(bsResiDat) == row.names(d2Feats)) & all(row.names(bsResiDat) == row.names(d2Dists)) & all(row.names(bsResiDat) == row.names(d2ScaledBins)) # double check
 
 # Read in 3DZD features and clean
 zern3d = read.delim('./analysis/3DZDs_20thOrder.tsv', header = F, sep ='\t', stringsAsFactors = F, row.names = 1)
@@ -196,7 +209,8 @@ cntID80 = sort(countClustMembers(id80))
 id90 = readCDHIT(cdhitDir = "./analysis/seqClustering/id90/")
 cntID90 = sort(countClustMembers(id90))
 
-mycol =  colorRampPalette(c("navy","cyan3","darkgreen"))(5)
+# mycol =  colorRampPalette(c("navy","cyan3","darkgreen"))(5)
+mycol = colfunc(5)
 jitFact = 0.0001
 alph = 0.9
 
@@ -407,9 +421,9 @@ lines(x = sort(rep(1:length(lpc50),3)), y = c(rbind(rep(0,length(lpc50)), lpc50,
 par(new=T)
 plot(0,0,pch='', xlim = c(0,250), ylim = c(0,60),
      xlab = '', ylab = '', main = '', axes = F)
-lines(x = sort(rep(1.5:(length(lpc50Len)+0.5),3)), y = c(rbind(rep(0,length(lpc50Len)), lpc50Len, rep(0,length(lpc50Len)))), col = 'firebrick', lwd = 2)
+lines(x = sort(rep(1.5:(length(lpc50Len)+0.5),3)), y = c(rbind(rep(0,length(lpc50Len)), lpc50Len, rep(0,length(lpc50Len)))), col = 'black', lwd = 2)
 axis(side = 4, at = pretty(c(0,60)))      # Add second axis
-mtext("Number of structures per cluster", side = 4, line = 3, cex = 1.5, col = 'firebrick')             # Add second axis label
+mtext("Number of structures per cluster", side = 4, line = 3, cex = 1.5, col = 'black')             # Add second axis label
 legend(x= 'topright', legend = '50% Identity', pch = 15, col = mycol[1], bty = 'n', cex = 2, pt.cex = 3)
 
 plot(0,0,pch='', xlim = c(0,350), ylim = c(0,17), xlab = '', ylab = '')
@@ -422,9 +436,9 @@ lines(x = sort(rep(1:length(lpc80),3)), y = c(rbind(rep(0,length(lpc80)), lpc80,
 par(new=T)
 plot(0,0,pch='', xlim = c(0,350), ylim = c(0,60),
      xlab = '', ylab = '', main = '', axes = F)
-lines(x = sort(rep(1.5:(length(lpc80Len)+0.5),3)), y = c(rbind(rep(0,length(lpc80Len)), lpc80Len, rep(0,length(lpc80Len)))), col = 'firebrick', lwd = 2)
+lines(x = sort(rep(1.5:(length(lpc80Len)+0.5),3)), y = c(rbind(rep(0,length(lpc80Len)), lpc80Len, rep(0,length(lpc80Len)))), col = 'black', lwd = 2)
 axis(side = 4, at = pretty(c(0,60)))      # Add second axis
-mtext("Number of structures per cluster", side = 4, line = 3, cex = 1.5, col = 'firebrick')             # Add second axis label
+mtext("Number of structures per cluster", side = 4, line = 3, cex = 1.5, col = 'black')             # Add second axis label
 legend(x= 'topright', legend = '80% Identity', pch = 15, col = mycol[4], bty = 'n', cex = 2, pt.cex = 3)
 
 dev.off()
@@ -516,7 +530,7 @@ legend(x = 'topright', pch = c(rep(15,9),21,23, 24),
                   '',
                   'Branching','No Branching',
                   '',
-                  'High Mannose', 'NeuAc', 'Terminal Fucose'),
+                  'High Mannose', 'Sialic Acid', 'Terminal Fucose'),
        col = c(sacc_col,
                'white',
                'navy', 'grey85',
@@ -582,7 +596,7 @@ legend(x = 'topright', pch = c(rep(15,9),21,23, 24),
                   '',
                   'Branching','No Branching',
                   '',
-                  'High Mannose', 'NeuAc', 'Terminal Fucose'),
+                  'High Mannose', 'Sialic Acid', 'Terminal Fucose'),
        col = c(sacc_col,
                'white',
                'navy', 'grey85',
@@ -624,8 +638,9 @@ melt_ligOccur = melt(data =topLigOccurences, id.vars = 'id_cutoff')
 colnames(melt_ligOccur) = c('Clust_ID', 'Ligand', 'Cluster_Percent_w_ligand')
 
 
-ggplot(melt_ligOccur, aes(fill = Clust_ID, x = Ligand, y = Cluster_Percent_w_ligand)) + geom_bar(stat="identity", color="black", position=position_dodge())+
+ggplot(melt_ligOccur, aes(fill = Clust_ID, x = Ligand, alpha = Ligand, y = Cluster_Percent_w_ligand)) + geom_bar(stat="identity", color="black", position=position_dodge())+
   scale_fill_manual(values=mycol[c(1,4)]) +
+  scale_alpha_manual(values=c(rep(0.6,3), rep(1,12)), guide = F) +
   geom_hline(yintercept = c(5)) +
   geom_vline(xintercept = c(3.5), lty = 2) +
   theme_linedraw(base_size = 22) +
@@ -738,11 +753,20 @@ for (i in 1:ncol(d2Dists)){
 if (sum(tag) > 0){ d2Dists = d2Dists[,!tag]}
 
 pca = prcomp(x = d2Dists, scale. = T)
+
+pc1 = pc2 = 0
+runSum = 0
 for( i in 1:10){ # How much variance is captured by the top principle components
-  v = as.character(round(pca$sdev[i]**2/sum(pca$sdev**2), 4) * 100)
-  print( paste('PC', as.character(i), ' accounts for ', v, '% of the total variance', sep = '') )
+  v = round(pca$sdev[i]**2/sum(pca$sdev**2), 4) * 100
+  if ( i == 1){pc1 = as.character(v)}
+  if ( i == 2){pc2 = as.character(v)}
+  runSum = runSum + v
+  print( paste('PC', as.character(i), ' accounts for ', as.character(v), '% of the total variance', sep = '') )
 }
-plot(pca$x, main = 'PCA of d2Dists (raw bin counts)', xlab = 'PC1 (61.52% of var.)', ylab = 'PC2 (20.67% of var.)')
+print( paste('Top 10 PCs account for a total of ', as.character(runSum), '% of the total variance', sep = '') )
+plot(pca$x, xlab = paste('PC1 (', pc1, '% of variance)', sep =''), ylab = paste('PC2 (', pc2, '% of variance)', sep =''), main = 'PCA of d2Dists (raw bin counts)')
+
+
 
 corrplot(cor(pca$x[,1:10], d2Feats))
 
@@ -757,15 +781,17 @@ for (i in 1:nrow(d2Dists)){
 }
 
 pca.d2Dists = prcomp(x = d2Dists, scale. = T)
+pc1 = pc2 = 0
 runSum = 0
 for( i in 1:10){ # How much variance is captured by the top principle components
   v = round(pca.d2Dists$sdev[i]**2/sum(pca.d2Dists$sdev**2), 4) * 100
+  if ( i == 1){pc1 = as.character(v)}
+  if ( i == 2){pc2 = as.character(v)}
   runSum = runSum + v
   print( paste('PC', as.character(i), ' accounts for ', as.character(v), '% of the total variance', sep = '') )
 }
 print( paste('Top 10 PCs account for a total of ', as.character(runSum), '% of the total variance', sep = '') )
-
-plot(pca.d2Dists$x, main = 'PCA of d2Dists (% comp per pocket)', xlab = 'PC1 (41.41% of var.)', ylab = 'PC2 (24.33% of var.)')
+plot(pca.d2Dists$x, xlab = paste('PC1 (', pc1, '% of variance)', sep =''), ylab = paste('PC2 (', pc2, '% of variance)', sep =''), main = 'PCA of d2Dists (% comp per pocket)')
 
 corrplot(cor(pca.d2Dists$x[,1:10], d2Feats))
 
@@ -785,6 +811,63 @@ legend(x ="topright", legend = c('mGRFT', '2CL8', '2WGC', '4URR', '1HJV'), col =
 
 # volMod = lm(d2Feats$vol_4Ang ~ pca.d2Dists$x[,1] + pca.d2Dists$x[,2])
 # summary(volMod)
+
+# Scaled bins s.t. each shape has 40 equal bins of varied distance
+pca = prcomp(x = d2ScaledBins, scale. = T)
+
+pc1 = pc2 = 0
+runSum = 0
+for( i in 1:10){ # How much variance is captured by the top principle components
+  v = round(pca$sdev[i]**2/sum(pca$sdev**2), 4) * 100
+  if ( i == 1){pc1 = as.character(v)}
+  if ( i == 2){pc2 = as.character(v)}
+  runSum = runSum + v
+  print( paste('PC', as.character(i), ' accounts for ', as.character(v), '% of the total variance', sep = '') )
+}
+print( paste('Top 10 PCs account for a total of ', as.character(runSum), '% of the total variance', sep = '') )
+plot(pca$x, xlab = paste('PC1 (', pc1, '% of variance)', sep =''), ylab = paste('PC2 (', pc2, '% of variance)', sep =''), main = 'PCA of d2Dists in scaled bins')
+
+corrplot(cor(pca$x[,1:10], d2Feats))
+
+thresholds = c('_4Ang', '_6Ang', '_8Ang', '_10Ang')
+for (i in 1:nrow(d2ScaledBins)){
+  for (t in 1:length(thresholds)){
+    tag = grepl(thresholds[t], colnames(d2ScaledBins)) # get columns for the threshold
+    if (! all(d2ScaledBins[i,tag] == 0)){ # avoid /0 error
+      d2ScaledBins[i,tag] = d2ScaledBins[i,tag] / sum(d2ScaledBins[i,tag])
+    }
+  }
+}
+
+pca.scaleBins = prcomp(x = d2ScaledBins, scale. = T)
+
+pc1 = pc2 = 0
+runSum = 0
+for( i in 1:10){ # How much variance is captured by the top principle components
+  v = round(pca.scaleBins$sdev[i]**2/sum(pca.scaleBins$sdev**2), 4) * 100
+  if ( i == 1){pc1 = as.character(v)}
+  if ( i == 2){pc2 = as.character(v)}
+  runSum = runSum + v
+  print( paste('PC', as.character(i), ' accounts for ', as.character(v), '% of the total variance', sep = '') )
+}
+print( paste('Top 10 PCs account for a total of ', as.character(runSum), '% of the total variance', sep = '') )
+plot(pca.scaleBins$x, xlab = paste('PC1 (', pc1, '% of variance)', sep =''), ylab = paste('PC2 (', pc2, '% of variance)', sep =''), main = 'PCA of d2Dists in scaled bins (% per pocket)')
+
+corrplot(cor(pca.scaleBins$x[,1:10], d2Feats))
+
+smoothScatter(pca.scaleBins$x, main = 'PCA of d2ScaledBins (% comp per pocket)', xlab = paste('PC1 (', pc1, '% of variance)', sep =''), ylab = paste('PC2 (', pc2, '% of variance)', sep =''))
+pdb = '3LL2'
+points(pca.scaleBins$x[grepl(pdb,row.names(d2Dists)), 1], pca.scaleBins$x[grepl(pdb,row.names(d2Dists)), 2], col = alpha('green',0.7), pch=19)
+pdb = '2CL8'
+points(pca.scaleBins$x[grepl(pdb,row.names(d2Dists)), 1], pca.scaleBins$x[grepl(pdb,row.names(d2Dists)), 2], col = alpha('orange2',0.7), pch=19) # 1 deep medium sized pockets only
+pdb = '4URR'
+points(pca.scaleBins$x[grepl(pdb,row.names(d2Dists)), 1], pca.scaleBins$x[grepl(pdb,row.names(d2Dists)), 2], col = alpha('red',0.7), pch=19) # deep long pocket
+pdb = '1HJV'
+points(pca.scaleBins$x[grepl(pdb,row.names(d2Dists)), 1], pca.scaleBins$x[grepl(pdb,row.names(d2Dists)), 2], col = alpha('purple',0.7), pch=19) # one 
+pdb = '2WGC'
+points(pca.scaleBins$x[grepl(pdb,row.names(d2Dists)), 1], pca.scaleBins$x[grepl(pdb,row.names(d2Dists)), 2], col = alpha('blue',0.7), pch=19) # two 0 pockets only
+legend(x ="topright", legend = c('mGRFT', '2CL8', '2WGC', '4URR', '1HJV'), col = c('green','orange2', 'blue', 'red', 'purple'), pch = 19)
+
 
 
 # PCA of d2 distribution features
@@ -811,14 +894,7 @@ zern4 = rbind(zern4, rep(0,ncol(zern4))) # Add a row of zeros to Zern4 for the m
 row.names(zern4)[nrow(zern4)] = row.names(zern8)[ ! (row.names(zern8) %in% row.names(zern4)) ] # Name the row of zeros
 zern4 = zern4[row.names(zern8),] # Re-order zern4 to match other zerns
 
-
-# zern6 = zern6[!grepl('2WBW', row.names(zern6)),]
-# zern8 = zern8[!grepl('2WBW', row.names(zern8)),]
-# zern10 = zern10[!grepl('2WBW', row.names(zern10)),]
-
-all(row.names(zern4) == row.names(zern6))
-all(row.names(zern4) == row.names(zern8))
-all(row.names(zern4) == row.names(zern10))
+all(row.names(zern4) == row.names(zern6)) & all(row.names(zern4) == row.names(zern8)) & all(row.names(zern4) == row.names(zern10))
 
 # Normalize each shape s.t. each descriptor becomes the percentage of the sum of all descriptors for that shape
 zern4Norm = t(apply(zern4, 1, invarNorm))
@@ -827,6 +903,7 @@ zern8Norm = t(apply(zern8, 1, invarNorm))
 zern10Norm = t(apply(zern10, 1, invarNorm))
 
 allZernNorm = as.data.frame(cbind(zern4Norm, zern6Norm, zern8Norm, zern10Norm))
+
 
 # Add rows of zeros for the pockets with no volume
 missingRows = row.names(bsResiDat)[!(row.names(bsResiDat) %in% row.names(allZernNorm))]
@@ -856,15 +933,18 @@ for (i in 1:length(labels.u)){
 
 
 pca = prcomp(x = allZernNorm, scale. = T)
+pc1 = pc2 = 0
 runSum = 0
 for( i in 1:10){ # How much variance is captured by the top principle components
   v = round(pca$sdev[i]**2/sum(pca$sdev**2), 4) * 100
+  if ( i == 1){pc1 = as.character(v)}
+  if ( i == 2){pc2 = as.character(v)}
   runSum = runSum + v
   print( paste('PC', as.character(i), ' accounts for ', as.character(v), '% of the total variance', sep = '') )
 }
 print( paste('Top 10 PCs account for a total of ', as.character(runSum), '% of the total variance', sep = '') )
 
-plot(pca$x, xlab = 'PC1 (15.99% of variance)', ylab = 'PC2 (7.24% of variance)', main = 'PCA of 3DZDs colored by cluster membership (50% id)', pch = 19, col = alpha(colors[labels.int], 0.6))
+plot(pca$x, xlab = paste('PC1 (', pc1, '% of variance)', sep =''), ylab = paste('PC2 (', pc2, '% of variance)', sep =''), main = 'PCA of 3DZDs colored by cluster membership (50% id)', pch = 19, col = alpha(colors[labels.int], 0.6))
 
 corrplot(cor(pca.d2Dists$x[row.names(d2Dists) %in% row.names(allZernNorm),1:10],pca$x[row.names(d2Dists)[row.names(d2Dists) %in% row.names(allZernNorm)],1:10]))
 
@@ -874,7 +954,7 @@ zern.umap = umap(allZernNorm)
 ##
 
 
-plot(x = zern.umap$layout[,1], y = zern.umap$layout[,2], xlim = c(-5.5,7), ylim = c(-6.5,6.5),
+plot(x = zern.umap$layout[,1], y = zern.umap$layout[,2], xlim = c(-6,7), ylim = c(-6,7),
      pch = 19, col = alpha(colors[labels.int], 0.6),
      xlab = 'UMAP 1', ylab = 'UMAP 2', main = 'UMAP vis for 3DZDs (colored by 50% id clusters)')
 pdb = '3LL2'
@@ -907,21 +987,77 @@ zern.umap$layout[out2tag ,]
 outlierPlots(d2Feats, out2tag)
 outlierPlots(allZernNorm, out2tag)
 
-
-zern.umap$layout[(zern.umap$layout[,2] < 7) & (zern.umap$layout[,1] > 10),]
-
-
-
-# tag = (zern.umap$layout[,1] < -20) & (zern.umap$layout[,2] < -20)
-# zern.umap$layout[tag,]
-# outlierLst = row.names(zern.umap$layout)[tag]
-# tmp = apply(X = d2Feats, 2, mean)
-# tmpO = apply(X = d2Feats[outlierLst,], 2, mean)
-# barplot((tmpO-tmp)/tmp)
-# abline(a = 0, b =1)
-# summary(d2Feats)
+out3tag = (zern.umap$layout[,1] < -15)
+zern.umap$layout[out3tag ,]
+outlierPlots(d2Feats, out3tag)
+outlierPlots(allZernNorm, out3tag)
 
 
+## 10th order polynomials?
+zern4Norm = t(apply(zern4[,1:36], 1, invarNorm))
+zern6Norm = t(apply(zern6[,1:36], 1, invarNorm))
+zern8Norm = t(apply(zern8[,1:36], 1, invarNorm))
+zern10Norm = t(apply(zern10[,1:36], 1, invarNorm))
+
+zern10thNorm = as.data.frame(cbind(zern4Norm, zern6Norm, zern8Norm, zern10Norm))
+
+
+# Add rows of zeros for the pockets with no volume
+missingRows = row.names(bsResiDat)[!(row.names(bsResiDat) %in% row.names(zern10thNorm))]
+zeroes2Zern = as.data.frame(matrix(0,nrow = length(missingRows), ncol = ncol(zern10thNorm)))
+row.names(zeroes2Zern) = missingRows
+colnames(zeroes2Zern) = colnames(zern10thNorm)
+
+zern10thNorm = rbind(zern10thNorm, zeroes2Zern)
+
+all(row.names(zern10thNorm) %in% row.names(bsResiDat)) & all(row.names(bsResiDat) %in% row.names(zern10thNorm))# All dataframes have the smae row names
+zern10thNorm = zern10thNorm[row.names(bsResiDat),]  # order 3DZDs df to match others
+all(row.names(bsResiDat) == row.names(zern10thNorm)) & all(row.names(bsResiDat) == row.names(d2Feats)) & all(row.names(bsResiDat) == row.names(pca.d2Dists$x))# All dataframes have the smae row names and are in the same order
+
+pca = prcomp(x = zern10thNorm, scale. = T)
+pc1 = pc2 = 0
+runSum = 0
+for( i in 1:10){ # How much variance is captured by the top principle components
+  v = round(pca$sdev[i]**2/sum(pca$sdev**2), 4) * 100
+  if ( i == 1){pc1 = as.character(v)}
+  if ( i == 2){pc2 = as.character(v)}
+  runSum = runSum + v
+  print( paste('PC', as.character(i), ' accounts for ', as.character(v), '% of the total variance', sep = '') )
+}
+print( paste('Top 10 PCs account for a total of ', as.character(runSum), '% of the total variance', sep = '') )
+
+plot(pca$x, xlab = paste('PC1 (', pc1, '% of variance)', sep =''), ylab = paste('PC2 (', pc2, '% of variance)', sep =''), main = 'PCA of 3DZDs colored by cluster membership (50% id)', pch = 19, col = alpha(colors[labels.int], 0.6))
+
+
+zern.umap = umap(zern10thNorm)
+
+# Checking outliers
+plot(x = zern.umap$layout[,1], y = zern.umap$layout[,2],#xlim = c(-5.5,7), ylim = c(-6.5,6.5),
+     pch = 19, col = alpha(colors[labels.int], 0.6),
+     xlab = 'UMAP 1', ylab = 'UMAP 2', main = 'UMAP vis for 3DZDs (colored by 50% id clusters)')
+
+tag = unname((zern.umap$layout[,1] < -20))
+zern.umap$layout[tag,]
+outlierPlots(d2Feats, tag)
+outlierPlots(allZernNorm, tag)
+
+plot(x = zern.umap$layout[,1], y = zern.umap$layout[,2], xlim = c(-6.5,6.5), ylim = c(-6.5,6.5),
+     pch = 19, col = alpha(colors[labels.int], 0.6),
+     xlab = 'UMAP 1', ylab = 'UMAP 2', main = 'UMAP vis for 3DZDs (colored by 50% id clusters)')
+
+# randPnts = row.names(zern10thNorm)[round(runif(n = 7, min = 1, max = nrow(zern10thNorm)))]
+randPnts = c("4Z4Z_GLA:D:1","4LK7_04G:D:202","2JDH_TA5:B:1117","4FMH_GAL:X:1","1BOS_GAL:R:4370","4X07_GLA:D:1","4E52_GMH:E:1")
+par(new = T)
+plot(zern.umap$layout[randPnts,], xlim = c(-6.5,6.5), ylim = c(-6.5,6.5), cex = 2.5,
+     axes = F, xlab = '', ylab = '', main = '')
+
+z20.umap = umap(allZernNorm)
+plot(x = z20.umap$layout[,1], y = z20.umap$layout[,2], xlim = c(-6,7), ylim = c(-6,7),
+     pch = 19, col = alpha(colors[labels.int], 0.6),
+     xlab = 'UMAP 1', ylab = 'UMAP 2', main = 'UMAP vis for 3DZDs (colored by 50% id clusters)')
+par(new = T)
+plot(z20.umap$layout[randPnts,], xlim = c(-6,7), ylim = c(-6,7), cex = 2.5,
+     axes = F, xlab = '', ylab = '', main = '')
 
 # Clean up residue based features
 dropCols = rep(F,ncol(bsResiDat))
