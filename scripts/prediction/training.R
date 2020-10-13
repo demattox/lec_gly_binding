@@ -884,7 +884,7 @@ plot(pca$x, main = 'PCA of d2Feats', xlab = 'PC1 (51.56% of var.)', ylab = 'PC2 
 
 
 ###########################
-# Explore predictive feature set
+# Explore 3DZDs
 ###########################
 
 row.names(zern8)[ ! (row.names(zern8) %in% row.names(zern4)) ]
@@ -913,13 +913,13 @@ colnames(zeroes2Zern) = colnames(allZernNorm)
 
 allZernNorm = rbind(allZernNorm, zeroes2Zern)
 
-# All dataframes have the smae row names
+# All dataframes have the same row names
 all(row.names(allZernNorm) %in% row.names(bsResiDat)) & all(row.names(bsResiDat) %in% row.names(allZernNorm))
 
 # order 3DZDs df to match others
 allZernNorm = allZernNorm[row.names(bsResiDat),]
 
-# All dataframes have the smae row names and are in the same order
+# All dataframes have the same row names and are in the same order
 all(row.names(bsResiDat) == row.names(allZernNorm)) & all(row.names(bsResiDat) == row.names(d2Feats)) & all(row.names(bsResiDat) == row.names(pca.d2Dists$x))
 
 # Plot the 3DZDs
@@ -1014,11 +1014,11 @@ all(row.names(zern10thNorm) %in% row.names(bsResiDat)) & all(row.names(bsResiDat
 zern10thNorm = zern10thNorm[row.names(bsResiDat),]  # order 3DZDs df to match others
 all(row.names(bsResiDat) == row.names(zern10thNorm)) & all(row.names(bsResiDat) == row.names(d2Feats)) & all(row.names(bsResiDat) == row.names(pca.d2Dists$x))# All dataframes have the smae row names and are in the same order
 
-pca = prcomp(x = zern10thNorm, scale. = T)
+pca.z10 = prcomp(x = zern10thNorm, scale. = T)
 pc1 = pc2 = 0
 runSum = 0
 for( i in 1:10){ # How much variance is captured by the top principle components
-  v = round(pca$sdev[i]**2/sum(pca$sdev**2), 4) * 100
+  v = round(pca.z10$sdev[i]**2/sum(pca.z10$sdev**2), 4) * 100
   if ( i == 1){pc1 = as.character(v)}
   if ( i == 2){pc2 = as.character(v)}
   runSum = runSum + v
@@ -1026,10 +1026,11 @@ for( i in 1:10){ # How much variance is captured by the top principle components
 }
 print( paste('Top 10 PCs account for a total of ', as.character(runSum), '% of the total variance', sep = '') )
 
-plot(pca$x, xlab = paste('PC1 (', pc1, '% of variance)', sep =''), ylab = paste('PC2 (', pc2, '% of variance)', sep =''), main = 'PCA of 3DZDs colored by cluster membership (50% id)', pch = 19, col = alpha(colors[labels.int], 0.6))
+plot(pca.z10$x, xlab = paste('PC1 (', pc1, '% of variance)', sep =''), ylab = paste('PC2 (', pc2, '% of variance)', sep =''), main = 'PCA of 3DZDs colored by cluster membership (50% id)', pch = 19, col = alpha(colors[labels.int], 0.6))
 
-
+###
 zern.umap = umap(zern10thNorm)
+###
 
 # Checking outliers
 plot(x = zern.umap$layout[,1], y = zern.umap$layout[,2],#xlim = c(-5.5,7), ylim = c(-6.5,6.5),
@@ -1045,19 +1046,54 @@ plot(x = zern.umap$layout[,1], y = zern.umap$layout[,2], xlim = c(-6.5,6.5), yli
      pch = 19, col = alpha(colors[labels.int], 0.6),
      xlab = 'UMAP 1', ylab = 'UMAP 2', main = 'UMAP vis for 3DZDs (colored by 50% id clusters)')
 
+
+
+# Check reconstructions
+
 # randPnts = row.names(zern10thNorm)[round(runif(n = 7, min = 1, max = nrow(zern10thNorm)))]
 randPnts = c("4Z4Z_GLA:D:1","4LK7_04G:D:202","2JDH_TA5:B:1117","4FMH_GAL:X:1","1BOS_GAL:R:4370","4X07_GLA:D:1","4E52_GMH:E:1")
-par(new = T)
-plot(zern.umap$layout[randPnts,], xlim = c(-6.5,6.5), ylim = c(-6.5,6.5), cex = 2.5,
-     axes = F, xlab = '', ylab = '', main = '')
 
+randCols = randClusts = rep(0, length(randPnts))
+randLabs = rep('', length(randPnts))
+for (i in 1: length(randPnts)){
+  randClusts[i] = bsResiDat[randPnts[i], 'seqClust50']
+  randLabs[i] = paste(randPnts[i], randClusts[i], sep = ', clust# ')
+}
+for (i in 1:length(labels.u)){
+  randCols[randClusts == labels.u[i]] = i
+}
+
+plot(x = zern.umap$layout[,1], y = zern.umap$layout[,2], xlim = c(-6.5,6.5), ylim = c(-6.5,6.5),
+     pch = 19, col = alpha(colors[labels.int], 0.3),
+     xlab = 'UMAP 1', ylab = 'UMAP 2', main = 'UMAP vis for 10th order 3DZDs') # 1100x800
+par(new = T)
+plot(zern.umap$layout[randPnts,], xlim = c(-6.5,6.5), ylim = c(-6.5,6.5),
+     cex = 1.5, lwd = 3, pch = 21, bg = colors[randCols], col = alpha('black', 0.8),
+     axes = F, xlab = '', ylab = '', main = '')
+text(x = zern.umap$layout[randPnts,1], y = zern.umap$layout[randPnts,2], labels = randLabs, cex = 1.3, font = 2, 
+     pos = c(3, 3, 3, 3, 1, 3, 3))
+
+##
 z20.umap = umap(allZernNorm)
-plot(x = z20.umap$layout[,1], y = z20.umap$layout[,2], xlim = c(-6,7), ylim = c(-6,7),
+##
+plot(z20.umap$layout, xlim = c(-7,6), ylim = c(-7,6),
      pch = 19, col = alpha(colors[labels.int], 0.6),
      xlab = 'UMAP 1', ylab = 'UMAP 2', main = 'UMAP vis for 3DZDs (colored by 50% id clusters)')
+
+
+plot(z20.umap$layout, xlim = c(-7,6), ylim = c(-7,6),
+     pch = 19, col = alpha(colors[labels.int], 0.3),
+     xlab = 'UMAP 1', ylab = 'UMAP 2', main = 'UMAP vis for 20th order 3DZDs')
 par(new = T)
-plot(z20.umap$layout[randPnts,], xlim = c(-6,7), ylim = c(-6,7), cex = 2.5,
+plot(z20.umap$layout[randPnts,], xlim = c(-7,6), ylim = c(-7,6),
+     cex = 1.5, lwd = 3, pch = 21, bg = colors[randCols], col = alpha('black', 0.8),
      axes = F, xlab = '', ylab = '', main = '')
+text(x = z20.umap$layout[randPnts,1], y = z20.umap$layout[randPnts,2], labels = randLabs, cex = 1.3, font = 2, 
+     pos = c(3, 3, 2, 3, 3, 3, 3))
+
+###########################
+# Assemble predictive feature set
+###########################
 
 # Clean up residue based features
 dropCols = rep(F,ncol(bsResiDat))
@@ -1079,7 +1115,247 @@ sum(dropCols)
 
 bsResiDat = bsResiDat[,!dropCols]
 
+# Limit to columns with number of residues, AA-specifc frequencies, and secStruct frequencies
 resiPredFeats = bsResiDat[,grepl('_bin', colnames(bsResiDat))]
-resiPredFeats$numBSresis_bin1 = sqrt(resiPredFeats$numBSresis_bin1)/max(sqrt(resiPredFeats$numBSresis_bin1))
+
+# Combine resi features with pocket features for premlinary feature set
+all(row.names(resiPredFeats) == row.names(pca.z10)) & all(row.names(resiPredFeats) == row.names(d2Feats)) & all(row.names(resiPredFeats) == row.names(pca.scaleBins$x))
+
+runSum = rep(0, ncol(zern10thNorm))
+sum = 0
+for( i in 1:ncol(zern10thNorm)){ # How much variance is captured by the top principle components
+  v = pca.z10$sdev[i]**2/sum(pca.z10$sdev**2) * 100
+  sum = sum + v
+  runSum[i] = sum
+}
+
+topZernPCs = pca.z10$x[,runSum <= 80]
+colnames(topZernPCs) = gsub('^', 'zern_', colnames(topZernPCs))
+
+runSum = rep(0, ncol(d2ScaledBins))
+sum = 0
+for( i in 1:ncol(d2ScaledBins)){ # How much variance is captured by the top principle components
+  v = pca.scaleBins$sdev[i]**2/sum(pca.scaleBins$sdev**2) * 100
+  sum = sum + v
+  runSum[i] = sum
+}
+
+topBinPCs = pca.scaleBins$x[, runSum <= 80]
+colnames(topZernPCs) = gsub('^', 'binnedD2_', colnames(topZernPCs))
+
+
+predFeats = cbind(resiPredFeats, d2Feats, topBinPCs, topZernPCs) # Preliminary predictive feature set
+
+###########################
+# Explore predictive feature set
+###########################
+
+colors = colfunc(length(unique(bsResiDat$seqClust50)))
+labels = bsResiDat$seqClust50
+labels.u = sort(unique(labels))
+labels.int = rep(0,length(labels))
+for (i in 1:length(labels.u)){
+  labels.int[labels == labels.u[i]] = i
+}
+
+# initial UMAP
+umap.rawfeats = umap(predFeats)
+
+plot(umap.rawfeats$layout, #xlim = c(-5.5,7), ylim = c(-6.5,6.5),
+     pch = 19, col = alpha(colors[labels.int], 0.6),
+     xlab = 'UMAP 1', ylab = 'UMAP 2', main = 'UMAP vis for 209 predictive features (colored by 50% id clusters)')
+
+# corrplot(cor(umap.rawfeats$layout, d2Feats))
+
+# Try scaling features between [0,1]
+scaledFeats = predFeats
+for(i in 1:ncol(scaledFeats)){
+  scaledFeats[,i] = (scaledFeats[,i] - min(scaledFeats[,i])) / (max(scaledFeats[,i]) - min(scaledFeats[,i]))
+}
+
+umap.scaledfeats = umap(scaledFeats)
+
+plot(umap.scaledfeats$layout, #xlim = c(-5.5,7), ylim = c(-6.5,6.5),
+     pch = 19, col = alpha(colors[labels.int], 0.6),
+     xlab = 'UMAP 1', ylab = 'UMAP 2', main = 'UMAP vis for 209 predictive features - Scaled (colored by 50% id clusters)')
+
+
+colors = colfunc(length(unique(bsResiDat$seqClust80)))
+labels = bsResiDat$seqClust80
+labels.u = sort(unique(labels))
+labels.int = rep(0,length(labels))
+for (i in 1:length(labels.u)){
+  labels.int[labels == labels.u[i]] = i
+}
+
+plot(umap.scaledfeats$layout, #xlim = c(-5.5,7), ylim = c(-6.5,6.5),
+     pch = 19, col = alpha(colors[labels.int], 0.6),
+     xlab = 'UMAP 1', ylab = 'UMAP 2', main = 'UMAP vis for 209 predictive features - Scaled (colored by 80% id clusters)')
+
+### Variance within clusters vs between clusters
+
+# bwClus = cor(t(scaledFeats), method = 'spearman')
+bwClus = distance(x = scaledFeats) # Precompute all pairwise distances between binding sites
+
+inClus50Cor = rep(-1, length(clusLst50))
+inClus50All = rep(-1, ((nrow(bsResiDat)**2)/2))
+ind = 1
+for (i in 1:length(clusLst50)) {
+  tag = bsResiDat$seqClust50 == clusLst50[i]
+  if (sum(tag) > 1) { # Check correlations between cluster members if cluster has more than one member
+    # corMat = cor(t(scaledFeats[bsResiDat$seqClust50 == clusLst50[i],]), method = 'spearman')
+    # corMat = distance(x = scaledFeats[bsResiDat$seqClust50 == clusLst50[i], ])
+    corMat = bwClus[tag,tag][upper.tri(bwClus[tag,tag])]
+    inClus50Cor[i] = mean(corMat)
+    inClus50All[ind:(ind+length(corMat)-1)] = corMat
+    ind = ind+length(corMat)
+  }
+}
+inClus50Cor = inClus50Cor[inClus50Cor != -1] # drop values from clusters with only one member
+inClus50All = inClus50All[inClus50All != -1] # drop unchanged values from initialized vector for all pairwise distances
+
+inClus80Cor = rep(-1, length(clusLst80))
+inClus80All = rep(-1, ((nrow(bsResiDat)**2)/2))
+ind = 1
+for (i in 1:length(clusLst80)) {
+  tag = bsResiDat$seqClust80 == clusLst80[i]
+  if (sum(tag) > 1) { # Check correlations between cluster members if cluster has more than one member
+    # corMat = cor(t(scaledFeats[bsResiDat$seqClust80 == clusLst80[i],]), method = 'spearman')
+    # corMat = distance(x = scaledFeats[bsResiDat$seqClust80 == clusLst80[i], ])
+    corMat = bwClus[tag,tag][upper.tri(bwClus[tag,tag])]
+    inClus80Cor[i] = mean(corMat)
+    inClus80All[ind:(ind+length(corMat)-1)] = corMat
+    ind = ind+length(corMat)
+  }
+}
+inClus80Cor = inClus80Cor[inClus80Cor != -1] # drop values from clusters with only one member
+inClus80All = inClus80All[inClus80All != -1] # drop unchanged values from initialized vector for all pairwise distances
+
+# Plot inter/intra cluster distance distributions
+bwClusPlot = bwClus[upper.tri(bwClus)]
+
+plot(density(inClus50Cor))
+plot(density(inClus50All))
+
+plot(density(inClus80Cor))
+plot(density(inClus80All))
+
+plot(density(bwClusPlot))
+
+mclusdf = rbind(data.frame('type' = c('All binding sites'), 'seqID' = c('NA'),'value' = bwClusPlot),
+                data.frame('type' = c('Average w/in clust'), 'seqID' = c('80'), 'value' = inClus80Cor),
+                data.frame('type' = c('All w/in clust'), 'seqID' = c('80'), 'value' = inClus80All),
+                data.frame('type' = c('Average w/in clust'), 'seqID' = c('50'), 'value' = inClus50Cor),
+                data.frame('type' = c('All w/in clust'), 'seqID' = c('50'), 'value' = inClus50All))
+
+ggplot(data = mclusdf, aes(x = type, y = value, col = seqID, fill = seqID)) + geom_boxplot(notch = T, outlier.alpha = 0.5) +
+  scale_fill_manual(values = rep('grey80',3), guide = F) + 
+  scale_color_manual(values = c('black', mycol[1], mycol[4])) +
+  labs(title = 'Inter- & intracluster distances (from predictive features)', x = "Pairwise grouping", y = "Euclidean distance") +
+  theme_dark(base_size = 22)
+  
+###########################
+# T-test enrichments
+###########################
+
+# Ligand tags
+parenCnt = bracCnt = manCnt = neuCnt = bracCnt = rep(0,length(uniLigs))
+for (i in 1:length(uniLigs)){
+  lig = uniLigs[i]
+  parenCnt[i] = lengths(regmatches(lig, gregexpr("\\(", lig)))
+  bracCnt[i] = lengths(regmatches(lig, gregexpr("\\[", lig)))
+  manCnt[i] = lengths(regmatches(lig, gregexpr("Man", lig)))
+  neuCnt[i] = lengths(regmatches(lig, gregexpr("Neu", lig)))
+}
+
+mTag = parenCnt == 0 & bracCnt == 0 # Monosaccharides
+dTag = parenCnt == 1 & bracCnt == 0 # Disaccharides
+tTag = (parenCnt == 2 & bracCnt == 0) | (parenCnt == 2 & bracCnt == 1) # Trisaccharides
+qTag = (parenCnt == 3 & bracCnt == 0) | (parenCnt == 3 & bracCnt == 1) | (parenCnt == 1 & bracCnt == 2) # Tetrasaccharides
+pTag = !(mTag | dTag | tTag | qTag) # 5+ sugars
+bTag = bracCnt >= 1 # Branched glycans
+
+manTag = manCnt > 3 # High mannose
+neuTag = neuCnt >= 1 # Has sialic acid
+fucTag = grepl('^Fuc',ligSort50) # Has a terminal fucose
+
+
+# get tags to indicate binding sites containing one of the 15 ligands of interest
+ligTags = as.data.frame(matrix(F, nrow = nrow(bsResiDat), ncol = 3+length(top50)))
+row.names(ligTags) =  row.names(bsResiDat)
+colnames(ligTags) = colnames(topLigOccurences)[2:ncol(topLigOccurences)] 
+
+ligTags$High_Mannose = bsResiDat$iupac %in% uniLigs[manTag]
+ligTags$Sialic_Acid = bsResiDat$iupac %in% uniLigs[neuTag]
+ligTags$Terminal_Fucose = bsResiDat$iupac %in% uniLigs[fucTag]
+
+
+for (i in 1:length(top50)){
+  lig = top50[i]
+  lig = gsub('\\(', '\\\\(', lig)
+  lig = gsub('\\)', '\\\\)', lig)
+  lig = gsub('\\[', '\\\\]', lig)
+  lig = gsub('\\[', '\\\\]', lig)
+  lig = gsub('^', '\\^', lig)
+  lig = gsub('$', '\\$', lig)
+  
+  colInd = grep(lig, colnames(ligTags))
+  ligTags[,colInd] = grepl(lig, bsResiDat$iupac)
+}
+
+# Add tags to bsResiDat
+# bsResiDat = cbind(bsResiDat, ligTags)
+
+
+
+# T-tests for cluster independent feature enrichment by ligand
+stats = as.data.frame(matrix(0, nrow = ncol(predFeats), ncol = (ncol(ligTags)*3)))
+row.names(stats) = colnames(predFeats)
+colnames(stats) = c(paste(colnames(ligTags), 'p', sep = '_'), paste(colnames(ligTags), 'diff', sep = '_'), paste(colnames(ligTags), 'adj', sep = '_'))
+
+for (i in 1:ncol(ligTags)){ # for ligand i
+  lig = colnames(ligTags)[i]
+  # meanClust50_data = as.data.frame(matrix(NA, nrow = length(clusLst50), ncol = (ncol(predFeats)*2))) # Rows for unique clusters, columns for predictive features from bsites WITH or WITHOUT current ligand
+  # colnames(meanClust50_data) = c(paste(colnames(predFeats), 'with', sep = '_'),  paste(colnames(predFeats), 'without', sep = '_'))
+  for(k in 1: ncol(predFeats)){ # for each feature k
+    meanClust50_data = as.data.frame(matrix(NA, nrow = length(clusLst50), ncol = 2)) # Rows for unique clusters, columns for predictive feature from bsites WITH or WITHOUT current ligand
+    colnames(meanClust50_data) = c('with', 'without')
+    for (j in 1:length(clusLst50)){ # for each cluster j
+      clustTag = bsResiDat$seqClust50 == clusLst50[j]
+      withTag = clustTag & ligTags[,i]
+      withoutTag = clustTag & !ligTags[,i]
+      if ( sum(withTag) >= 1){
+        meanClust50_data[j, grepl('with')] = mean( predFeats[withTag,k] )
+      }
+      if ( sum(withoutTag) >= 1){
+        meanClust50_data[j, grepl('without')] = mean( predFeats[withoutTag,k] )
+      }
+    }
+    # ligTest = t.test(meanClust50_data[
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
