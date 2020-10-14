@@ -15,7 +15,8 @@ library(seqinr)
 library(stringr)
 library(randomForest)
 library(caret)
-
+library(pheatmap)
+library(VennDiagram)
 
 source_url("https://raw.githubusercontent.com/obigriffith/biostar-tutorials/master/Heatmaps/heatmap.3.R")
 
@@ -1141,7 +1142,7 @@ for( i in 1:ncol(d2ScaledBins)){ # How much variance is captured by the top prin
 }
 
 topBinPCs = pca.scaleBins$x[, runSum <= 80]
-colnames(topZernPCs) = gsub('^', 'binnedD2_', colnames(topZernPCs))
+colnames(topBinPCs) = gsub('^', 'binnedD2_', colnames(topBinPCs))
 
 
 predFeats = cbind(resiPredFeats, d2Feats, topBinPCs, topZernPCs) # Preliminary predictive feature set
@@ -1255,7 +1256,7 @@ ggplot(data = mclusdf, aes(x = type, y = value, col = seqID, fill = seqID)) + ge
   theme_dark(base_size = 22)
   
 ###########################
-# T-test enrichments
+# Descriptive analysis
 ###########################
 
 # Ligand tags
@@ -1308,45 +1309,234 @@ for (i in 1:length(top50)){
 
 
 
-# T-tests for cluster independent feature enrichment by ligand
-stats = as.data.frame(matrix(0, nrow = ncol(predFeats), ncol = (ncol(ligTags)*3)))
+# Statistical test for cluster independent feature enrichment by ligand
+stats = as.data.frame(matrix(0, nrow = ncol(predFeats), ncol = (ncol(ligTags)*4)))
 row.names(stats) = colnames(predFeats)
-colnames(stats) = c(paste(colnames(ligTags), 'p', sep = '_'), paste(colnames(ligTags), 'diff', sep = '_'), paste(colnames(ligTags), 'adj', sep = '_'))
+colnames(stats) = c(paste(colnames(ligTags), 'p', sep = '_'), paste(colnames(ligTags), '_FC', sep = '_'), paste(colnames(ligTags), 'effectSize', sep = '_'), paste(colnames(ligTags), 'adj', sep = '_'))
+
+scaled_stats = stats # In parallel, try this with scaled features for more robust change metric, shouldn't impact WMW test much
 
 for (i in 1:ncol(ligTags)){ # for ligand i
-  lig = colnames(ligTags)[i]
   # meanClust50_data = as.data.frame(matrix(NA, nrow = length(clusLst50), ncol = (ncol(predFeats)*2))) # Rows for unique clusters, columns for predictive features from bsites WITH or WITHOUT current ligand
   # colnames(meanClust50_data) = c(paste(colnames(predFeats), 'with', sep = '_'),  paste(colnames(predFeats), 'without', sep = '_'))
   for(k in 1: ncol(predFeats)){ # for each feature k
     meanClust50_data = as.data.frame(matrix(NA, nrow = length(clusLst50), ncol = 2)) # Rows for unique clusters, columns for predictive feature from bsites WITH or WITHOUT current ligand
     colnames(meanClust50_data) = c('with', 'without')
+    scaledClus50_data = meanClust50_data
     for (j in 1:length(clusLst50)){ # for each cluster j
       clustTag = bsResiDat$seqClust50 == clusLst50[j]
       withTag = clustTag & ligTags[,i]
       withoutTag = clustTag & !ligTags[,i]
       if ( sum(withTag) >= 1){
-        meanClust50_data[j, grepl('with')] = mean( predFeats[withTag,k] )
+        meanClust50_data[j, 1] = mean( predFeats[withTag,k] )
+        scaledClus50_data[j, 1] = mean( scaledFeats[withTag,k] )
       }
       if ( sum(withoutTag) >= 1){
-        meanClust50_data[j, grepl('without')] = mean( predFeats[withoutTag,k] )
+        meanClust50_data[j, 2] = mean( predFeats[withoutTag,k] )
+        scaledClus50_data[j, 2] = mean( scaledFeats[withoutTag,k] )
       }
     }
-    # ligTest = t.test(meanClust50_data[
+    # Raw Feats
+    wDat = meanClust50_data[,1]
+    wDat = wDat[!is.na(wDat)]
+    woDat = meanClust50_data[,2]
+    woDat = woDat[!is.na(woDat)]
+    # Scaled feats
+    sW = scaledClus50_data[!is.na(scaledClus50_data[,1]),1] # Non-NA feats from bSites w/ ligand
+    sWO = scaledClus50_data[!is.na(scaledClus50_data[,2]),2] # Non-NA feats from bSites w/ ligand
+    
+    # ligTest = t.test(wDat[!is.na(wDat)], woDat[!is.na(woDat)])
+    ligTest = wilcox.test(x= wDat, y = woDat) # Wilcoxon–Mann–Whitney test, sample sizes can be small (~5% of 230 clusters ~= 10), no reason to assume distribution is normal as it likely isn't, as well as sample sizes often being too small to test for normality
+    sTest = wilcox.test(x = sW, y = sWO)
+    
+    stats[k, grepl('_p$', colnames(stats))][i] = ligTest$p.value # Raw p-value
+    stats[k, grepl('_effectSize$', colnames(stats))][i] = ligTest$statistic / (length(wDat) * length(woDat)) # common language effect size
+    scaled_stats[k, grepl('_p$', colnames(scaled_stats))][i] = sTest$p.value # Raw p-value
+    scaled_stats[k, grepl('_effectSize$', colnames(scaled_stats))][i] = sTest$statistic / (length(sW) * length(sWO)) # common language effect size
+    
+    if (median(woDat) != 0){
+      stats[k, grepl('_FC$', colnames(stats))][i] = median(wDat) / median(woDat) # Fold change in mean values  
+    } else{
+      stats[k, grepl('_FC$', colnames(stats))][i] = median(wDat)
+    }
+    if (median(sWO) != 0){
+      scaled_stats[k, grepl('_FC$', colnames(scaled_stats))][i] = median(sW) / median(sWO) # Fold change in mean values  
+    } else{
+      scaled_stats[k, grepl('_FC$', colnames(scaled_stats))][i] = median(sW)
+    }
   }
+  stats[,grepl('_adj$', colnames(stats))][,i] = p.adjust(stats[grepl('_p$', colnames(stats))][,i], method = "BH") # Benjamini-Hochberg MHT correction (FDR)
+  scaled_stats[,grepl('_adj$', colnames(scaled_stats))][,i] = p.adjust(scaled_stats[grepl('_p$', colnames(scaled_stats))][,i], method = "BH") # Benjamini-Hochberg MHT correction (FDR)
+}
+
+
+for (i in 1:ncol(ligTags)){
+  lig = colnames(ligTags)[i]
+  cat(lig)
+  cat('\n----\n')
+  cat('DOWN w/ ligand\n')
+  cat(row.names(stats)[stats[,grepl('_adj$', colnames(stats))][,i] <= 0.1  &  stats[,grepl('_effectSize$', colnames(stats))][,i] < 0.5])
+  cat('\nUP w/ ligand\n')
+  cat(row.names(stats)[stats[,grepl('_adj$', colnames(stats))][,i] <= 0.1  &  stats[,grepl('_effectSize$', colnames(stats))][,i] > 0.5])
+  cat('\n----------------\n')
+}
+
+
+# Colors to features for plotting
+featColors = rep('', nrow(stats))
+resiFeats = colorRampPalette(c("plum1","tomato", "firebrick4"))(4)
+pocketFeats = colorRampPalette(c('turquoise', 'dodgerblue1', 'blue2'))(3)
+
+featColors[grep('^vol_4Ang$', row.names(stats)) : grep('^leftskew_10Ang$', row.names(stats))] = pocketFeats[1] # features within the d2Feats range
+featColors[grepl('^binnedD2', row.names(stats))] = pocketFeats[2] # PCs from the binned D2 measures
+featColors[grepl('^zern', row.names(stats))] = pocketFeats[3] # PCs from the 3DZDs
+
+featColors[grepl('^numBSresis', row.names(stats))] = resiFeats[1] # number of residues in binding site features
+featColors[gsub('_bin\\d{1}', '', row.names(stats)) %in% c('H', 'B', 'E', 'G', 'T', 'S', 'X.')] = resiFeats[2] # secondary structure features
+featColors[gsub('_bin\\d{1}', '', row.names(stats)) %in% c('nonpolar', 'polar', 'posCharge', 'negCharge', 'aromatic')] = resiFeats[3] # amino acid properties
+featColors[grepl('^[[:upper:]]{3}_', row.names(stats))] = resiFeats[4] # amino acid identities
+
+resiFeatTag = featColors %in% resiFeats
+pocketFeatTag = featColors %in% pocketFeats
+
+# Plot volcano plots from raw features
+
+dev.off()
+par(mfrow=c(3,5))
+xLim = c(0,1)
+# yLim = c(0,10)
+for(i in 1:ncol(ligTags)){
+  
+  yLim = c(0,max(-log10(0.1), -log10(min(stats[,grepl('_adj$', colnames(stats))][,i]))) + 1)
+  
+  tag = stats[,grepl('_adj$', colnames(stats))][,i] < 0.1
+  
+  # dev.off()
+  plot(0,0,axes = F, main = '', xlab = '', ylab = '', pch = NA)
+  bg = "seashell2"
+  fg = "ivory"
+  rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = bg)
+  # abline(v = c(-1,-.5,0,.5,1), lwd = 6, col = fg)
+  # abline(v = c(-1.25,-.75,-.25,.25,.75,1.25), lwd = 3, col = fg)
+  # abline(h = c(0,1,2,3,4,5,6), lwd = 6, col = fg)
+  # abline(h = c(0.5,1.5,2.5,3.5,4.5,5.5,6.5), lwd = 3, col = fg)
+  par(new=T)
+  
+  plot(stats[,grepl('_effectSize$', colnames(stats))][,i], -log10(stats[,grepl('_adj$', colnames(stats))][,i]), # Plot all points w/ color @ alpha 0.5
+       xlab = "Effect size", ylab = "-log10(FDR)", main = colnames(ligTags)[i],
+       pch = 19, cex = 2, col = alpha(featColors, 0.5),
+       cex.axis = 1.5, cex.main = 2, cex.lab = 1.5,
+       xlim = xLim, ylim = yLim)
+  par(new=T)
+  plot(stats[,grepl('_effectSize$', colnames(stats))][tag,i], -log10(stats[,grepl('_adj$', colnames(stats))][tag,i]), # Plot stat sig points again with alpha 1
+       pch = 19, col = featColors[tag], cex = 2,
+       axes = F, xlab = "", ylab = "", main = "",
+       xlim = xLim, ylim = yLim)
+  par(new=T)
+  plot(stats[,grepl('_effectSize$', colnames(stats))][tag,i], -log10(stats[,grepl('_adj$', colnames(stats))][tag,i]), # Outline stat sig points in black to highlight them
+       col = 'black', cex = 2.05,
+       xlab = "", ylab = "", axes = F, main = "",
+       xlim = xLim, ylim = yLim)
+  abline(h= -log10(0.1), lwd = 2)
+  abline(v = 0.5, lty=2, lwd = 2)
+}
+
+dev.off()
+plot(0,0,axes = F, main = '', xlab = '', ylab = '', pch = NA)
+legend(x = 'center', col = c(resiFeats, pocketFeats),
+       legend = c('bs resi cnt', 'sec struct', 'aa type', 'aa ident',
+                  'D2 feats', 'D2 PCs', 'Zern PCs'),
+       pch = 19)
+
+dev.off()
+par(mfrow=c(3,5))
+xLim = c(0,1)
+yLim = c(0,1)
+# Compare raw feats to scaled feats
+for (i in 1:ncol(ligTags)){
+  plot(stats[,grepl('_adj$', colnames(stats))][,i], scaled_stats[,grepl('_adj$', colnames(scaled_stats))][,i],
+       xlab = 'Raw feat adjusted p-values', ylab = 'Scaled feat adjusted p-values',
+       main = colnames(ligTags)[i],
+       xlim = xLim, ylim = yLim)
+  abline(a = 0, b = 1)
+  text(x=0.6, y=0.05, labels = paste( 'Pear. corr = ', cor(stats[,grepl('_adj$', colnames(stats))][,i], scaled_stats[,grepl('_adj$', colnames(scaled_stats))][,i]), sep = ''), cex = 2)
 }
 
 
 
+# Plot volcano plots from scaled features
+
+dev.off()
+par(mfrow=c(3,5))
+xLim = c(-10,10)
+# yLim = c(0,10)
+for(i in 1:ncol(ligTags)){
+  
+  yLim = c(0,max(-log10(0.1), -log10(min(scaled_stats[,grepl('_adj$', colnames(scaled_stats))][,i]))) + 1)
+  
+  tag = scaled_stats[,grepl('_adj$', colnames(scaled_stats))][,i] < 0.1
+  
+  # dev.off()
+  plot(0,0,axes = F, main = '', xlab = '', ylab = '', pch = NA)
+  bg = "seashell2"
+  fg = "ivory"
+  rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = bg)
+  # abline(v = c(-1,-.5,0,.5,1), lwd = 6, col = fg)
+  # abline(v = c(-1.25,-.75,-.25,.25,.75,1.25), lwd = 3, col = fg)
+  # abline(h = c(0,1,2,3,4,5,6), lwd = 6, col = fg)
+  # abline(h = c(0.5,1.5,2.5,3.5,4.5,5.5,6.5), lwd = 3, col = fg)
+  par(new=T)
+  
+  plot(log2(scaled_stats[,grepl('_FC$', colnames(scaled_stats))][,i]), -log10(scaled_stats[,grepl('_adj$', colnames(scaled_stats))][,i]), # Plot all points w/ color @ alpha 0.5
+       xlab = "log2(median FC)", ylab = "-log10(FDR)", main = colnames(ligTags)[i],
+       pch = 19, cex = 2, col = alpha(featColors, 0.5),
+       cex.axis = 1.5, cex.main = 2, cex.lab = 1.5,
+       xlim = xLim, ylim = yLim)
+  par(new=T)
+  plot(log2(scaled_stats[,grepl('_FC$', colnames(scaled_stats))][tag,i]), -log10(scaled_stats[,grepl('_adj$', colnames(scaled_stats))][tag,i]), # Plot stat sig points again with alpha 1
+       pch = 19, col = featColors[tag], cex = 2,
+       axes = F, xlab = "", ylab = "", main = "",
+       xlim = xLim, ylim = yLim)
+  par(new=T)
+  plot(log2(scaled_stats[,grepl('_FC$', colnames(scaled_stats))][tag,i]), -log10(scaled_stats[,grepl('_adj$', colnames(scaled_stats))][tag,i]), # Outline stat sig points in black to highlight them
+       col = 'black', cex = 2.05,
+       xlab = "", ylab = "", axes = F, main = "",
+       xlim = xLim, ylim = yLim)
+  abline(h= -log10(0.1), lwd = 2)
+  abline(v = 0, lty=2, lwd = 2)
+}
+
+# Correlation between features for each ligand
+dev.off()
+breakLst = seq(-1,1,0.05)
+pheatmap(cor(stats[,grepl('_effectSize$', colnames(stats))], scaled_stats[,grepl('_effectSize$', colnames(scaled_stats))], method = 'spearman'),
+        color = colorRampPalette(c("royalblue1", "grey90", "gold1"))(length(breakLst)),
+        labels_row = gsub('_effectSize$', '', colnames(stats[,grepl('_effectSize$', colnames(stats))])),
+        main = 'Spearman correlation between feature-specific effect sizes across ligand classes',
+        breaks = breakLst,
+        show_colnames = F,
+        gaps_row = c(1,4))
+
+# Correlations by feature type
+dev.off()
+breakLst = seq(-1,1,0.05)
+pheatmap(cor(stats[resiFeatTag,grepl('_effectSize$', colnames(stats))], scaled_stats[resiFeatTag,grepl('_effectSize$', colnames(scaled_stats))], method = 'spearman'),
+         color = colorRampPalette(c("royalblue1", "grey90", "gold1"))(length(breakLst)),
+         labels_row = gsub('_effectSize$', '', colnames(stats[,grepl('_effectSize$', colnames(stats))])),
+         main = 'Spearman correlation between RESIDUE feature effect sizes across ligand classes',
+         breaks = breakLst,
+         show_colnames = F,
+         gaps_row = c(1,4))
+pheatmap(cor(stats[pocketFeatTag,grepl('_effectSize$', colnames(stats))], scaled_stats[pocketFeatTag,grepl('_effectSize$', colnames(scaled_stats))], method = 'spearman'),
+         color = colorRampPalette(c("royalblue1", "grey90", "gold1"))(length(breakLst)),
+         labels_row = gsub('_effectSize$', '', colnames(stats[,grepl('_effectSize$', colnames(stats))])),
+         main = 'Spearman correlation between POCKET feature effect sizes across ligand classes',
+         breaks = breakLst,
+         show_colnames = F,
+         gaps_row = c(1,4))
 
 
-
-
-
-
-
-
-
-
+# Shared significant features
 
 
 
