@@ -13,7 +13,6 @@ library(RColorBrewer)
 library(umap)
 library(seqinr)
 library(stringr)
-library(caret)
 library(pheatmap)
 library(VennDiagram)
 
