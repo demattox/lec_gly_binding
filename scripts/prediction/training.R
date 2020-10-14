@@ -13,7 +13,6 @@ library(RColorBrewer)
 library(umap)
 library(seqinr)
 library(stringr)
-library(randomForest)
 library(caret)
 library(pheatmap)
 library(VennDiagram)
@@ -1278,7 +1277,7 @@ bTag = bracCnt >= 1 # Branched glycans
 
 manTag = manCnt > 3 # High mannose
 neuTag = neuCnt >= 1 # Has sialic acid
-fucTag = grepl('^Fuc',ligSort50) # Has a terminal fucose
+fucTag = grepl('^Fuc',uniLigs) # Has a terminal fucose
 
 
 # get tags to indicate binding sites containing one of the 15 ligands of interest
@@ -1515,7 +1514,7 @@ pheatmap(cor(stats[,grepl('_effectSize$', colnames(stats))], scaled_stats[,grepl
         main = 'Spearman correlation between feature-specific effect sizes across ligand classes',
         breaks = breakLst,
         show_colnames = F,
-        gaps_row = c(1,4))
+        cutree_rows = 3)
 
 # Correlations by feature type
 dev.off()
@@ -1537,15 +1536,75 @@ pheatmap(cor(stats[pocketFeatTag,grepl('_effectSize$', colnames(stats))], scaled
 
 
 # Shared significant features
+# Sialic acid features
+siaBindingFeats = list(row.names(stats)[stats$Sialic_Acid_adj < 0.1], row.names(stats)[stats$NeuAc_adj < 0.1], row.names(stats)[stats$`NeuAc(a2-3)Gal(b1-4)Glc_adj` < 0.1])
+venn.diagram(
+  x = siaBindingFeats,
+  category.names = c("Sialic acid" , "NeuAc" , "NeuAc(a2-3)Gal(b1-4)Glc"),
+  filename = '~/Desktop/tmp.png',
+  output=F,
+  imagetype="png" ,
+  height = 480 , 
+  width = 480 , 
+  resolution = 300,
+  compression = "lzw",
+  lwd = 1,
+  col=c("#440154ff", '#21908dff', '#DAA520FF'),
+  fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3), alpha('#DAA520FF',0.3)),
+  cex = 0.5,
+  fontfamily = "sans",
+  cat.cex = 0.3,
+  cat.default.pos = "outer",
+  cat.pos = c(-27, 27, 135),
+  cat.dist = c(0.055, 0.055, 0.085),
+  cat.fontfamily = "sans",
+  cat.col = c("#440154ff", '#21908dff', '#DAA520FF'),
+  rotation = 1
+)
+intersect(intersect(siaBindingFeats[[1]], siaBindingFeats[[2]]), siaBindingFeats[[3]])
 
+# Fucose binding
+fucBindingFeats = list(row.names(stats)[stats$Fuc_adj < 0.1], row.names(stats)[stats$Terminal_Fucose_adj < 0.1])
+intersect(fucBindingFeats[[1]], fucBindingFeats[[2]])
+dev.off()
+draw.pairwise.venn(area1 = length(fucBindingFeats[[1]]),
+                   area2 = length(fucBindingFeats[[2]]),
+                   cross.area = length(intersect(fucBindingFeats[[1]], fucBindingFeats[[2]])),
+                   euler.d = T, scaled = T, ext.text = F, cex = 2,
+                   category = c('Fucose (monosacc.)', 'Terminal fucose'), cat.cex = 2,
+                   cat.pos = c(0,0),
+                   fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3)),
+                   col = c("#440154ff", '#21908dff'),
+                   cat.col = c("#440154ff", '#21908dff'),
+                   cat.fontfamily = "sans",
+                   fontfamily = "sans"
+                   )
 
+d2FeatCor = cor(d2Feats)
+corrplot(d2FeatCor)
+plot(density(d2FeatCor[upper.tri(d2FeatCor,diag = F)]),
+     main = 'Density distribution of pairwise correlations b/w d2Feats',
+     xlab = 'Pearson correlation')
+abline(v = c(0.7, -0.7))
 
+sum(abs(d2FeatCor[upper.tri(d2FeatCor,diag = F)]) > 0.7) / length(d2FeatCor[upper.tri(d2FeatCor,diag = F)])
 
+subD2Feats = d2Feats[,grepl('_6Ang', colnames(d2Feats))]
 
+corrplot(cor(subD2Feats))
+sum(abs(cor(subD2Feats)[upper.tri(cor(subD2Feats),diag = F)]) > 0.7) / length(cor(subD2Feats)[upper.tri(cor(subD2Feats),diag = F)])
 
+###########################
+# Save out files for prediction
+###########################
 
+write.table(bsResiDat, file = './analysis/training/data_in/bsResiDat.tsv', quote = F, sep = '\t')
+write.table(predFeats, file = './analysis/training/data_in/predFeats.csv', quote = F, sep = ',')
+write.table(ligTags, file = './analysis/training/data_in/ligTags.tsv', quote = F, sep = '\t')
 
-
-
-
+# test = read.delim(file = './analysis/training/data_in/ligTags.tsv', sep = '\t', stringsAsFactors = F)
+# all(test == ligTags)
+# test = read.delim(file = './analysis/training/data_in/predFeats.csv', sep = ',', stringsAsFactors = F)
+# all(round(test,4) == round(predFeats,4))
+# test = read.delim(file = './analysis/training/data_in/bsResiDat.tsv', sep = '\t', stringsAsFactors = F)
 
