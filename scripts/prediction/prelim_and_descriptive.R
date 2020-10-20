@@ -474,7 +474,7 @@ for (i in 1:length(ligSort50)){
   parenCnt[i] = lengths(regmatches(lig, gregexpr("\\(", lig)))
   bracCnt[i] = lengths(regmatches(lig, gregexpr("\\[", lig)))
   manCnt[i] = lengths(regmatches(lig, gregexpr("Man", lig)))
-  neuCnt[i] = lengths(regmatches(lig, gregexpr("Neu", lig)))
+  neuCnt[i] = lengths(regmatches(lig, gregexpr("NeuAc", lig)))
 }
 
 mTag = parenCnt == 0 & bracCnt == 0 # Monosaccharides
@@ -529,7 +529,7 @@ legend(x = 'topright', pch = c(rep(15,9),21,23, 24),
                   '',
                   'Branching','No Branching',
                   '',
-                  'High Mannose', 'Sialic Acid', 'Terminal Fucose'),
+                  'High Mannose', 'Neu5Ac containing', 'Terminal Fucose'),
        col = c(sacc_col,
                'white',
                'navy', 'grey85',
@@ -539,12 +539,27 @@ legend(x = 'topright', pch = c(rep(15,9),21,23, 24),
               'forestgreen', 'darkorchid', 'firebrick1'),
        pt.cex =1.8)
 
+
+topLigOccurences$High_Mannose[1] = 0
+topLigOccurences$Sialic_Acid[1] = 0
+topLigOccurences$Terminal_Fucose[1] = 0
+for (i in 1:length(clusLst50)){
+  if(any(bsResiDat$iupac[bsResiDat$seqClust50 == clusLst50[i]] %in% ligSort50[manTag])){
+    topLigOccurences$High_Mannose[1] = topLigOccurences$High_Mannose[1] + 1
+  }
+  if(any(bsResiDat$iupac[bsResiDat$seqClust50 == clusLst50[i]] %in% ligSort50[neuTag])){
+    topLigOccurences$Sialic_Acid[1] = topLigOccurences$Sialic_Acid[1] + 1
+  }
+  if(any(bsResiDat$iupac[bsResiDat$seqClust50 == clusLst50[i]] %in% ligSort50[fucTag])){
+    topLigOccurences$Terminal_Fucose[1] = topLigOccurences$Terminal_Fucose[1] + 1
+  }
+}
+
+topLigOccurences[1,2:4] = (topLigOccurences[1,2:4] / length(clusLst50) )* 100
+
 # ligSort50[manTag]
-topLigOccurences$High_Mannose[1] = sum(cpl50[manTag])
 # ligSort50[neuTag]
-topLigOccurences$Sialic_Acid[1] = sum(cpl50[neuTag])
 # ligSort50[fucTag]
-topLigOccurences$Terminal_Fucose[1] = sum(cpl50[fucTag])
 
 ## 80% id
 
@@ -554,7 +569,7 @@ for (i in 1:length(ligSort80)){
   parenCnt[i] = lengths(regmatches(lig, gregexpr("\\(", lig)))
   bracCnt[i] = lengths(regmatches(lig, gregexpr("\\[", lig)))
   manCnt[i] = lengths(regmatches(lig, gregexpr("Man", lig)))
-  neuCnt[i] = lengths(regmatches(lig, gregexpr("Neu", lig)))
+  neuCnt[i] = lengths(regmatches(lig, gregexpr("NeuAc", lig)))
 }
 
 mTag = parenCnt == 0 & bracCnt == 0 # Monosaccharides
@@ -595,7 +610,7 @@ legend(x = 'topright', pch = c(rep(15,9),21,23, 24),
                   '',
                   'Branching','No Branching',
                   '',
-                  'High Mannose', 'Sialic Acid', 'Terminal Fucose'),
+                  'High Mannose', 'Neu5Ac containing', 'Terminal Fucose'),
        col = c(sacc_col,
                'white',
                'navy', 'grey85',
@@ -605,12 +620,27 @@ legend(x = 'topright', pch = c(rep(15,9),21,23, 24),
                  'forestgreen', 'darkorchid', 'firebrick1'),
        pt.cex =1.8)
 
+topLigOccurences$High_Mannose[2] = 0
+topLigOccurences$Sialic_Acid[2] = 0
+topLigOccurences$Terminal_Fucose[2] = 0
+for (i in 1:length(clusLst80)){
+  if(any(bsResiDat$iupac[bsResiDat$seqClust80 == clusLst80[i]] %in% ligSort80[manTag])){
+    topLigOccurences$High_Mannose[2] = topLigOccurences$High_Mannose[2] + 1
+  }
+  if(any(bsResiDat$iupac[bsResiDat$seqClust80 == clusLst80[i]] %in% ligSort80[neuTag])){
+    topLigOccurences$Sialic_Acid[2] = topLigOccurences$Sialic_Acid[2] + 1
+  }
+  if(any(bsResiDat$iupac[bsResiDat$seqClust80 == clusLst80[i]] %in% ligSort80[fucTag])){
+    topLigOccurences$Terminal_Fucose[2] = topLigOccurences$Terminal_Fucose[2] + 1
+  }
+}
+
+topLigOccurences[2,2:4] = (topLigOccurences[2,2:4] / length(clusLst80) )* 100
+
+
 # ligSort80[manTag]
-topLigOccurences$High_Mannose[2] = sum(cpl80[manTag])
 # ligSort80[neuTag]
-topLigOccurences$Sialic_Acid[2] = sum(cpl80[neuTag])
 # ligSort80[fucTag]
-topLigOccurences$Terminal_Fucose[2] = sum(cpl80[fucTag])
 
 top50 = ligSort50[cpl50 > 5]
 top80 = ligSort80[cpl80 > 5]
@@ -640,6 +670,7 @@ colnames(melt_ligOccur) = c('Clust_ID', 'Ligand', 'Cluster_Percent_w_ligand')
 ggplot(melt_ligOccur, aes(fill = Clust_ID, x = Ligand, alpha = Ligand, y = Cluster_Percent_w_ligand)) + geom_bar(stat="identity", color="black", position=position_dodge())+
   scale_fill_manual(values=mycol[c(1,4)]) +
   scale_alpha_manual(values=c(rep(0.6,3), rep(1,12)), guide = F) +
+  ylim(c(0, 30)) +
   geom_hline(yintercept = c(5)) +
   geom_vline(xintercept = c(3.5), lty = 2) +
   theme_linedraw(base_size = 22) +
@@ -1264,7 +1295,7 @@ for (i in 1:length(uniLigs)){
   parenCnt[i] = lengths(regmatches(lig, gregexpr("\\(", lig)))
   bracCnt[i] = lengths(regmatches(lig, gregexpr("\\[", lig)))
   manCnt[i] = lengths(regmatches(lig, gregexpr("Man", lig)))
-  neuCnt[i] = lengths(regmatches(lig, gregexpr("Neu", lig)))
+  neuCnt[i] = lengths(regmatches(lig, gregexpr("NeuAc", lig)))
 }
 
 mTag = parenCnt == 0 & bracCnt == 0 # Monosaccharides
@@ -1513,7 +1544,8 @@ pheatmap(cor(stats[,grepl('_effectSize$', colnames(stats))], scaled_stats[,grepl
         main = 'Spearman correlation between feature-specific effect sizes across ligand classes',
         breaks = breakLst,
         show_colnames = F,
-        cutree_rows = 3)
+        cutree_rows = 1,
+        treeheight_col = 0)
 
 # Correlations by feature type
 dev.off()
@@ -1524,14 +1556,14 @@ pheatmap(cor(stats[resiFeatTag,grepl('_effectSize$', colnames(stats))], scaled_s
          main = 'Spearman correlation between RESIDUE feature effect sizes across ligand classes',
          breaks = breakLst,
          show_colnames = F,
-         gaps_row = c(1,4))
+         treeheight_col = 0)
 pheatmap(cor(stats[pocketFeatTag,grepl('_effectSize$', colnames(stats))], scaled_stats[pocketFeatTag,grepl('_effectSize$', colnames(scaled_stats))], method = 'spearman'),
          color = colorRampPalette(c("royalblue1", "grey90", "gold1"))(length(breakLst)),
          labels_row = gsub('_effectSize$', '', colnames(stats[,grepl('_effectSize$', colnames(stats))])),
          main = 'Spearman correlation between POCKET feature effect sizes across ligand classes',
          breaks = breakLst,
          show_colnames = F,
-         gaps_row = c(1,4))
+         treeheight_col = 0)
 
 
 # Shared significant features
