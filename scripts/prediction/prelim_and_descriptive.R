@@ -1229,7 +1229,10 @@ bwClus = distance(x = scaledFeats) # Precompute all pairwise distances between b
 
 inClus50Cor = rep(-1, length(clusLst50))
 inClus50All = rep(-1, ((nrow(bsResiDat)**2)/2))
-ind = 1
+outClus50All = rep(-1, ((nrow(bsResiDat)**2)/2))
+outClus50Mean = rep(-1, length(clusLst50))
+ind1 = 1
+ind2 = 1
 for (i in 1:length(clusLst50)) {
   tag = bsResiDat$seqClust50 == clusLst50[i]
   if (sum(tag) > 1) { # Check correlations between cluster members if cluster has more than one member
@@ -1237,16 +1240,30 @@ for (i in 1:length(clusLst50)) {
     # corMat = distance(x = scaledFeats[bsResiDat$seqClust50 == clusLst50[i], ])
     corMat = bwClus[tag,tag][upper.tri(bwClus[tag,tag])]
     inClus50Cor[i] = mean(corMat)
-    inClus50All[ind:(ind+length(corMat)-1)] = corMat
-    ind = ind+length(corMat)
+    inClus50All[ind1:(ind1+length(corMat)-1)] = corMat
+    ind1 = ind1+length(corMat)
   }
+  inds = (1:nrow(bsResiDat))[tag]
+  outLst = matrix(0, ncol = (nrow(bsResiDat)-length(inds)), nrow = length(inds))
+  for(j in 1:length(inds)){
+    outLst[j,] = bwClus[inds[j],!tag]
+  }
+  outLst = as.vector(outLst)
+  outClus50Mean[i] = mean(outLst)
+  outClus50All[ind2:(ind2+length(outLst)-1)] =  outLst
+  ind2 = ind2 + length(outLst)
 }
 inClus50Cor = inClus50Cor[inClus50Cor != -1] # drop values from clusters with only one member
 inClus50All = inClus50All[inClus50All != -1] # drop unchanged values from initialized vector for all pairwise distances
+outClus50All = outClus50All[outClus50All != -1]
+
 
 inClus80Cor = rep(-1, length(clusLst80))
 inClus80All = rep(-1, ((nrow(bsResiDat)**2)/2))
-ind = 1
+outClus80All = rep(-1, ((nrow(bsResiDat)**2)/2))
+outClus80Mean = rep(-1, length(clusLst80))
+ind1 = 1
+ind2 = 1
 for (i in 1:length(clusLst80)) {
   tag = bsResiDat$seqClust80 == clusLst80[i]
   if (sum(tag) > 1) { # Check correlations between cluster members if cluster has more than one member
@@ -1254,12 +1271,23 @@ for (i in 1:length(clusLst80)) {
     # corMat = distance(x = scaledFeats[bsResiDat$seqClust80 == clusLst80[i], ])
     corMat = bwClus[tag,tag][upper.tri(bwClus[tag,tag])]
     inClus80Cor[i] = mean(corMat)
-    inClus80All[ind:(ind+length(corMat)-1)] = corMat
-    ind = ind+length(corMat)
+    inClus80All[ind1:(ind1+length(corMat)-1)] = corMat
+    ind1 = ind1+length(corMat)
   }
+  inds = (1:nrow(bsResiDat))[tag]
+  outLst = matrix(0, ncol = (nrow(bsResiDat)-length(inds)), nrow = length(inds))
+  for(j in 1:length(inds)){
+    outLst[j,] = bwClus[inds[j],!tag]
+  }
+  outLst = as.vector(outLst)
+  outClus80Mean[i] = mean(outLst)
+  outClus80All[ind2:(ind2+length(outLst)-1)] =  outLst
+  ind2 = ind2 + length(outLst)
 }
 inClus80Cor = inClus80Cor[inClus80Cor != -1] # drop values from clusters with only one member
 inClus80All = inClus80All[inClus80All != -1] # drop unchanged values from initialized vector for all pairwise distances
+outClus80All = outClus80All[outClus80All != -1]
+
 
 # Plot inter/intra cluster distance distributions
 bwClusPlot = bwClus[upper.tri(bwClus)]
@@ -1267,23 +1295,124 @@ bwClusPlot = bwClus[upper.tri(bwClus)]
 plot(density(inClus50Cor))
 plot(density(inClus50All))
 
+plot(density(outClus50Mean))
+plot(density(outClus50All))
+
 plot(density(inClus80Cor))
 plot(density(inClus80All))
 
-plot(density(bwClusPlot))
+plot(density(outClus80Mean))
+plot(density(outClus80All))
+
+plot(density(bwClusPlot), xlab = 'Euclidean distance', main = 'Distribution of all distances between all binding sites')
+allMed = median(bwClusPlot)
+abline(v = allMed, lty = 2, lwd = 3, col = 'red2')
+text(x = allMed + 2, y = 1,
+     labels = paste('Median = ', as.character(allMed), sep = ''),
+     cex = 1.5,
+     col = 'red1')
+
 
 mclusdf = rbind(data.frame('type' = c('All binding sites'), 'seqID' = c('NA'),'value' = bwClusPlot),
-                data.frame('type' = c('Average w/in clust'), 'seqID' = c('80'), 'value' = inClus80Cor),
-                data.frame('type' = c('All w/in clust'), 'seqID' = c('80'), 'value' = inClus80All),
-                data.frame('type' = c('Average w/in clust'), 'seqID' = c('50'), 'value' = inClus50Cor),
-                data.frame('type' = c('All w/in clust'), 'seqID' = c('50'), 'value' = inClus50All))
+                data.frame('type' = c('Cluster means (shared clusts)'), 'seqID' = c('80'), 'value' = inClus80Cor),
+                data.frame('type' = c('All w/in shared clusts'), 'seqID' = c('80'), 'value' = inClus80All),
+                data.frame('type' = c('Cluster means (shared clusts)'), 'seqID' = c('50'), 'value' = inClus50Cor),
+                data.frame('type' = c('All w/in shared clusts'), 'seqID' = c('50'), 'value' = inClus50All),
+                data.frame('type' = c('All (no shared clusts)'), 'seqID' = c('50'), 'value' = outClus50All),
+                data.frame('type' = c('All (no shared clusts)'), 'seqID' = c('80'), 'value' = outClus80All),
+                data.frame('type' = c('Cluster means (no shared clusts)'), 'seqID' = c('50'), 'value' = outClus50Mean),
+                data.frame('type' = c('Cluster means (no shared clusts)'), 'seqID' = c('80'), 'value' = outClus80Mean))
 
 ggplot(data = mclusdf, aes(x = type, y = value, col = seqID, fill = seqID)) + geom_boxplot(notch = T, outlier.alpha = 0.5) +
   scale_fill_manual(values = rep('grey80',3), guide = F) + 
   scale_color_manual(values = c('black', mycol[1], mycol[4])) +
   labs(title = 'Inter- & intracluster distances (from predictive features)', x = "Pairwise grouping", y = "Euclidean distance") +
-  theme_dark(base_size = 22)
+  theme_dark(base_size = 22) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
+
+# # Cosine similarity based on one-hot encoding of binned BS residues
+# oneHotTag = grepl('^[[:upper:]]{3}_', colnames(predFeats))
+
   
+# Sampling diversity w/in binding sites from the same sequence clusters
+set.seed(27)
+
+sampCnt = rep(0,length(clusLst50))
+totCnt = rep(0, length(clusLst50))
+for (i in 1:length(clusLst50)){
+  tag = bsResiDat$seqClust50 == clusLst50[i]
+  totCnt[i] = sum(tag)
+  if (sum(tag) == 1){
+    sampCnt[i] = 1
+  } else if (sum(tag) ==2){
+    if(distance(scaledFeats[tag,]) > allMed){
+      sampCnt[i] = 2
+    } else{
+      sampCnt[i] = 1
+    }
+  } else {
+    cnter = 1
+    
+    allInds = (1:nrow(bsResiDat))[tag] # Get the row indices for binding sites within a seq cluster
+    sampInds = rep(0, length(allInds)) # Initialize a vector of zeros to hold the randomly sampled indices
+    
+    # tmp = prcomp(scaledFeats[allInds,], center = T)
+    # tmpCol = colfunc(10)
+    # plot(tmp$x[,1:2], main = "PCA of 113 binding sites in cluster 15", pch = 19, col = 'black', cex = 1.5,
+    #      xlim = c(-1.6,1.5), ylim = c(-2,0.75))
+    
+    while( length(allInds) >= 2 ){
+      sampInds[cnter] = sample(allInds, size = 1) # Sample an index randomly
+      
+      # points(x = tmp$x[row.names(scaledFeats)[sampInds[cnter]],1], y = tmp$x[row.names(scaledFeats)[sampInds[cnter]],2],
+      #        pch = 21, bg = tmpCol[cnter], col = 'black' , cex = 2)
+      
+      cnter = cnter + 1 # increase the sample count
+      allInds = allInds[! allInds %in% sampInds] # Drop sampled indices from vector of remaining indices
+      
+      distMat = distance(x = rbind(scaledFeats[sampInds[sampInds != 0],], scaledFeats[allInds,])) # Find all pairwise distances b/w binding sites in cluster
+      distMat = distMat[1:sum(sampInds != 0),-1*(1:sum(sampInds != 0))] # Get the top n rows of the distance matrix dropping the first n columns, where n = the number of indices already sampled
+      if (is.matrix(distMat)){
+        distMat = apply(X = distMat, MARGIN = 2, FUN = min) # For each of the remaining binding sites, take the minimum pairwise distance to any sampled binding site
+      }
+      dropInds = allInds[distMat < allMed ]
+      
+      # if (! any(is.na(dropInds))){
+      #   points(x = tmp$x[row.names(scaledFeats)[dropInds],1], y = tmp$x[row.names(scaledFeats)[dropInds],2],
+      #          pch = 21, col = alpha(tmpCol[cnter-1], .8), bg = alpha(tmpCol[cnter-1], .4), cex = 1.8)
+      # }
+      
+      allInds = allInds[! allInds %in% dropInds]
+      
+      if(length(allInds) == 1){
+        sampInds[cnter] = allInds
+        # points(x = tmp$x[row.names(scaledFeats)[sampInds[cnter]],1], y = tmp$x[row.names(scaledFeats)[sampInds[cnter]],2],
+        #        pch = 21, bg = tmpCol[cnter], col = 'black' , cex = 2)
+      }
+      
+    }
+    legend(x = 'bottomright', legend = c(1:length(tmpCol)), col = tmpCol, pch = 19, pt.cex = 2)
+    
+    sampInds = sampInds[sampInds != 0]
+    length(sampInds)
+  }
+}
+
+
+plot(density(sampCnt))
+plot(density(sampCnt/totCnt))
+
+plot(jitter(totCnt, amount = 0.5), sampCnt, xlab = 'Number of binding sites in a seq cluster', ylab = 'Number of sampled binding sites', col = colfunc(3)[1],
+     xlim = c(0,200), ylim = c(0,10))
+par(new= T)
+plot(jitter(totCnt, amount = 0.5), bk1, col = colfunc(3)[2],
+     xlim = c(0,200), ylim = c(0,10),
+     axes = F, xlab = '', ylab = '', main = '')
+par(new= T)
+plot(jitter(totCnt, amount = 0.5), bk2, col = colfunc(3)[3],
+     xlim = c(0,200), ylim = c(0,10),
+     axes = F, xlab = '', ylab = '', main = '')
+
 ###########################
 # Descriptive analysis
 ###########################

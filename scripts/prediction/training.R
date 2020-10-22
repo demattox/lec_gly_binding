@@ -2,10 +2,11 @@
 library(randomForest)
 library(reshape)
 library(ggplot2)
-library(vcd)
+library(caret)
+library(MLmetrics)
 
-# library(caret)
-# library(readxl)
+# library(vcd)
+
 
 # indicate home dir for projet
 homeDir = '/Users/dmattox/cbk/lec_gly_binding/'
@@ -38,8 +39,8 @@ sampleClustMembers <- function(clusterIDs, featureSet, ligandTag, testClust, n =
   return(dat)
 }
 
-meanClustMembers <- function(clusterIDs, featureSet, ligandTag, testClust, n = 3){
-  # Sample n (default=3) random binding sites from each cluster besides the cluster withheld for testing (LOO, cluster index specified by testClust)
+meanClustMembers <- function(clusterIDs, featureSet, ligandTag, testClust){
+  # Take the mean of each feature foor binding sites with the ligand & the binding sites w/o the ligand from each cluster besides the cluster withheld for testing (LOO, cluster index specified by testClust)
   # Returns a training dataset with the features for each cluster representative, along with the last column indicating whether the ligand/ligand class of interest is contained in that binding site
   
   # Drop the excluded cluster
@@ -50,24 +51,30 @@ meanClustMembers <- function(clusterIDs, featureSet, ligandTag, testClust, n = 3
   colnames(dat) = colnames(predFeats)
   dat$bound = F
   
+  dropTag = rep(F, nrow(dat))
+  
   for (i in 1:length(uniClusts)) {
     j = (i - 1) * 2 + 1 # index for dat df to write subsampled cluster members to
     inds =  (1:nrow(featureSet))[clusterIDs == uniClusts[i]] # all the row indices matching a specific cluster
     
     if (any(ligandTag[inds])) {
       dat[j, 1:ncol(featureSet)] = apply(X = featureSet[inds[ligandTag[inds]], ], MARGIN = 2, FUN = mean)
+    } else{
+      dropTag[j] = T
     }
     if (any(!ligandTag[inds])) {
       dat[(j + 1), 1:ncol(featureSet)] = apply(X = featureSet[inds[!ligandTag[inds]], ], MARGIN = 2, FUN = mean)
+    } else{
+      dropTag[(j + 1)] = T
     }
     dat$bound[j] = T
   }
-  dat = dat[dat$numBSresis_bin1 != 0,]
+  dat = dat[!dropTag,]
   return(dat)
 }
 
 balancedClustMembers <- function(clusterIDs, featureSet, ligandTag, testClust, n = 2){
-  # Sample n (default=3) random binding sites from each cluster besides the cluster withheld for testing (LOO, cluster index specified by testClust)
+  # Sample n (default=3) binding sites from the postive & negative cases (ligand present/absent) for each cluster besides the cluster withheld for testing (LOO, cluster index specified by testClust), giving a maximum of n*2 binding sites/cluster
   # Returns a training dataset with the features for each cluster representative, along with the last column indicating whether the ligand/ligand class of interest is contained in that binding site
   
   # Drop the excluded cluster
@@ -96,6 +103,69 @@ balancedClustMembers <- function(clusterIDs, featureSet, ligandTag, testClust, n
   return(dat)
 }
 
+meanAllClusts <- function(clusterIDs, featureSet, ligandTag){
+  # Take the mean of each feature foor binding sites with the ligand & the binding sites w/o the ligand from every cluster
+  # Returns a training dataset with the features for each cluster representative, along with the last column indicating whether the ligand/ligand class of interest is contained in that binding site
+  
+  uniClusts = unique(clusterIDs)
+
+  dat = as.data.frame(matrix(0, nrow = (length(uniClusts) * 2), ncol = ncol(featureSet)))
+  colnames(dat) = colnames(predFeats)
+  dat$bound = F
+  
+  dropTag = rep(F, nrow(dat))
+  
+  for (i in 1:length(uniClusts)) {
+    j = (i - 1) * 2 + 1 # index for dat df to write subsampled cluster members to
+    inds =  (1:nrow(featureSet))[clusterIDs == uniClusts[i]] # all the row indices matching a specific cluster
+    
+    if (any(ligandTag[inds])) {
+      dat[j, 1:ncol(featureSet)] = apply(X = featureSet[inds[ligandTag[inds]], ], MARGIN = 2, FUN = mean)
+    } else{
+      dropTag[j] = T
+    }
+    if (any(!ligandTag[inds])) {
+      dat[(j + 1), 1:ncol(featureSet)] = apply(X = featureSet[inds[!ligandTag[inds]], ], MARGIN = 2, FUN = mean)
+    } else{
+      dropTag[(j + 1)] = T
+    }
+    dat$bound[j] = T
+  }
+  dat = dat[!dropTag,]
+  return(dat)
+}
+
+meanPerClust <- function(clusterIDs, featureSet, ligandTag){
+  # Take the mean of each feature foor binding sites with the ligand & the binding sites w/o the ligand from every cluster
+  # Returns a training dataset with the features for each cluster representative, along with the last column indicating whether the ligand/ligand class of interest is contained in that binding site
+  
+  uniClusts = unique(clusterIDs)
+  
+  dat = as.data.frame(matrix(0, nrow = (length(uniClusts) * 2), ncol = ncol(featureSet)))
+  colnames(dat) = colnames(predFeats)
+  dat$bound = F
+  
+  dropTag = rep(F, nrow(dat))
+  
+  for (i in 1:length(uniClusts)) {
+    j = (i - 1) * 2 + 1 # index for dat df to write subsampled cluster members to
+    inds =  (1:nrow(featureSet))[clusterIDs == uniClusts[i]] # all the row indices matching a specific cluster
+    
+    if (any(ligandTag[inds])) {
+      dat[j, 1:ncol(featureSet)] = apply(X = featureSet[inds[ligandTag[inds]], ], MARGIN = 2, FUN = mean)
+    } else{
+      dropTag[j] = T
+    }
+    if (any(!ligandTag[inds])) {
+      dat[(j + 1), 1:ncol(featureSet)] = apply(X = featureSet[inds[!ligandTag[inds]], ], MARGIN = 2, FUN = mean)
+    } else{
+      dropTag[(j + 1)] = T
+    }
+    dat$bound[j] = T
+  }
+  dat = dat[!dropTag,]
+  return(dat)
+}
 
 ##########################
 # Set up models
@@ -114,8 +184,9 @@ clusLst = unique(bsResiDat$seqClust50)
 default_mtry = floor(sqrt(ncol(predFeats))) # 209 --> 14
 
 
-###########################
-# BS example with sialic acid
+#########################
+# Very 1st pass prediction - LO(C)O
+#########################
 
 featImp = as.data.frame(matrix(0, nrow = ncol(predFeats), ncol = ncol(ligTags)))
 row.names(featImp) = colnames(predFeats)
@@ -264,4 +335,53 @@ for(i in 1:length(clusLst)){
 
 boxplot(siaPcnt)
 abline(h = sum(ligTags$Sialic_Acid)/length(ligTags$Sialic_Acid))
+
+#########################
+# 2nd pass prediction - 5x CV
+#########################
+
+folds = 5
+rep = 3
+tune.grid <- expand.grid(.mtry= c(-7:7) + default_mtry)
+
+siaDat = meanAllClusts(clusterIDs = bsResiDat$seqClust50, featureSet = predFeats, ligandTag = ligTags$Sialic_Acid) # ~24.4% have binding interactions
+siaDat$bound = as.factor(siaDat$bound)
+
+
+set.seed(27)
+inds = createMultiFolds(y = siaDat$bound, k = folds, times = rep)
+# for (i in 1:length(inds)){
+#   cat(sum(as.logical(siaDat$bound[inds[[i]]]))/length(inds[[i]]))
+#   cat('\n')
+# }
+
+train.control = trainControl(index = inds,
+                  method = 'repeatedcv', 
+                  number = folds,
+                  repeats = rep,
+                  search = 'grid',
+                  sampling = 'down'
+                  )
+
+rfFit <- train(bound ~ ., data = siaDat, 
+               method = "rf", 
+               trControl = train.control,
+               tuneGrid = tune.grid, 
+               maximize = TRUE,
+               verbose = TRUE,
+               importance = TRUE, 
+               ntree = 1000)
+
+rfFit
+rfFit$finalModel
+varImp(rfFit)
+
+
+
+
+
+
+
+
+
 
