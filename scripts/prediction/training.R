@@ -7,8 +7,7 @@ library(ggplot2)
 library(caret)
 library(MLmetrics)
 library(philentropy)
-
-# library(vcd)
+library(vcd)
 
 
 # indicate home dir for projet
@@ -211,11 +210,12 @@ pullDiverseCases <- function(scaledData, startInds, thresh){
       
       distMat = suppressMessages(distance(x = rbind(scaledData[out[out != 0],], scaledData[startInds,]))) # Find all pairwise distances b/w binding sites in cluster
       distMat = distMat[1:sum(out != 0),-1*(1:sum(out != 0))] # Get the top n rows of the distance matrix dropping the first n columns, where n = the number of indices already sampled
+      
       if (is.matrix(distMat)){
         distMat = apply(X = distMat, MARGIN = 2, FUN = min) # For each of the remaining binding sites, take the minimum pairwise distance to any sampled binding site
       }
-      dropInds = startInds[distMat < thresh ]
       
+      dropInds = startInds[distMat < thresh ]
       startInds = startInds[! startInds %in% dropInds]
       
       if(length(startInds) == 1){
@@ -290,6 +290,8 @@ bwBSiteDists = distance(scaledFeats)
 medPairwiseDist = median(bwBSiteDists[upper.tri(bwBSiteDists)])
 
 clusLst = unique(bsResiDat$seqClust50)
+
+all(row.names(bsResiDat) == row.names(predFeats))
 
 # Prep RF model specifications
 default_mtry = floor(sqrt(ncol(predFeats))) # 209 --> 14
@@ -492,44 +494,73 @@ varImp(rfFit)
 #########################
 
 folds = 5
-rep = 1
-
+reps = 5
 tune.grid <- expand.grid(.mtry= c(-7:7) + default_mtry)
 
+set.seed(27)
 
+# Define dataframes to hold model results
+trainOut = as.data.frame(matrix(0, nrow = length(clusLst), ncol = 7))
+row.names(trainOut) = clusLst
+colnames(trainOut) = c('final_mtry', 'kappa', 'recall', 'TP', 'TN', 'FP', 'FN')
+
+testOut = as.data.frame(matrix(0, nrow = length(clusLst), ncol = 4))
+row.names(testOut) = clusLst
+colnames(testOut) = c('TP', 'TN', 'FP', 'FN')
+
+featImp = as.data.frame(matrix(0, nrow = ncol(predFeats), ncol = ncol(ligTags)))
+row.names(featImp) = colnames(predFeats)
+colnames(featImp) = colnames(ligTags)
+
+# Loop through ligands with index i here
 
 i=2 #sialic acid
 
 lig = ligTags[,i]
 
-clusBinding = rep(F, length(clusLst))
+clusBinding = rep(F, length(clusLst)) # Whether a cluster has any positve examples of binding with the current ligand/ligand class
 for (j in (1:length(clusLst))){
   clusBinding[j] = any(lig[bsResiDat$seqClust50 == clusLst[j]])
 }
 # sum(clusBinding)
 
-testCases = clusLst[clusBinding]
+testCases = clusLst[clusBinding] # Clusters with any binding occurences to iterativelty withold for validation in LO(C)O validation
 
-for (j in (1:length(testCases))){
+for (j in (1:1)){#length(testCases))){
   
   outClust = testCases[j]
+  cat("testing on clust #", outClust, '\n')
   
   trainingClusts = clusLst[! clusLst == outClust]
   trainingClustBinding = clusBinding[! clusLst == outClust]
   
-  foldClusIDs = createMultiFolds(y = trainingClustBinding, k = folds, times = rep)
+  foldClusIDs = createMultiFolds(y = trainingClustBinding, k = folds, times = reps)
   
-  for (m in 1:rep){
-    trainDat = sampleDiverseSitesByLig(clusterIDs = bsResiDat$seqClust50, 
+  repDatSampCnt = rep(0, reps)
+  for (m in 1:reps){
+     sampDat = sampleDiverseSitesByLig(clusterIDs = bsResiDat$seqClust50, 
                                        testClust = outClust,
                                        featureSet = predFeats, 
                                        ligandTag = lig, 
                                        distThresh = medPairwiseDist, 
                                        scaledFeatureSet = scaledFeats)
+     
+    repDatSampCnt[m] = nrow(sampDat)
+    if (m == 1) {
+      trainDat = sampDat
+    } else{
+      trainDat = rbind(trainDat, sampDat)
+    }
+    
     
     for(n in 1:folds){
       foldInd = ((m - 1) * folds) + n
-      foldClusIDs[[foldInd]] = (1:nrow(trainDat))[trainDat$clus %in% clusLst[foldClusIDs[[foldInd]]]]
+      if (m == 1){
+        foldClusIDs[[foldInd]] = (1:nrow(sampDat))[sampDat$clus %in% trainingClusts[foldClusIDs[[foldInd]]]]
+      } else {
+        foldClusIDs[[foldInd]] = as.integer(repDatSampCnt[m-1] + (1:nrow(sampDat))[sampDat$clus %in% trainingClusts[foldClusIDs[[foldInd]]]])
+      }
+      
     }
   }
   
@@ -538,26 +569,64 @@ for (j in (1:length(testCases))){
   train.control = trainControl(index = foldClusIDs,
                                method = 'repeatedcv', 
                                number = folds,
-                               repeats = rep,
+                               repeats = reps,
                                search = 'grid',
-                               sampling = 'down'
-  )
+                               sampling = 'down')
   
-  rfFit <- train(bound ~ ., data = trainDat, 
+  rfFit <- train(bound ~ .,
+                 data = trainDat, 
                  method = "rf", 
                  trControl = train.control,
                  tuneGrid = tune.grid, 
                  maximize = TRUE,
                  verbose = TRUE,
                  importance = TRUE, 
-                 ntree = 1000)
+                 ntree = 1500,
+                 metric = "Kappa")
+  
+  trainKappa = Kappa(rfFit$finalModel$confusion[1:2,1:2])$Unweighted[1]
+  trainRecall = 1 - rfFit$finalModel$confusion[2,3]
+  trainAcc = (rfFit$finalModel$confusion[1,1] + rfFit$finalModel$confusion[2,2]) / sum(rfFit$finalModel$confusion)
+  best_mtry = unname(rfFit$bestTune)[,1]
+  
+  trainTag = row.names(trainOut) == outClust
+  trainOut$final_mtry[trainTag] = best_mtry
+  trainOut$kappa[trainTag] = trainKappa
+  trainOut$recall[trainTag] = trainRecall
+  trainOut$TP[trainTag] = rfFit$finalModel$confusion[2,2]
+  trainOut$TN[trainTag] = rfFit$finalModel$confusion[1,1]
+  trainOut$FP[trainTag] = rfFit$finalModel$confusion[1,2]
+  trainOut$FN[trainTag] = rfFit$finalModel$confusion[2,1]
+  
+  featImp[, i] = featImp[, i] + rfFit$finalModel$importance[,4]
+  
+  cat("train:\n\tRecall = ", trainRecall, "\n\tKappa = ", trainKappa,"\n\tAccuracy = ", trainAcc, '\n\tmtry = ', best_mtry, '\n')
   
   testDat = predFeats[bsResiDat$seqClust50 == outClust,]
-  # testDat$bound = factor(lig[bsResiDat$seqClust50 == outClust], levels = levels(trainDat$bound))
+  testObs = factor(lig[bsResiDat$seqClust50 == outClust], levels = levels(trainDat$bound))
   
   validate = predict(rfFit$finalModel, newdata = testDat)
-  sum(validate == testDat$bound)
+  
+  TP = sum(validate == "TRUE" & testObs == "TRUE")
+  TN = sum(validate == "FALSE" & testObs == "FALSE")
+  FN = sum(validate == "TRUE" & testObs == "FALSE")
+  FP = sum(validate == "FALSE" & testObs == "TRUE")
+  
+  randAcc = ((TN+FP)*(TN+FN) + (FN+TP)*(FP+TP)) / length(validate)^2
+  testAcc = (TP+TN)/(TP+TN+FP+FN)
+  testKappa = (testAcc - randAcc) / (1 - randAcc)
+  testRecall = TP / (TP + FN)
+  
+  testTag = row.names(testOut) == outClust
+  testOut$TP[testTag] = TP
+  testOut$TN[testTag] = TN
+  testOut$FN[testTag] = FN
+  testOut$FP[testTag] = FP
+  
+  cat("test:\n\tRecall = ", testRecall, "\n\tKappa = ", testKappa,"\n\tAccuracy = ", testAcc, '\n__________________\n\n')
 }
+
+featImp[, i] = featImp[, i] / length(testCases)
 
 # for(k in 1:25){cat(sum(trainingClustBinding[foldClusIDs[[k]]])); cat('\n')}
 
