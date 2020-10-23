@@ -1394,7 +1394,7 @@ for (i in 1:length(clusLst50)){
     legend(x = 'bottomright', legend = c(1:length(tmpCol)), col = tmpCol, pch = 19, pt.cex = 2)
     
     sampInds = sampInds[sampInds != 0]
-    length(sampInds)
+    # length(sampInds)
   }
 }
 
