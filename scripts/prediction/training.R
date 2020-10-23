@@ -494,7 +494,7 @@ varImp(rfFit)
 #########################
 
 folds = 5
-reps = 5
+reps = 3
 tune.grid <- expand.grid(.mtry= c(-7:7) + default_mtry)
 
 set.seed(27)
@@ -526,7 +526,7 @@ for (j in (1:length(clusLst))){
 
 testCases = clusLst[clusBinding] # Clusters with any binding occurences to iterativelty withold for validation in LO(C)O validation
 
-for (j in (1:1)){#length(testCases))){
+for (j in (1:2length(testCases))){
   
   outClust = testCases[j]
   cat("testing on clust #", outClust, '\n')
@@ -609,8 +609,8 @@ for (j in (1:1)){#length(testCases))){
   
   TP = sum(validate == "TRUE" & testObs == "TRUE")
   TN = sum(validate == "FALSE" & testObs == "FALSE")
-  FN = sum(validate == "TRUE" & testObs == "FALSE")
-  FP = sum(validate == "FALSE" & testObs == "TRUE")
+  FN = sum(validate == "FALSE" & testObs == "TRUE")
+  FP = sum(validate == "TRUE" & testObs == "FALSE")
   
   randAcc = ((TN+FP)*(TN+FN) + (FN+TP)*(FP+TP)) / length(validate)^2
   testAcc = (TP+TN)/(TP+TN+FP+FN)
