@@ -526,7 +526,7 @@ for (j in (1:length(clusLst))){
 
 testCases = clusLst[clusBinding] # Clusters with any binding occurences to iterativelty withold for validation in LO(C)O validation
 
-for (j in (1:2length(testCases))){
+for (j in (1:length(testCases))){
   
   outClust = testCases[j]
   cat("testing on clust #", outClust, '\n')
