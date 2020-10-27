@@ -270,6 +270,14 @@ sampleDiverseSitesByLig <- function(clusterIDs, testClust, featureSet, ligandTag
     return(dat)
 }
 
+f2 <- function (data, lev = NULL, model = NULL, beta = 2) {
+  precision <- posPredValue(data$pred, data$obs, positive = "TRUE")
+  recall  <- sensitivity(data$pred, data$obs, postive = "TRUE")
+  f2_val <- ((1 + beta^2) * precision * recall) / (beta^2 * precision + recall)
+  names(f2_val) <- c("F2")
+  f2_val
+} 
+
 ##########################
 # Set up models
 ###########################
@@ -571,7 +579,8 @@ for (j in (1:length(testCases))){
                                number = folds,
                                repeats = reps,
                                search = 'grid',
-                               sampling = 'down')
+                               sampling = 'down',
+                               summaryFunction = f2)
   
   rfFit <- train(bound ~ .,
                  data = trainDat, 
@@ -582,7 +591,7 @@ for (j in (1:length(testCases))){
                  verbose = TRUE,
                  importance = TRUE, 
                  ntree = 1500,
-                 metric = "Kappa")
+                 metric = "F2")
   
   trainKappa = Kappa(rfFit$finalModel$confusion[1:2,1:2])$Unweighted[1]
   trainRecall = 1 - rfFit$finalModel$confusion[2,3]
@@ -631,7 +640,310 @@ featImp[, i] = featImp[, i] / length(testCases)
 # for(k in 1:25){cat(sum(trainingClustBinding[foldClusIDs[[k]]])); cat('\n')}
 
 
+#############
+# Model trained to maximize Kappa score
+#############
+# kappaBased_featImp = featImp[,2]
+# kappaBased_trainOut = trainOut[trainOut$final_mtry != 0, ]
+# kappaBased_testOut = testOut[row.names(testOut) %in% as.character(testCases),]
 
 
+kappaConfusion = kappaBased_trainOut[,4:7]
+apply(kappaConfusion, MARGIN = 2, FUN = mean)
+plot(density(apply(kappaConfusion, MARGIN = 1, FUN = sum)), main = 'Kappa trained - number sampled')
+kappaConfusion_normalized = kappaConfusion
+for(i in 1:nrow(kappaConfusion_normalized)){
+  kappaConfusion_normalized[i,] = kappaConfusion[i,] / sum(kappaConfusion[i,])
+}
+apply(kappaConfusion_normalized, MARGIN = 2, FUN = mean)
+
+kappaBased_trainOut$f2 = 0
+kappaBased_trainOut$prec = 0
+for(i in 1:nrow(kappaBased_trainOut)){
+  r = kappaBased_trainOut$recall[i]
+  p = kappaBased_trainOut$TP[i] / (kappaBased_trainOut$TP[i] + kappaBased_trainOut$FP[i])
+  kappaBased_trainOut$prec[i] = p
+  kappaBased_trainOut$f2[i] = ((1+(2^2)) * p * r) / (2^2 * p + r)
+}
+
+# Validation results
+kappaTestCon = apply(X = kappaBased_testOut, MARGIN = 2, FUN = sum)
+
+TP = kappaTestCon[[1]]
+TN = kappaTestCon[[2]]
+FP = kappaTestCon[[3]]
+FN = kappaTestCon[[4]]
+
+kappa_validationRecall = TP / ( TP + FN)
+kappa_validationPrec = TP / (TP + FP)
+kappa_validationF2 = ((1+(2^2)) * kappa_validationPrec * kappa_validationRecall) / (2^2 * kappa_validationPrec + kappa_validationRecall)
+randAcc = ((TN+FP)*(TN+FN) + (FN+TP)*(FP+TP)) / sum(c(TP + TN + FP + FN))^2
+testAcc = (TP+TN)/(TP+TN+FP+FN)
+kappa_validationKappa = (testAcc - randAcc) / (1 - randAcc)
+
+kappaBased_testOut$recall = kappaBased_testOut$TP / (kappaBased_testOut$TP + kappaBased_testOut$FN )
+kappaBased_testOut$prec = kappaBased_testOut$TP / (kappaBased_testOut$TP + kappaBased_testOut$FP )
+kappaBased_testOut$f2 = kappaBased_testOut$kappa = 0
+for ( i in 1:nrow(kappaBased_testOut)){
+  kappaBased_testOut$f2[i] = ((1+(2^2)) * kappaBased_testOut$prec[i] * kappaBased_testOut$recall[i]) / (2^2 * kappaBased_testOut$prec[i] + kappaBased_testOut$recall[i])
+  
+  TP = kappaBased_testOut$TP[i]
+  TN = kappaBased_testOut$TN[i]
+  FP = kappaBased_testOut$FP[i]
+  FN = kappaBased_testOut$FN[i]
+  
+  randAcc = ((TN+FP)*(TN+FN) + (FN+TP)*(FP+TP)) / sum(c(TP + TN + FP + FN))^2
+  testAcc = (TP+TN)/(TP+TN+FP+FN)
+  kappaBased_testOut$kappa[i] = (testAcc - randAcc) / (1 - randAcc)
+}
+kappaBased_testOut$f2[is.na(kappaBased_testOut$f2)] = 0
+
+kappaTestConNormed = kappaBased_testOut[,1:4]
+for(i in 1:nrow(kappaTestConNormed)){
+  kappaTestConNormed[i,] = kappaTestConNormed[i,] / sum(kappaTestConNormed[i,])
+}
+
+
+#############
+# Model trained to maximize F2 score
+#############
+# f2Based_featImp = featImp[,2]
+# f2Based_trainOut = trainOut[trainOut$final_mtry != 0, ]
+# f2Based_testOut = testOut[row.names(testOut) %in% as.character(testCases),]
+
+
+f2Confusion = f2Based_trainOut[,4:7]
+
+apply(X = f2Confusion, MARGIN = 2, FUN = mean)
+f2Confusion_norm = f2Confusion
+for(i in 1:nrow(f2Confusion_norm)){
+  f2Confusion_norm[i,] = f2Confusion[i,] / sum(f2Confusion[i,])
+}
+apply(f2Confusion_norm, MARGIN = 2, FUN = mean)
+
+# calculate f2 scores
+f2Based_trainOut$f2 = 0
+f2Based_trainOut$precision = 0
+for(i in 1:nrow(f2Based_trainOut)){
+  r = f2Based_trainOut$recall[i]
+  p = f2Based_trainOut$TP[i] / (f2Based_trainOut$TP[i] + f2Based_trainOut$FP[i])
+  f2Based_trainOut$precision[i] = p
+  f2Based_trainOut$f2[i] = ((1+(2^2)) * p * r) / (2^2 * p + r)
+}
+
+# Validation results
+f2TestCon = apply(X = f2Based_testOut, MARGIN = 2, FUN = sum)
+
+TP = f2TestCon[[1]]
+TN = f2TestCon[[2]]
+FP = f2TestCon[[3]]
+FN = f2TestCon[[4]]
+
+f2_validationRecall = TP / ( TP + FN)
+f2_validationPrec = TP / (TP + FP)
+f2_validationF2 = ((1+(2^2)) * f2_validationPrec * f2_validationRecall) / (2^2 * f2_validationPrec + f2_validationRecall)
+randAcc = ((TN+FP)*(TN+FN) + (FN+TP)*(FP+TP)) / sum(c(TP + TN + FP + FN))^2
+testAcc = (TP+TN)/(TP+TN+FP+FN)
+f2_validationKappa = (testAcc - randAcc) / (1 - randAcc)
+
+
+f2Based_testOut$recall = f2Based_testOut$TP / (f2Based_testOut$TP + f2Based_testOut$FN )
+f2Based_testOut$prec = f2Based_testOut$TP / (f2Based_testOut$TP + f2Based_testOut$FP )
+f2Based_testOut$f2 = f2Based_testOut$kappa = 0
+for ( i in 1:nrow(f2Based_testOut)){
+  f2Based_testOut$f2[i] = ((1+(2^2)) * f2Based_testOut$prec[i] * f2Based_testOut$recall[i]) / (2^2 * f2Based_testOut$prec[i] + f2Based_testOut$recall[i])
+  
+  TP = f2Based_testOut$TP[i]
+  TN = f2Based_testOut$TN[i]
+  FP = f2Based_testOut$FP[i]
+  FN = f2Based_testOut$FN[i]
+  
+  randAcc = ((TN+FP)*(TN+FN) + (FN+TP)*(FP+TP)) / sum(c(TP + TN + FP + FN))^2
+  testAcc = (TP+TN)/(TP+TN+FP+FN)
+  f2Based_testOut$kappa[i] = (testAcc - randAcc) / (1 - randAcc)
+}
+f2Based_testOut$f2[is.na(f2Based_testOut$f2)] = 0
+
+f2TestConNormed = f2Based_testOut[,1:4]
+for(i in 1:nrow(f2TestConNormed)){
+  f2TestConNormed[i,] = f2TestConNormed[i,] / sum(f2TestConNormed[i,])
+}
+
+
+
+
+
+
+
+
+# Plots
+
+# Binding site smapling
+plot(density(apply(f2Confusion, MARGIN = 1, FUN = sum)), main = 'Binding sites sampled across validations',
+     xlab = 'Number of binding sites sampled',
+     xlim = c(440, 500), ylim = c(0,0.06),
+     col = 'darkorange1', lwd =3)
+par(new = T)
+plot(density(apply(kappaConfusion, MARGIN = 1, FUN = sum)),
+     main = '', xlab = '', ylab ='', axes = F,
+     xlim = c(440, 500), ylim = c(0,0.06),
+     col = 'darkorchid1', lwd =3)
+legend(x='topright', lty = 1, lwd = 3, col = c('darkorange1', 'darkorchid1'), legend = c('Kappa trained', ' F2 trained'))
+
+# Training scores
+par(mfrow=c(1,2))
+boxplot(kappaBased_trainOut$kappa, kappaBased_trainOut$recall, kappaBased_trainOut$prec, kappaBased_trainOut$f2,
+        ylim = c(0.7, 1),
+        names = c('Kappa', 'Recall', 'Prec.', 'F2'),
+        main = 'Kappa-based training performance',
+        col = 'darkorange1')
+boxplot(f2Based_trainOut$kappa, f2Based_trainOut$recall, f2Based_trainOut$prec, f2Based_trainOut$f2,
+        ylim = c(0.7, 1), 
+        names = c('Kappa', 'Recall', 'Prec.', 'F2'),
+        main = 'F2-based training performance',
+        col = 'darkorchid1')
+
+# Validation performance by cluster
+par(mfrow=c(1,2))
+boxplot(kappaBased_testOut$kappa, kappaBased_testOut$recall, kappaBased_testOut$prec, kappaBased_testOut$f2,
+        ylim = c(0, 1),
+        names = c('Kappa', 'Recall', 'Prec.', 'F2'),
+        main = 'Kappa-based validation performance',
+        col = 'darkorange1')
+boxplot(f2Based_testOut$kappa, f2Based_testOut$recall, f2Based_testOut$prec, f2Based_testOut$f2,
+        ylim = c(0, 1), 
+        names = c('Kappa', 'Recall', 'Prec.', 'F2'),
+        main = 'F2-based validation performance',
+        col = 'darkorchid1')
+
+# Density distribution correlation matrices
+par(mfrow=c(2,2))
+plot(density(kappaTestConNormed$TN),
+     main = 'True Neg', 
+     xlab = '% of outcomes',
+     xlim = c(0,1),
+     col = 'darkorange1', lwd =3)
+plot(density(kappaTestConNormed$FP),
+     main = 'False Pos', 
+     xlab = '% of outcomes',
+     xlim = c(0,1),
+     col = 'darkorange1', lwd =3)
+plot(density(kappaTestConNormed$FN),
+     main = 'False Neg', 
+     xlab = '% of outcomes',
+     xlim = c(0,1),
+     col = 'darkorange1', lwd =3)
+plot(density(kappaTestConNormed$TP),
+     main = 'True Pos', 
+     xlab = '% of outcomes',
+     xlim = c(0,1),
+     col = 'darkorange1', lwd =3)
+
+par(mfrow=c(2,2))
+plot(density(f2TestConNormed$TN),
+     main = 'True Neg', 
+     xlab = '% of outcomes',
+     xlim = c(0,1),
+     col = 'darkorchid1', lwd =3)
+plot(density(f2TestConNormed$FP),
+     main = 'False Pos', 
+     xlab = '% of outcomes',
+     xlim = c(0,1),
+     col = 'darkorchid1', lwd =3)
+plot(density(f2TestConNormed$FN),
+     main = 'False Neg', 
+     xlab = '% of outcomes',
+     xlim = c(0,1),
+     col = 'darkorchid1', lwd =3)
+plot(density(f2TestConNormed$TP),
+     main = 'True Pos', 
+     xlab = '% of outcomes',
+     xlim = c(0,1),
+     col = 'darkorchid1', lwd =3)
+
+# train vs test
+par(mfrow=c(1,2))
+plot(kappaBased_trainOut$f2, kappaBased_testOut$f2,
+     main = 'Kappa-trained',
+     xlim = c(0.9,1), ylim = c(0,1),
+     xlab = 'Training F2 Score', ylab = 'Test F2 Score',
+     col = 'darkorange1', lwd =3, cex = 1.5)
+cor(kappaBased_trainOut$f2, kappaBased_testOut$f2)
+
+plot(f2Based_trainOut$f2, f2Based_testOut$f2,
+     main = 'F2-trained',
+     xlim = c(0.9,1), ylim = c(0,1),
+     xlab = 'Training F2 Score', ylab = 'Test F2 Score',
+     col = 'darkorchid1', lwd =3, cex = 1.5)
+cor(f2Based_trainOut$f2, f2Based_testOut$f2)
+
+# size vs test
+par(mfrow=c(1,2))
+plot(apply(kappaBased_testOut[,1:4], 1, sum), kappaBased_testOut$f2,
+     main = 'Kappa-trained',
+     ylim = c(0,1),
+     xlab = 'Number of binding sites in excluded (test) cluster', ylab = 'Test F2 Score',
+     col = 'darkorange1', lwd =3, cex = 1.5)
+plot(apply(f2Based_testOut[,1:4], 1, sum), f2Based_testOut$f2,
+     main = 'F2-trained',
+     ylim = c(0,1),
+     xlab = 'Number of binding sites in excluded (test) cluster', ylab = 'Test F2 Score',
+     col = 'darkorchid1', lwd =3, cex = 1.5)
+
+# mtry vs train
+par(mfrow=c(1,2))
+plot(kappaBased_trainOut$final_mtry, kappaBased_trainOut$f2,
+     main = 'Kappa-trained',
+     xlim = c(7,21),
+     ylim = c(0.85,1),
+     xlab = 'mtry used in final model', ylab = 'Train F2 Score',
+     col = 'darkorange1', lwd =3, cex = 1.5)
+par(new = T)
+plot(density(kappaBased_trainOut$final_mtry),
+     xlim = c(7,21), axes = F, xlab = '', ylab = '', main = '')
+legend(x = 'bottomright', legend = 'mtry density', col = 'black', lty = 1)
+
+plot(f2Based_trainOut$final_mtry, f2Based_trainOut$f2,
+     main = 'F2-trained',
+     xlim = c(7,21),
+     ylim = c(0.85,1),
+     xlab = 'mtry used in final model', ylab = 'Train F2 Score',
+     col = 'darkorchid1', lwd =3, cex = 1.5)
+par(new = T)
+plot(density(f2Based_trainOut$final_mtry),
+     xlim = c(7,21), axes = F, xlab = '', ylab = '', main = '')
+legend(x = 'bottomright', legend = 'mtry density', col = 'black', lty = 1)
+
+# mtry vs test
+par(mfrow=c(1,2))
+plot(kappaBased_trainOut$final_mtry, kappaBased_testOut$f2,
+     main = 'Kappa-trained',
+     xlim = c(7,21),
+     ylim = c(0,1),
+     xlab = 'mtry used in final model', ylab = 'Train F2 Score',
+     col = 'darkorange1', lwd =3, cex = 1.5)
+plot(f2Based_trainOut$final_mtry, f2Based_testOut$f2,
+     main = 'F2-trained',
+     xlim = c(7,21),
+     ylim = c(0,1),
+     xlab = 'mtry used in final model', ylab = 'Train F2 Score',
+     col = 'darkorchid1', lwd =3, cex = 1.5)
+
+# mtry vs mtry
+dev.off()
+plot(jitter(kappaBased_trainOut$final_mtry, 0.1), jitter(f2Based_trainOut$final_mtry, 0.1),
+     xlab = 'final mtry from kappa based model', ylab = 'final mtry from F2 based model',
+     xlim = c(7,21), ylim = c(7,21))
+cor(kappaBased_trainOut$final_mtry, f2Based_trainOut$final_mtry)
+
+# Feature importance
+plot(kappaBased_featImp, f2Based_featImp, xlab = 'Kappa trained feature importances', ylab = 'F2 trained feature importances', main = 'Feature importance (Mean Decrease in Gini)')
+abline(a = 0, b=1)
+
+plot(density(f2Based_featImp), xlab = 'Mean Decrease in Gini')
+
+par(mar=c(4,10,4,2))
+barplot(f2Based_featImp[order(f2Based_featImp, decreasing = T)][20:1], names.arg = row.names(featImp)[order(f2Based_featImp, decreasing = T)][20:1], 
+        horiz = T, xlab = 'Mean Decrease in Gini Impurity', las=1)
 
 
