@@ -272,34 +272,44 @@ setwd(homeDir)
 # }
 
 
-pullDiverseCases <- function(scaledData, startInds, thresh, boundTag){
+pullDiverseCases <- function(scaledData, startInds, thresh, prevSampled = NA){
   
-  #
-  allInds = inds # Temp, change in funct arguments
-  boundTag = ligandTag[inds]
-  #
-  
-  if (any(boundTag)){
-    startInds = allInds[boundTag]
+  if (any(is.na(prevSampled))) {
+    # if no inds being passed in that were sampled from the positive class
+    if (length(startInds) == 1) {
+      out = startInds
+    } else if (length(startInds) == 2) {
+      if (suppressMessages(distance(scaledFeats[startInds,])) >= thresh) {
+        out = startInds # Two binding sites are greater than the threshold distance from each other, keep both
+      } else{
+        out = sample(startInds, size = 1) # Two binding sites are within the threshold distance from each other, pick one at random
+      }
+      
+    } else {
+      cnter = 1
+      out = rep(0, length(startInds)) # Hold the set of diverse indices
+    }
+  } else{
+    # if inds are passed in from the positive class
+    
+    out = c(prevSampled, rep(0, length(startInds)))
+    cnter = length(prevSampled) + 1
+    
+    if (length(startInds) == 1) {
+      # One new neg site to compare to previously smapled positive sites
+      
+      distMat = suppressMessages(distance(x = rbind(scaledData[out[out != 0], ], scaledData[startInds, ]))) # Find all pairwise distances b/w binding sites in cluster
+      if (is.matrix(distMat)){ # if more than one previously sampled binding site
+        distMat = distMat[1:sum(out != 0), -1 * (1:sum(out != 0))] # Get the top n rows of the distance matrix dropping the first n columns, where n = the number of indices already sampled
+      }
+       if (!any(distMat < thresh)) {
+        out[cnter] = startInds
+      }
+    }
   }
   
-  if (length(startInds) == 1){
-    
-    out = startInds
-    
-  } else if (length(startInds) == 2){
-    
-    if(suppressMessages(distance(scaledFeats[startInds,])) >= thresh){
-      out = startInds # Two binding sites are greater than the threshold distance from each other, keep both
-    } else{
-      out = sample(startInds, size = 1) # Two binding sites are within the threshold distance from each other, pick one at random
-    }
-    
-  } else {
-    
-    cnter = 1
-    out = rep(0, length(startInds)) # Hold the set of diverse indices
-    
+
+  if (any(out == 0)){
     while( length(startInds) >= 2 ){
       
       out[cnter] = sample(startInds, size = 1) # Sample an index randomly
@@ -322,9 +332,9 @@ pullDiverseCases <- function(scaledData, startInds, thresh, boundTag){
       }
       
     }
-    
-    out = out[out != 0]
   }
+  
+  out = out[out != 0]
   return(out)
 }
 
@@ -349,20 +359,20 @@ sampleDiverseSitesByLig <- function(clusterIDs, testClust, featureSet, ligandTag
     negInds = inds[! ligandTag[inds]] # Indices of binding sites w/o ligand
     posInds = inds[ligandTag[inds]] # Indices of binding sites w/ ligand
     
-    if (length(negInds > 0)){
-      negInds = pullDiverseCases(scaledData = scaledFeatureSet, startInds = negInds, thresh = distThresh)
-    }
     if (length(posInds) > 0){
-      posInds = pullDiverseCases(scaledData = scaledFeatureSet, startInds = posInds, thresh = distThresh)
+      outInds = pullDiverseCases(scaledData = scaledFeatureSet, startInds = posInds, thresh = distThresh)
+    } else {
+      outInds = NA
     }
+    if (length(negInds > 0)){
+      outInds = pullDiverseCases(scaledData = scaledFeatureSet, startInds = negInds, thresh = distThresh, prevSampled = outInds)
+    }
+
+    dat[(j:(j+length(outInds) - 1)), (1:ncol(predFeats))] = predFeats[outInds, ] # set feature values for representative binding sites
+    dat$bound[(j:(j+length(outInds) - 1))] = ligandTag[outInds] # Set bound variable
+    dat$clus[(j:(j+length(outInds) - 1))] = uniClusts[i] # Set cluster ID
     
-    inds = c(negInds, posInds)
-    
-    dat[(j:(j+length(inds) - 1)), (1:ncol(predFeats))] = predFeats[inds, ] # set feature values for representative binding sites
-    dat$bound[(j:(j+length(inds) - 1))] = ligandTag[inds] # Set bound variable
-    dat$clus[(j:(j+length(inds) - 1))] = uniClusts[i] # Set cluster ID
-    
-    j = j + length(inds)
+    j = j + length(outInds)
   }
   dat = dat[-1*(j:nrow(dat)), ]
   dat$bound = as.factor(dat$bound)
@@ -377,7 +387,11 @@ f2 <- function (data, lev = NULL, model = NULL, beta = 2) {
   f2_val <- ((1 + beta^2) * precision * recall) / (beta^2 * precision + recall)
   names(f2_val) <- c("F2")
   f2_val
-} 
+}
+
+# f3 <- function(newBeta = 3, ...){
+#   return(f2(data, lev = NULL, model = NULL, beta = newBeta))
+# }
 
 ##########################
 # Set up models
@@ -1204,6 +1218,12 @@ hist(apply(lecSpec[fpLecs[ ! fpLecs %in% siaIDs], ], 1, sum), breaks = 12,
 folds = 5
 reps = 3
 
+default_mtry = round(sqrt(ncol(predFeats)), 0)
+default_ntree = 2000
+
+tune.grid = expand.grid(.mtry=default_mtry)
+
+
 set.seed(27)  
 
 # Loop through ligands with index i here
@@ -1287,18 +1307,17 @@ for (j in (1:length(testCases))){
                  data = trainDat, 
                  method = "rf", 
                  trControl = train.control,
-                 mtry = default_mtry,
+                 tuneGrid = tune.grid,
                  maximize = TRUE,
                  verbose = TRUE,
                  importance = TRUE, 
-                 ntree = 1500,
+                 ntree = default_ntree,
                  metric = "F2")
   
   trainKappa = Kappa(rfFit$finalModel$confusion[1:2,1:2])$Unweighted[1]
   trainRecall = 1 - rfFit$finalModel$confusion[2,3]
   trainAcc = (rfFit$finalModel$confusion[1,1] + rfFit$finalModel$confusion[2,2]) / sum(rfFit$finalModel$confusion)
-  best_mtry = unname(rfFit$bestTune)[,1]
-  
+
   trainTag = row.names(trainOut) == outClust
   trainOut$final_mtry[trainTag] = best_mtry
   trainOut$kappa[trainTag] = trainKappa
@@ -1310,7 +1329,7 @@ for (j in (1:length(testCases))){
   
   featImp[, j] = rfFit$finalModel$importance[,4]
   
-  cat("train:\n\tRecall = ", trainRecall, "\n\tKappa = ", trainKappa,"\n\tAccuracy = ", trainAcc, '\n\tmtry = ', best_mtry, '\n')
+  cat("train:\n\tRecall = ", trainRecall, "\n\tKappa = ", trainKappa,"\n\tAccuracy = ", trainAcc, '\n')
   
   testDat = predFeats[bsResiDat$seqClust50 == outClust,]
   testObs = factor(lig[bsResiDat$seqClust50 == outClust], levels = levels(trainDat$bound))
