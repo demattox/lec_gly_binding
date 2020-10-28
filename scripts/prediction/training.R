@@ -8,6 +8,7 @@ library(caret)
 library(MLmetrics)
 library(philentropy)
 library(vcd)
+library(PRROC)
 
 
 # indicate home dir for projet
@@ -182,8 +183,106 @@ setwd(homeDir)
 # }
 
 
+# 
+# pullDiverseCases <- function(scaledData, startInds, thresh){
+#   if (length(startInds) == 1){
+#     
+#     out = startInds
+#     
+#   } else if (length(startInds) == 2){
+#     
+#     if(suppressMessages(distance(scaledFeats[startInds,])) >= thresh){
+#       out = startInds # Two binding sites are greater than the threshold distance from each other, keep both
+#     } else{
+#       out = sample(startInds, size = 1) # Two binding sites are within the threshold distance from each other, pick one at random
+#     }
+#     
+#   } else {
+#     
+#     cnter = 1
+#     out = rep(0, length(startInds)) # Hold the set of diverse indices
+#     
+#     while( length(startInds) >= 2 ){
+#       
+#       out[cnter] = sample(startInds, size = 1) # Sample an index randomly
+#       cnter = cnter + 1 # increase the sample count
+#       
+#       startInds = startInds[! startInds %in% out] # Drop sampled indices from vector of remaining indices
+#       
+#       distMat = suppressMessages(distance(x = rbind(scaledData[out[out != 0],], scaledData[startInds,]))) # Find all pairwise distances b/w binding sites in cluster
+#       distMat = distMat[1:sum(out != 0),-1*(1:sum(out != 0))] # Get the top n rows of the distance matrix dropping the first n columns, where n = the number of indices already sampled
+#       
+#       if (is.matrix(distMat)){
+#         distMat = apply(X = distMat, MARGIN = 2, FUN = min) # For each of the remaining binding sites, take the minimum pairwise distance to any sampled binding site
+#       }
+#       
+#       dropInds = startInds[distMat < thresh ]
+#       startInds = startInds[! startInds %in% dropInds]
+#       
+#       if(length(startInds) == 1){
+#         out[cnter] = startInds
+#       }
+#       
+#     }
+# 
+#     out = out[out != 0]
+#   }
+#   return(out)
+# }
+# 
+# sampleDiverseSitesByLig <- function(clusterIDs, testClust, featureSet, ligandTag, distThresh, scaledFeatureSet = featureSet){
+#   # Sample diverse binding sites with ligand and without ligand [ligandTag] for each cluster in clusterIDs, except the cluster held out for LO(C)O validation indicated by testClust
+#   # Samples binding sites from the specified feature set, calculates Euclidean distance b/w binding sites from scaledFeatureSet
+#   # Binding sites sampled randomly if Euc. distance to any previously sampled binding sites is greater than distThresh (median pariwise distance between all binding sites)
+#   
+#     # Drop the excluded cluster
+#     uniClusts = unique(clusterIDs)
+#     uniClusts = uniClusts[ ! uniClusts %in% testClust]
+# 
+#     dat = as.data.frame(matrix(0, nrow = nrow(featureSet), ncol = ncol(featureSet)))
+#     colnames(dat) = colnames(predFeats)
+#     dat$bound = F
+#     dat$clus = 0
+#     
+#     j = 1 # index for writing to returned dataframe (dat)
+# 
+#     for (i in 1:length(uniClusts)) {
+#       inds =  (1:nrow(featureSet))[clusterIDs == uniClusts[i]] # all the row indices matching a specific cluster 
+#       negInds = inds[! ligandTag[inds]] # Indices of binding sites w/o ligand
+#       posInds = inds[ligandTag[inds]] # Indices of binding sites w/ ligand
+#       
+#       if (length(negInds > 0)){
+#         negInds = pullDiverseCases(scaledData = scaledFeatureSet, startInds = negInds, thresh = distThresh)
+#       }
+#       if (length(posInds) > 0){
+#         posInds = pullDiverseCases(scaledData = scaledFeatureSet, startInds = posInds, thresh = distThresh)
+#       }
+#       
+#       inds = c(negInds, posInds)
+#       
+#       dat[(j:(j+length(inds) - 1)), (1:ncol(predFeats))] = predFeats[inds, ] # set feature values for representative binding sites
+#       dat$bound[(j:(j+length(inds) - 1))] = ligandTag[inds] # Set bound variable
+#       dat$clus[(j:(j+length(inds) - 1))] = uniClusts[i] # Set cluster ID
+# 
+#       j = j + length(inds)
+#     }
+#     dat = dat[-1*(j:nrow(dat)), ]
+#     dat$bound = as.factor(dat$bound)
+#     return(dat)
+# }
 
-pullDiverseCases <- function(scaledData, startInds, thresh){
+
+pullDiverseCases <- function(scaledData, startInds, thresh, boundTag){
+  
+  #
+  allInds = inds # Temp, change in funct arguments
+  boundTag = ligandTag[inds]
+  #
+  
+  if (any(boundTag)){
+    startInds = allInds[boundTag]
+  }
+  
   if (length(startInds) == 1){
     
     out = startInds
@@ -223,7 +322,7 @@ pullDiverseCases <- function(scaledData, startInds, thresh){
       }
       
     }
-
+    
     out = out[out != 0]
   }
   return(out)
@@ -234,41 +333,43 @@ sampleDiverseSitesByLig <- function(clusterIDs, testClust, featureSet, ligandTag
   # Samples binding sites from the specified feature set, calculates Euclidean distance b/w binding sites from scaledFeatureSet
   # Binding sites sampled randomly if Euc. distance to any previously sampled binding sites is greater than distThresh (median pariwise distance between all binding sites)
   
-    # Drop the excluded cluster
-    uniClusts = unique(clusterIDs)
-    uniClusts = uniClusts[ ! uniClusts %in% testClust]
-
-    dat = as.data.frame(matrix(0, nrow = nrow(featureSet), ncol = ncol(featureSet)))
-    colnames(dat) = colnames(predFeats)
-    dat$bound = F
-    dat$clus = 0
+  # Drop the excluded cluster
+  uniClusts = unique(clusterIDs)
+  uniClusts = uniClusts[ ! uniClusts %in% testClust]
+  
+  dat = as.data.frame(matrix(0, nrow = nrow(featureSet), ncol = ncol(featureSet)))
+  colnames(dat) = colnames(predFeats)
+  dat$bound = F
+  dat$clus = 0
+  
+  j = 1 # index for writing to returned dataframe (dat)
+  
+  for (i in 1:length(uniClusts)) {
+    inds =  (1:nrow(featureSet))[clusterIDs == uniClusts[i]] # all the row indices matching a specific cluster 
+    negInds = inds[! ligandTag[inds]] # Indices of binding sites w/o ligand
+    posInds = inds[ligandTag[inds]] # Indices of binding sites w/ ligand
     
-    j = 1 # index for writing to returned dataframe (dat)
-
-    for (i in 1:length(uniClusts)) {
-      inds =  (1:nrow(featureSet))[clusterIDs == uniClusts[i]] # all the row indices matching a specific cluster 
-      negInds = inds[! ligandTag[inds]] # Indices of binding sites w/o ligand
-      posInds = inds[ligandTag[inds]] # Indices of binding sites w/ ligand
-      
-      if (length(negInds > 0)){
-        negInds = pullDiverseCases(scaledData = scaledFeatureSet, startInds = negInds, thresh = distThresh)
-      }
-      if (length(posInds) > 0){
-        posInds = pullDiverseCases(scaledData = scaledFeatureSet, startInds = posInds, thresh = distThresh)
-      }
-      
-      inds = c(negInds, posInds)
-      
-      dat[(j:(j+length(inds) - 1)), (1:ncol(predFeats))] = predFeats[inds, ] # set feature values for representative binding sites
-      dat$bound[(j:(j+length(inds) - 1))] = ligandTag[inds] # Set bound variable
-      dat$clus[(j:(j+length(inds) - 1))] = uniClusts[i] # Set cluster ID
-
-      j = j + length(inds)
+    if (length(negInds > 0)){
+      negInds = pullDiverseCases(scaledData = scaledFeatureSet, startInds = negInds, thresh = distThresh)
     }
-    dat = dat[-1*(j:nrow(dat)), ]
-    dat$bound = as.factor(dat$bound)
-    return(dat)
+    if (length(posInds) > 0){
+      posInds = pullDiverseCases(scaledData = scaledFeatureSet, startInds = posInds, thresh = distThresh)
+    }
+    
+    inds = c(negInds, posInds)
+    
+    dat[(j:(j+length(inds) - 1)), (1:ncol(predFeats))] = predFeats[inds, ] # set feature values for representative binding sites
+    dat$bound[(j:(j+length(inds) - 1))] = ligandTag[inds] # Set bound variable
+    dat$clus[(j:(j+length(inds) - 1))] = uniClusts[i] # Set cluster ID
+    
+    j = j + length(inds)
+  }
+  dat = dat[-1*(j:nrow(dat)), ]
+  dat$bound = as.factor(dat$bound)
+  return(dat)
 }
+
+
 
 f2 <- function (data, lev = NULL, model = NULL, beta = 2) {
   precision <- posPredValue(data$pred, data$obs, positive = "TRUE")
@@ -505,7 +606,13 @@ folds = 5
 reps = 3
 tune.grid <- expand.grid(.mtry= c(-7:7) + default_mtry)
 
-set.seed(27)
+set.seed(27)  
+
+# Loop through ligands with index i here
+
+i=2 #sialic acid
+
+lig = ligTags[,i]
 
 # Define dataframes to hold model results
 trainOut = as.data.frame(matrix(0, nrow = length(clusLst), ncol = 7))
@@ -516,15 +623,9 @@ testOut = as.data.frame(matrix(0, nrow = length(clusLst), ncol = 4))
 row.names(testOut) = clusLst
 colnames(testOut) = c('TP', 'TN', 'FP', 'FN')
 
-featImp = as.data.frame(matrix(0, nrow = ncol(predFeats), ncol = ncol(ligTags)))
+featImp = as.data.frame(matrix(0, nrow = ncol(predFeats), ncol = length(clusLst)))
 row.names(featImp) = colnames(predFeats)
-colnames(featImp) = colnames(ligTags)
-
-# Loop through ligands with index i here
-
-i=2 #sialic acid
-
-lig = ligTags[,i]
+colnames(featImp) = clusLst
 
 clusBinding = rep(F, length(clusLst)) # Whether a cluster has any positve examples of binding with the current ligand/ligand class
 for (j in (1:length(clusLst))){
@@ -533,6 +634,9 @@ for (j in (1:length(clusLst))){
 # sum(clusBinding)
 
 testCases = clusLst[clusBinding] # Clusters with any binding occurences to iterativelty withold for validation in LO(C)O validation
+
+predicitions = as.list(rep('', length(row.names(bsResiDat)[bsResiDat$seqClust50 %in% testCases])))
+names(predicitions) = row.names(bsResiDat)[bsResiDat$seqClust50 %in% testCases]
 
 for (j in (1:length(testCases))){
   
@@ -607,21 +711,26 @@ for (j in (1:length(testCases))){
   trainOut$FP[trainTag] = rfFit$finalModel$confusion[1,2]
   trainOut$FN[trainTag] = rfFit$finalModel$confusion[2,1]
   
-  featImp[, i] = featImp[, i] + rfFit$finalModel$importance[,4]
+  featImp[, j] = rfFit$finalModel$importance[,4]
   
   cat("train:\n\tRecall = ", trainRecall, "\n\tKappa = ", trainKappa,"\n\tAccuracy = ", trainAcc, '\n\tmtry = ', best_mtry, '\n')
   
   testDat = predFeats[bsResiDat$seqClust50 == outClust,]
   testObs = factor(lig[bsResiDat$seqClust50 == outClust], levels = levels(trainDat$bound))
   
-  validate = predict(rfFit$finalModel, newdata = testDat)
+  validate = predict(rfFit$finalModel, newdata = testDat, type = 'prob')
   
-  TP = sum(validate == "TRUE" & testObs == "TRUE")
-  TN = sum(validate == "FALSE" & testObs == "FALSE")
-  FN = sum(validate == "FALSE" & testObs == "TRUE")
-  FP = sum(validate == "TRUE" & testObs == "FALSE")
+  for(m in 1:nrow(validate)) {
+    bsName = row.names(validate)[m]
+    predicitions[[bsName]] = validate[bsName,2]
+  }
   
-  randAcc = ((TN+FP)*(TN+FN) + (FN+TP)*(FP+TP)) / length(validate)^2
+  TP = sum(validate[,2] >= 0.5 & testObs == "TRUE")
+  TN = sum(validate[,2] < 0.5 & testObs == "FALSE")
+  FN = sum(validate[,2] < 0.5 & testObs == "TRUE")
+  FP = sum(validate[,2] >= 0.5 & testObs == "FALSE")
+  
+  randAcc = ((TN+FP)*(TN+FN) + (FN+TP)*(FP+TP)) / nrow(validate)^2
   testAcc = (TP+TN)/(TP+TN+FP+FN)
   testKappa = (testAcc - randAcc) / (1 - randAcc)
   testRecall = TP / (TP + FN)
@@ -635,7 +744,7 @@ for (j in (1:length(testCases))){
   cat("test:\n\tRecall = ", testRecall, "\n\tKappa = ", testKappa,"\n\tAccuracy = ", testAcc, '\n__________________\n\n')
 }
 
-featImp[, i] = featImp[, i] / length(testCases)
+# featImp[, i] = featImp[, i] / length(testCases)
 
 # for(k in 1:25){cat(sum(trainingClustBinding[foldClusIDs[[k]]])); cat('\n')}
 
@@ -771,13 +880,9 @@ for(i in 1:nrow(f2TestConNormed)){
 
 
 
-
-
-
-
-
+################
 # Plots
-
+################
 # Binding site smapling
 plot(density(apply(f2Confusion, MARGIN = 1, FUN = sum)), main = 'Binding sites sampled across validations',
      xlab = 'Number of binding sites sampled',
@@ -947,3 +1052,291 @@ barplot(f2Based_featImp[order(f2Based_featImp, decreasing = T)][20:1], names.arg
         horiz = T, xlab = 'Mean Decrease in Gini Impurity', las=1)
 
 
+################
+# Get individual labels (AND probabilities)
+################
+outcomes = as.data.frame(matrix('', nrow = length(predicitions), ncol = 2))
+row.names(outcomes) = names(predicitions)
+colnames(outcomes) = c("Obs", "Pred")
+
+outcomes$Obs = ligTags[row.names(outcomes), 2]
+outcomes$Pred = as.numeric(predicitions[row.names(outcomes)])
+
+# test = runif(n = nrow(outcomes), min = 0, max = 1)
+
+sum(outcomes$Pred >= 0.5 & outcomes$Obs == T)
+sum(testOut$TP)
+
+tp = sum(outcomes$Pred >= 0.5 & outcomes$Obs == T)
+fp = sum(outcomes$Pred >= 0.5 & outcomes$Obs == F)
+fn = sum(outcomes$Pred < 0.5 & outcomes$Obs == T)
+
+P =  tp / (tp + fp)
+R = tp / (tp + fn)
+
+
+pr = pr.curve(outcomes$Pred[outcomes$Obs == T], outcomes$Pred[outcomes$Obs == F], curve= T, rand.compute = T)
+
+plot(pr$curve[,1:2], type = 'l', lwd = 3, col = 'darkorchid1',
+     xlim = c(0,1), ylim = c(0,1),
+     xlab = 'Recall', ylab = 'Precision', main = paste('PR Curve\nAUC = ', as.character(round(pr$auc.integral, digits = 5)), sep = ''))
+abline(h = pr$rand$auc.integral, lty = 1, lwd = 2)
+lines(x = c(R,R), y = c(-1,P), lty = 2)
+lines(x = c(-1,R), y = c(P,P), lty = 2)
+points(R,P, pch = 19)
+
+################
+# Investigate False Positives
+################
+
+lecIDs = unique(bsResiDat$uniparc)
+
+iupacLigCnt = rep(0, length(lecIDs))
+
+for (i in 1:length(lecIDs)){
+  id = lecIDs[i]
+  iupacLigCnt[i] = length(unique(bsResiDat$iupac[bsResiDat$uniparc == id]))
+}
+
+plot(density(iupacLigCnt), xlab = 'Number of different IUPAC ligands per UniProt ID', main = 'Density distribution of lectin promiscuity')
+
+# Get ligand tags again
+uniLigs = unique(bsResiDat$iupac)
+
+parenCnt = bracCnt = manCnt = neuCnt = bracCnt = rep(0,length(uniLigs))
+for (i in 1:length(uniLigs)){
+  lig = uniLigs[i]
+  parenCnt[i] = lengths(regmatches(lig, gregexpr("\\(", lig)))
+  bracCnt[i] = lengths(regmatches(lig, gregexpr("\\[", lig)))
+  manCnt[i] = lengths(regmatches(lig, gregexpr("Man", lig)))
+  neuCnt[i] = lengths(regmatches(lig, gregexpr("NeuAc", lig)))
+}
+
+mTag = parenCnt == 0 & bracCnt == 0 # Monosaccharides
+dTag = parenCnt == 1 & bracCnt == 0 # Disaccharides
+tTag = (parenCnt == 2 & bracCnt == 0) | (parenCnt == 2 & bracCnt == 1) # Trisaccharides
+qTag = (parenCnt == 3 & bracCnt == 0) | (parenCnt == 3 & bracCnt == 1) | (parenCnt == 1 & bracCnt == 2) # Tetrasaccharides
+pTag = !(mTag | dTag | tTag | qTag) # 5+ sugars
+bTag = bracCnt >= 1 # Branched glycans
+
+manTag = manCnt > 3 # High mannose
+uniLigs[manTag]
+neuTag = neuCnt >= 1 # Has sialic acid
+uniLigs[neuTag]
+fucTag = grepl('^Fuc',uniLigs) # Has a terminal fucose
+uniLigs[fucTag]
+
+# Look at lectin specificity
+lecSpec = as.data.frame(matrix(nrow = length(lecIDs), ncol = length(uniLigs)))
+row.names(lecSpec) = lecIDs
+colnames(lecSpec) = uniLigs
+for (i in 1:length(lecIDs)){
+  lecSpec[i,] = uniLigs %in% unique((bsResiDat$iupac[bsResiDat$uniparc == lecIDs[i]]))
+}
+
+hist(apply(lecSpec, 1, sum), xlim = c(0,15), breaks = 15,
+     main = 'Count of unique bound ligands per lectin', xlab = 'Number of unique glycans bound',
+     col = 'grey50')
+sum(apply(lecSpec, 1, sum) == 1) / nrow(lecSpec)
+
+structCnt = rep(0,length(lecIDs))
+for(i in 1:length(lecIDs)){
+  structCnt[i] = length(unique(bsResiDat$pdb[bsResiDat$uniparc == lecIDs[i]]))
+}
+
+plot(structCnt, apply(lecSpec, 1, sum),
+     xlab = 'Number of structures avilable for a lectin', ylab = 'Number of observed unique ligands', main = 'Number of Ligands per Lectin vs. Number of Stuctures per Lectin',
+     ylim = c(0,15),
+     pch = 19, col = alpha('firebrick1',0.2))
+abline(a = 0, b=1)
+
+plot(density( (apply(lecSpec, 1, sum) / structCnt) ))
+sum((apply(lecSpec, 1, sum) / structCnt) == 1)
+
+all(row.names(lecSpec)[apply(lecSpec[,neuTag], 1, any)] == unique(bsResiDat$uniparc[bsResiDat$iupac %in% uniLigs[neuTag]])) # confirming ligTags match
+
+siaIDs = unique(bsResiDat$uniparc[bsResiDat$iupac %in% uniLigs[neuTag]])
+
+hist(apply(lecSpec[siaIDs,], 1, sum), breaks = 12,
+     xlim = c(0,12),
+     main = 'Count of unique bound ligands per sialic-acid-binding lectin', xlab = 'Number of unique glycans bound',
+     col = 'grey50')
+plot(structCnt[lecIDs %in% siaIDs], apply(lecSpec[siaIDs,], 1, sum),
+     xlab = 'Number of structures avilable for a lectin', ylab = 'Number of observed unique ligands', main = 'Number of Ligands per Lectin vs. Number of Stuctures per Lectin\nSialic Acid Binding Lectins',
+     ylim = c(0,15),
+     pch = 19, col = alpha('firebrick1',0.2))
+abline(a = 0, b=1)
+
+
+sum(apply(lecSpec[siaIDs,!neuTag], 1, sum) != 0)
+hist(apply(lecSpec[siaIDs,!neuTag], 1, sum), breaks = 12,
+     xlim = c(0,12),
+     main = 'Count of unique, bound, non-sialic-acid ligands per sialic-acid-binding lectin', xlab = 'Number of unique, non-sialic-acid glycans bound',
+     col = 'grey50')
+
+otherNonNeuLigs = apply(lecSpec[siaIDs,!neuTag], 2, sum)
+otherNonNeuLigs = otherNonNeuLigs[otherNonNeuLigs != 0]
+otherNonNeuLigs = otherNonNeuLigs[order(otherNonNeuLigs, decreasing = T)]
+
+fpBS = row.names(outcomes)[outcomes$Pred >= 0.5 & outcomes$Obs == F] # Binding sites that ended up as false positives
+fpLecs = unique(bsResiDat$uniparc[row.names(bsResiDat) %in% fpBS])
+length(fpLecs)
+
+sum(fpLecs %in% siaIDs)
+
+hist(apply(lecSpec[fpLecs[fpLecs %in% siaIDs], !neuTag], 1, sum), breaks = 12,
+     xlim = c(0,12),
+     main = 'Count of unique, bound, non-sialic-acid ligands per FP sialic-acid-binding lectin', xlab = 'Number of unique, non-sialic-acid glycans bound',
+     col = 'grey50')
+
+hist(apply(lecSpec[fpLecs[ ! fpLecs %in% siaIDs], ], 1, sum), breaks = 12,
+     xlim = c(0,12),
+     main = 'Count of unique, bound ligands per other FP lectin', xlab = 'Number of unique glycans bound',
+     col = 'grey50')
+
+#########################
+# 4th pass prediction - 5x CV training from sampling + LO(C)O validation
+# Revamped sampling to limit similar negative examples
+# Train with beta = [2,3,4]
+# Lockdown mtry @ 14 (sqrt(feature count))
+#########################
+
+folds = 5
+reps = 3
+
+set.seed(27)  
+
+# Loop through ligands with index i here
+
+i=2 #sialic acid
+
+lig = ligTags[,i]
+
+# Define dataframes to hold model results
+trainOut = as.data.frame(matrix(0, nrow = length(clusLst), ncol = 7))
+row.names(trainOut) = clusLst
+colnames(trainOut) = c('final_mtry', 'kappa', 'recall', 'TP', 'TN', 'FP', 'FN')
+
+testOut = as.data.frame(matrix(0, nrow = length(clusLst), ncol = 4))
+row.names(testOut) = clusLst
+colnames(testOut) = c('TP', 'TN', 'FP', 'FN')
+
+featImp = as.data.frame(matrix(0, nrow = ncol(predFeats), ncol = length(clusLst)))
+row.names(featImp) = colnames(predFeats)
+colnames(featImp) = clusLst
+
+clusBinding = rep(F, length(clusLst)) # Whether a cluster has any positve examples of binding with the current ligand/ligand class
+for (j in (1:length(clusLst))){
+  clusBinding[j] = any(lig[bsResiDat$seqClust50 == clusLst[j]])
+}
+# sum(clusBinding)
+
+testCases = clusLst[clusBinding] # Clusters with any binding occurences to iterativelty withold for validation in LO(C)O validation
+
+predicitions = as.list(rep('', length(row.names(bsResiDat)[bsResiDat$seqClust50 %in% testCases])))
+names(predicitions) = row.names(bsResiDat)[bsResiDat$seqClust50 %in% testCases]
+
+for (j in (1:length(testCases))){
+  
+  outClust = testCases[j]
+  cat("testing on clust #", outClust, '\n')
+  
+  trainingClusts = clusLst[! clusLst == outClust]
+  trainingClustBinding = clusBinding[! clusLst == outClust]
+  
+  foldClusIDs = createMultiFolds(y = trainingClustBinding, k = folds, times = reps)
+  
+  repDatSampCnt = rep(0, reps)
+  for (m in 1:reps){
+    sampDat = sampleDiverseSitesByLig(clusterIDs = bsResiDat$seqClust50, 
+                                      testClust = outClust,
+                                      featureSet = predFeats, 
+                                      ligandTag = lig, 
+                                      distThresh = medPairwiseDist, 
+                                      scaledFeatureSet = scaledFeats)
+    
+    repDatSampCnt[m] = nrow(sampDat)
+    if (m == 1) {
+      trainDat = sampDat
+    } else{
+      trainDat = rbind(trainDat, sampDat)
+    }
+    
+    
+    for(n in 1:folds){
+      foldInd = ((m - 1) * folds) + n
+      if (m == 1){
+        foldClusIDs[[foldInd]] = (1:nrow(sampDat))[sampDat$clus %in% trainingClusts[foldClusIDs[[foldInd]]]]
+      } else {
+        foldClusIDs[[foldInd]] = as.integer(repDatSampCnt[m-1] + (1:nrow(sampDat))[sampDat$clus %in% trainingClusts[foldClusIDs[[foldInd]]]])
+      }
+      
+    }
+  }
+  
+  trainDat$clus <- NULL
+  
+  train.control = trainControl(index = foldClusIDs,
+                               method = 'repeatedcv', 
+                               number = folds,
+                               repeats = reps,
+                               sampling = 'down',
+                               summaryFunction = f2)
+  
+  rfFit <- train(bound ~ .,
+                 data = trainDat, 
+                 method = "rf", 
+                 trControl = train.control,
+                 mtry = default_mtry,
+                 maximize = TRUE,
+                 verbose = TRUE,
+                 importance = TRUE, 
+                 ntree = 1500,
+                 metric = "F2")
+  
+  trainKappa = Kappa(rfFit$finalModel$confusion[1:2,1:2])$Unweighted[1]
+  trainRecall = 1 - rfFit$finalModel$confusion[2,3]
+  trainAcc = (rfFit$finalModel$confusion[1,1] + rfFit$finalModel$confusion[2,2]) / sum(rfFit$finalModel$confusion)
+  best_mtry = unname(rfFit$bestTune)[,1]
+  
+  trainTag = row.names(trainOut) == outClust
+  trainOut$final_mtry[trainTag] = best_mtry
+  trainOut$kappa[trainTag] = trainKappa
+  trainOut$recall[trainTag] = trainRecall
+  trainOut$TP[trainTag] = rfFit$finalModel$confusion[2,2]
+  trainOut$TN[trainTag] = rfFit$finalModel$confusion[1,1]
+  trainOut$FP[trainTag] = rfFit$finalModel$confusion[1,2]
+  trainOut$FN[trainTag] = rfFit$finalModel$confusion[2,1]
+  
+  featImp[, j] = rfFit$finalModel$importance[,4]
+  
+  cat("train:\n\tRecall = ", trainRecall, "\n\tKappa = ", trainKappa,"\n\tAccuracy = ", trainAcc, '\n\tmtry = ', best_mtry, '\n')
+  
+  testDat = predFeats[bsResiDat$seqClust50 == outClust,]
+  testObs = factor(lig[bsResiDat$seqClust50 == outClust], levels = levels(trainDat$bound))
+  
+  validate = predict(rfFit$finalModel, newdata = testDat, type = 'prob')
+  
+  for(m in 1:nrow(validate)) {
+    bsName = row.names(validate)[m]
+    predicitions[[bsName]] = validate[bsName,2]
+  }
+  
+  TP = sum(validate[,2] >= 0.5 & testObs == "TRUE")
+  TN = sum(validate[,2] < 0.5 & testObs == "FALSE")
+  FN = sum(validate[,2] < 0.5 & testObs == "TRUE")
+  FP = sum(validate[,2] >= 0.5 & testObs == "FALSE")
+  
+  randAcc = ((TN+FP)*(TN+FN) + (FN+TP)*(FP+TP)) / nrow(validate)^2
+  testAcc = (TP+TN)/(TP+TN+FP+FN)
+  testKappa = (testAcc - randAcc) / (1 - randAcc)
+  testRecall = TP / (TP + FN)
+  
+  testTag = row.names(testOut) == outClust
+  testOut$TP[testTag] = TP
+  testOut$TN[testTag] = TN
+  testOut$FN[testTag] = FN
+  testOut$FP[testTag] = FP
+  
+  cat("test:\n\tRecall = ", testRecall, "\n\tKappa = ", testKappa,"\n\tAccuracy = ", testAcc, '\n__________________\n\n')
+}
