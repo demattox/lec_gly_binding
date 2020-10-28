@@ -389,9 +389,18 @@ f2 <- function (data, lev = NULL, model = NULL, beta = 2) {
   f2_val
 }
 
-# f3 <- function(newBeta = 3, ...){
-#   return(f2(data, lev = NULL, model = NULL, beta = newBeta))
-# }
+f3 <- function (data, lev = NULL, model = NULL, beta = 3) {
+  precision <- posPredValue(data$pred, data$obs, positive = "TRUE")
+  recall  <- sensitivity(data$pred, data$obs, postive = "TRUE")
+  f3_val <- ((1 + beta^2) * precision * recall) / (beta^2 * precision + recall)
+  names(f3_val) <- c("F3")
+  f3_val
+}
+
+
+pCnt <- function(x){
+  return(x/sum(x))
+}
 
 ##########################
 # Set up models
@@ -1233,17 +1242,13 @@ i=2 #sialic acid
 lig = ligTags[,i]
 
 # Define dataframes to hold model results
-trainOut = as.data.frame(matrix(0, nrow = length(clusLst), ncol = 7))
+trainOut = as.data.frame(matrix(0, nrow = length(clusLst), ncol = 6))
 row.names(trainOut) = clusLst
-colnames(trainOut) = c('final_mtry', 'kappa', 'recall', 'TP', 'TN', 'FP', 'FN')
+colnames(trainOut) = c('kappa', 'recall', 'TP', 'TN', 'FP', 'FN')
 
 testOut = as.data.frame(matrix(0, nrow = length(clusLst), ncol = 4))
 row.names(testOut) = clusLst
 colnames(testOut) = c('TP', 'TN', 'FP', 'FN')
-
-featImp = as.data.frame(matrix(0, nrow = ncol(predFeats), ncol = length(clusLst)))
-row.names(featImp) = colnames(predFeats)
-colnames(featImp) = clusLst
 
 clusBinding = rep(F, length(clusLst)) # Whether a cluster has any positve examples of binding with the current ligand/ligand class
 for (j in (1:length(clusLst))){
@@ -1255,6 +1260,10 @@ testCases = clusLst[clusBinding] # Clusters with any binding occurences to itera
 
 predicitions = as.list(rep('', length(row.names(bsResiDat)[bsResiDat$seqClust50 %in% testCases])))
 names(predicitions) = row.names(bsResiDat)[bsResiDat$seqClust50 %in% testCases]
+
+featImp = as.data.frame(matrix(0, nrow = ncol(predFeats), ncol = length(testCases)))
+row.names(featImp) = colnames(predFeats)
+colnames(featImp) = testCases
 
 for (j in (1:length(testCases))){
   
@@ -1301,7 +1310,7 @@ for (j in (1:length(testCases))){
                                number = folds,
                                repeats = reps,
                                sampling = 'down',
-                               summaryFunction = f2)
+                               summaryFunction = f3)
   
   rfFit <- train(bound ~ .,
                  data = trainDat, 
@@ -1312,14 +1321,13 @@ for (j in (1:length(testCases))){
                  verbose = TRUE,
                  importance = TRUE, 
                  ntree = default_ntree,
-                 metric = "F2")
+                 metric = "F3")
   
   trainKappa = Kappa(rfFit$finalModel$confusion[1:2,1:2])$Unweighted[1]
   trainRecall = 1 - rfFit$finalModel$confusion[2,3]
   trainAcc = (rfFit$finalModel$confusion[1,1] + rfFit$finalModel$confusion[2,2]) / sum(rfFit$finalModel$confusion)
 
   trainTag = row.names(trainOut) == outClust
-  trainOut$final_mtry[trainTag] = best_mtry
   trainOut$kappa[trainTag] = trainKappa
   trainOut$recall[trainTag] = trainRecall
   trainOut$TP[trainTag] = rfFit$finalModel$confusion[2,2]
@@ -1359,3 +1367,41 @@ for (j in (1:length(testCases))){
   
   cat("test:\n\tRecall = ", testRecall, "\n\tKappa = ", testKappa,"\n\tAccuracy = ", testAcc, '\n__________________\n\n')
 }
+
+# newf2_train = trainOut[as.character(testCases),]
+# newf2_test = testOut[as.character(testCases),]
+# newf2_feats = featImp[,as.character(testCases)]
+# newf2_preds = predicitions
+
+apply(newf2_train[,3:6], 2, mean)
+apply(apply(newf2_train[,3:6], 1, pCnt), 1, mean)
+
+newf2_train$f2 = 0
+newf2_train$prec = 0
+for(i in 1:nrow(f2Based_trainOut)){
+  r = newf2_train$recall[i]
+  p = newf2_train$TP[i] / (newf2_train$TP[i] + newf2_train$FP[i])
+  newf2_train$prec[i] = p
+  newf2_train$f2[i] = ((1+(2^2)) * p * r) / (2^2 * p + r)
+}
+
+par(mfrow=c(1,2))
+boxplot(f2Based_trainOut$kappa, f2Based_trainOut$recall, f2Based_trainOut$prec, f2Based_trainOut$f2,
+        ylim = c(0.7, 1), 
+        names = c('Kappa', 'Recall', 'Prec.', 'F2'),
+        main = 'OLD F2 trained',
+        col = 'darkorchid1')
+boxplot(newf2_train$kappa, newf2_train$recall, newf2_train$prec, newf2_train$f2,
+        ylim = c(0.7, 1), 
+        names = c('Kappa', 'Recall', 'Prec.', 'F2'),
+        main = 'NEW F2 trained',
+        col = 'slateblue')
+
+
+
+
+
+newf3_train = trainOut[as.character(testCases),]
+newf3_test = testOut[as.character(testCases),]
+newf3_feats = featImp
+newf3_preds = predicitions
