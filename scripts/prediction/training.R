@@ -389,17 +389,50 @@ f2 <- function (data, lev = NULL, model = NULL, beta = 2) {
   f2_val
 }
 
-f3 <- function (data, lev = NULL, model = NULL, beta = 3) {
-  precision <- posPredValue(data$pred, data$obs, positive = "TRUE")
-  recall  <- sensitivity(data$pred, data$obs, postive = "TRUE")
-  f3_val <- ((1 + beta^2) * precision * recall) / (beta^2 * precision + recall)
-  names(f3_val) <- c("F3")
-  f3_val
-}
-
+# f3 <- function (data, lev = NULL, model = NULL, beta = 3) {
+#   precision <- posPredValue(data$pred, data$obs, positive = "TRUE")
+#   recall  <- sensitivity(data$pred, data$obs, postive = "TRUE")
+#   f3_val <- ((1 + beta^2) * precision * recall) / (beta^2 * precision + recall)
+#   names(f3_val) <- c("F3")
+#   f3_val
+# }
+# 
+# f4 <- function (data, lev = NULL, model = NULL, beta = 4) {
+#   precision <- posPredValue(data$pred, data$obs, positive = "TRUE")
+#   recall  <- sensitivity(data$pred, data$obs, postive = "TRUE")
+#   f4_val <- ((1 + beta^2) * precision * recall) / (beta^2 * precision + recall)
+#   names(f4_val) <- c("F4")
+#   f4_val
+# }
 
 pCnt <- function(x){
   return(x/sum(x))
+}
+
+getKPRFb <- function(conMatDF){
+  # conMatDF has rows of different confusion matrices, with the columns ordered as TP, TN, FP, FN
+  # sums each column and finds performance metrics
+  f2TestCon = apply(X = conMatDF, MARGIN = 2, FUN = sum)
+  
+  TP = f2TestCon[[1]]
+  TN = f2TestCon[[2]]
+  FP = f2TestCon[[3]]
+  FN = f2TestCon[[4]]
+  
+  f2_validationRecall = TP / ( TP + FN)
+  f2_validationPrec = TP / (TP + FP)
+  f2_validationF2 = ((1+(2^2)) * f2_validationPrec * f2_validationRecall) / (2^2 * f2_validationPrec + f2_validationRecall)
+  f3score = ((1+(3^2)) * f2_validationPrec * f2_validationRecall) / (3^2 * f2_validationPrec + f2_validationRecall)
+  f4score = ((1+(4^2)) * f2_validationPrec * f2_validationRecall) / (4^2 * f2_validationPrec + f2_validationRecall)
+  randAcc = ((TN+FP)*(TN+FN) + (FN+TP)*(FP+TP)) / sum(c(TP + TN + FP + FN))^2
+  testAcc = (TP+TN)/(TP+TN+FP+FN)
+  f2_validationKappa = (testAcc - randAcc) / (1 - randAcc)
+  return(list(kappa = f2_validationKappa,
+              recall = f2_validationRecall,
+              precision = f2_validationPrec,
+              F2 = f2_validationF2,
+              F3 = f3score,
+              F4 = f4score))
 }
 
 ##########################
@@ -1231,6 +1264,9 @@ default_mtry = round(sqrt(ncol(predFeats)), 0)
 default_ntree = 2000
 
 tune.grid = expand.grid(.mtry=default_mtry)
+# tune.grid <- expand.grid(.mtry= c(-7:7) + default_mtry)
+# tune.grid = expand.grid(.mtry=21)
+
 
 
 set.seed(27)  
@@ -1310,7 +1346,7 @@ for (j in (1:length(testCases))){
                                number = folds,
                                repeats = reps,
                                sampling = 'down',
-                               summaryFunction = f3)
+                               summaryFunction = f2)
   
   rfFit <- train(bound ~ .,
                  data = trainDat, 
@@ -1321,7 +1357,7 @@ for (j in (1:length(testCases))){
                  verbose = TRUE,
                  importance = TRUE, 
                  ntree = default_ntree,
-                 metric = "F3")
+                 metric = "F2")
   
   trainKappa = Kappa(rfFit$finalModel$confusion[1:2,1:2])$Unweighted[1]
   trainRecall = 1 - rfFit$finalModel$confusion[2,3]
@@ -1368,6 +1404,12 @@ for (j in (1:length(testCases))){
   cat("test:\n\tRecall = ", testRecall, "\n\tKappa = ", testKappa,"\n\tAccuracy = ", testAcc, '\n__________________\n\n')
 }
 
+#################
+# F2 vs F3 vs F4
+#################
+
+# betaCols =  colorRampPalette(c("slateblue","cyan3"))(3)
+
 # newf2_train = trainOut[as.character(testCases),]
 # newf2_test = testOut[as.character(testCases),]
 # newf2_feats = featImp[,as.character(testCases)]
@@ -1376,13 +1418,15 @@ for (j in (1:length(testCases))){
 apply(newf2_train[,3:6], 2, mean)
 apply(apply(newf2_train[,3:6], 1, pCnt), 1, mean)
 
-newf2_train$f2 = 0
+newf2_train$f2 = newf2_train$f3 = newf2_train$f4 = 0
 newf2_train$prec = 0
 for(i in 1:nrow(f2Based_trainOut)){
   r = newf2_train$recall[i]
   p = newf2_train$TP[i] / (newf2_train$TP[i] + newf2_train$FP[i])
   newf2_train$prec[i] = p
   newf2_train$f2[i] = ((1+(2^2)) * p * r) / (2^2 * p + r)
+  newf2_train$f3[i] = ((1+(3^2)) * p * r) / (3^2 * p + r)
+  newf2_train$f4[i] = ((1+(4^2)) * p * r) / (4^2 * p + r)
 }
 
 par(mfrow=c(1,2))
@@ -1397,11 +1441,336 @@ boxplot(newf2_train$kappa, newf2_train$recall, newf2_train$prec, newf2_train$f2,
         main = 'NEW F2 trained',
         col = 'slateblue')
 
+f2TestMetrics = getKPRFb(newf2_test)
+
+f2_outcomes = as.data.frame(matrix('', nrow = length(newf2_preds), ncol = 2))
+row.names(f2_outcomes) = names(newf2_preds)
+colnames(f2_outcomes) = c("Obs", "Pred")
+
+f2_outcomes$Obs = ligTags[row.names(f2_outcomes), 2]
+f2_outcomes$Pred = as.numeric(predicitions[row.names(f2_outcomes)])
+
+pr = pr.curve(f2_outcomes$Pred[f2_outcomes$Obs == T], f2_outcomes$Pred[f2_outcomes$Obs == F], curve= T, rand.compute = T)
+
+R = f2TestMetrics[['recall']]
+p = f2TestMetrics[['precision']]
+
+
+dev.off()
+plot(pr$curve[,1:2], type = 'l', lwd = 3, col = betaCols[1],
+     xlim = c(0,1), ylim = c(0,1),
+     xlab = 'Recall', ylab = 'Precision', main = paste('PR Curve\nAUC = ', as.character(round(pr$auc.integral, digits = 5)), sep = ''))
+abline(h = pr$rand$auc.integral, lty = 1, lwd = 2)
+lines(x = c(R,R), y = c(-1,P), lty = 2)
+lines(x = c(-1,R), y = c(P,P), lty = 2)
+points(R,P, pch = 19)
+
+
+
+# newf3_train = trainOut[as.character(testCases),]
+# newf3_test = testOut[as.character(testCases),]
+# newf3_feats = featImp
+# newf3_preds = predicitions
+
+apply(newf3_train[,3:6], 2, mean)
+apply(apply(newf3_train[,3:6], 1, pCnt), 1, mean)
+
+newf3_train$f2 = newf3_train$f3 = newf3_train$f4 = 0
+newf3_train$prec = 0
+for(i in 1:nrow(newf3_train)){
+  r = newf3_train$recall[i]
+  p = newf3_train$TP[i] / (newf3_train$TP[i] + newf3_train$FP[i])
+  newf3_train$prec[i] = p
+  newf3_train$f2[i] = ((1+(2^2)) * p * r) / (2^2 * p + r)
+  newf3_train$f3[i] = ((1+(3^2)) * p * r) / (3^2 * p + r)
+  newf3_train$f4[i] = ((1+(4^2)) * p * r) / (4^2 * p + r)
+}
+
+apply(newf3_test, 2, sum)
+
+f3TestMetrics = getKPRFb(newf3_test)
+
+f3_outcomes = as.data.frame(matrix('', nrow = length(newf3_preds), ncol = 2))
+row.names(f3_outcomes) = names(newf3_preds)
+colnames(f3_outcomes) = c("Obs", "Pred")
+
+f3_outcomes$Obs = ligTags[row.names(f3_outcomes), 2]
+f3_outcomes$Pred = as.numeric(predicitions[row.names(f3_outcomes)])
+
+pr = pr.curve(f3_outcomes$Pred[f3_outcomes$Obs == T], f3_outcomes$Pred[f3_outcomes$Obs == F], curve= T, rand.compute = T)
+
+R = f3TestMetrics[['recall']]
+p = f3TestMetrics[['precision']]
+
+
+dev.off()
+plot(pr$curve[,1:2], type = 'l', lwd = 3, col = betaCols[2],
+     xlim = c(0,1), ylim = c(0,1),
+     xlab = 'Recall', ylab = 'Precision', main = paste('PR Curve\nAUC = ', as.character(round(pr$auc.integral, digits = 5)), sep = ''))
+abline(h = pr$rand$auc.integral, lty = 1, lwd = 2)
+lines(x = c(R,R), y = c(-1,P), lty = 2)
+lines(x = c(-1,R), y = c(P,P), lty = 2)
+points(R,P, pch = 19)
+
+# newf4_train = trainOut[as.character(testCases),]
+# newf4_test = testOut[as.character(testCases),]
+# newf4_feats = featImp
+# newf4_preds = predicitions
+
+apply(newf4_train[,3:6], 2, mean)
+apply(apply(newf4_train[,3:6], 1, pCnt), 1, mean)
+
+newf4_train$f2 = newf4_train$f3 = newf4_train$f4 = 0
+newf4_train$prec = 0
+for(i in 1:nrow(newf4_train)){
+  r = newf4_train$recall[i]
+  p = newf4_train$TP[i] / (newf4_train$TP[i] + newf4_train$FP[i])
+  newf4_train$prec[i] = p
+  newf4_train$f2[i] = ((1+(2^2)) * p * r) / (2^2 * p + r)
+  newf4_train$f3[i] = ((1+(3^2)) * p * r) / (3^2 * p + r)
+  newf4_train$f4[i] = ((1+(4^2)) * p * r) / (4^2 * p + r)
+}
+
+apply(newf4_test, 2, sum)
+
+f4TestMetrics = getKPRFb(newf4_test)
+
+
+f4_outcomes = as.data.frame(matrix('', nrow = length(newf4_preds), ncol = 2))
+row.names(f4_outcomes) = names(newf4_preds)
+colnames(f4_outcomes) = c("Obs", "Pred")
+
+f4_outcomes$Obs = ligTags[row.names(f4_outcomes), 2]
+f4_outcomes$Pred = as.numeric(predicitions[row.names(f4_outcomes)])
+
+pr = pr.curve(f4_outcomes$Pred[f4_outcomes$Obs == T], f4_outcomes$Pred[f4_outcomes$Obs == F], curve= T, rand.compute = T)
+
+R = f4TestMetrics[['recall']]
+p = f4TestMetrics[['precision']]
+
+
+dev.off()
+plot(pr$curve[,1:2], type = 'l', lwd = 3, col = betaCols[3],
+     xlim = c(0,1), ylim = c(0,1),
+     xlab = 'Recall', ylab = 'Precision', main = paste('PR Curve\nAUC = ', as.character(round(pr$auc.integral, digits = 5)), sep = ''))
+abline(h = pr$rand$auc.integral, lty = 1, lwd = 2)
+lines(x = c(R,R), y = c(-1,P), lty = 2)
+lines(x = c(-1,R), y = c(P,P), lty = 2)
+points(R,P, pch = 19)
 
 
 
 
-newf3_train = trainOut[as.character(testCases),]
-newf3_test = testOut[as.character(testCases),]
-newf3_feats = featImp
-newf3_preds = predicitions
+
+
+
+
+par(mfrow=c(2,2))
+boxplot(newf2_train$kappa, newf2_train$recall, newf2_train$prec, newf2_train$f2, newf2_train$f3, newf2_train$f4,
+        ylim = c(0.7, 1), 
+        names = c('Kappa', 'Recall', 'Prec.', 'F2', 'F3', 'F4'),
+        main = 'F2 trained',
+        col = betaCols[1])
+boxplot(newf3_train$kappa, newf3_train$recall, newf3_train$prec, newf3_train$f2, newf3_train$f3, newf3_train$f4,
+        ylim = c(0.7, 1), 
+        names = c('Kappa', 'Recall', 'Prec.', 'F2', 'F3', 'F4'),
+        main = 'F3 trained',
+        col = betaCols[2])
+boxplot(newf4_train$kappa, newf4_train$recall, newf4_train$prec, newf4_train$f2, newf4_train$f3, newf4_train$f4,
+        ylim = c(0.7, 1), 
+        names = c('Kappa', 'Recall', 'Prec.', 'F2', 'F3', 'F4'),
+        main = 'F4 trained',
+        col = betaCols[3])
+
+##########
+# Vanilla train & test validation
+##########
+
+trainOut = trainOut[as.character(testCases),]
+testOut = testOut[as.character(testCases),]
+
+# Training
+apply(trainOut[,3:6], 2, mean)
+apply(apply(trainOut[,3:6], 1, pCnt), 1, mean)
+
+trainOut$f2 = 0
+trainOut$prec = 0
+for(i in 1:nrow(trainOut)){
+  r = trainOut$recall[i]
+  p = trainOut$TP[i] / (trainOut$TP[i] + trainOut$FP[i])
+  trainOut$prec[i] = p
+  trainOut$f2[i] = ((1+(2^2)) * p * r) / (2^2 * p + r)
+  trainOut$f3[i] = ((1+(3^2)) * p * r) / (3^2 * p + r)
+  trainOut$f4[i] = ((1+(4^2)) * p * r) / (4^2 * p + r)
+}
+
+boxplot(trainOut$kappa, trainOut$recall, trainOut$prec, trainOut$f2,
+        ylim = c(0.7, 1), 
+        names = c('Kappa', 'Recall', 'Prec.', 'F2'),
+        main = 'New sampling, mtry = 21, F2 trained',
+        col = 'seagreen')
+
+# Validation
+apply(testOut, 2, sum)
+
+validationMetrics = getKPRFb(testOut)
+
+outcomes = as.data.frame(matrix('', nrow = length(predicitions), ncol = 2))
+row.names(outcomes) = names(predicitions)
+colnames(outcomes) = c("Obs", "Pred")
+
+outcomes$Obs = ligTags[row.names(outcomes), 2]
+outcomes$Pred = as.numeric(predicitions[row.names(outcomes)])
+
+pr = pr.curve(outcomes$Pred[outcomes$Obs == T], outcomes$Pred[outcomes$Obs == F], curve= T, rand.compute = T)
+
+R = validationMetrics[['recall']]
+P = validationMetrics[['precision']]
+
+
+dev.off()
+plot(pr$curve[,1:2], type = 'l', lwd = 3, col = 'slateblue',
+     xlim = c(0,1), ylim = c(0,1),
+     xlab = 'Recall', ylab = 'Precision', main = paste('PR Curve\nAUC = ', as.character(round(pr$auc.integral, digits = 5)), sep = ''))
+abline(h = pr$rand$auc.integral, lty = 1, lwd = 2)
+lines(x = c(R,R), y = c(-1,P), lty = 2)
+lines(x = c(-1,R), y = c(P,P), lty = 2)
+points(R,P, pch = 19)
+
+
+
+#########################
+# of the negatives, how many come from lectins that DO bind sialic acid in other structures?
+#########################
+
+all(row.names(lecSpec)[apply(lecSpec[,neuTag], 1, any)] == unique(bsResiDat$uniparc[bsResiDat$iupac %in% uniLigs[neuTag]])) # confirming ligTags match
+
+siaIDs = unique(bsResiDat$uniparc[bsResiDat$iupac %in% uniLigs[neuTag]])
+
+fpBS = row.names(outcomes)[outcomes$Pred >= 0.5 & outcomes$Obs == F] # Binding sites that ended up as false positives
+fpLecs = unique(bsResiDat$uniparc[row.names(bsResiDat) %in% fpBS]) # unique lectin uniprot ids of lectins that show up as false positives
+fpIDs = bsResiDat$uniparc[row.names(bsResiDat) %in% fpBS] # UniProt ID for FP binding site
+length(fpLecs)
+
+sum(fpLecs %in% siaIDs) # number of FP lectins that do bind sialic acid
+sum(fpIDs %in% siaIDs) # Number of False Positives that come from lectins that DO bind sialic acid in other structures
+
+
+sum(outcomes$Obs == F)
+negBS = row.names(outcomes)[outcomes$Obs == F]
+negIDs = bsResiDat$uniparc[row.names(bsResiDat) %in% negBS]
+sum(negIDs %in% siaIDs) # Number of negative binding sites that come from lectins that DO bind sialic acid in other structures             
+
+bound_fpBS = fpBS[fpIDs %in% siaIDs]
+noFP_out = outcomes[! row.names(outcomes) %in% bound_fpBS,]
+dropFPs = pr.curve(noFP_out$Pred[noFP_out$Obs == T], noFP_out$Pred[noFP_out$Obs == F], curve= T, rand.compute = T)
+
+bound_NegBS = negBS[negIDs %in% siaIDs]
+noFPTN_out = outcomes[! row.names(outcomes) %in% bound_NegBS,]
+dropFPTNs = pr.curve(noFPTN_out$Pred[noFPTN_out$Obs == T], noFPTN_out$Pred[noFPTN_out$Obs == F], curve= T, rand.compute = T)
+
+
+R=0.793
+P=0.775
+plot(dropFPs$curve[,1:2], type = 'l', lwd = 3, col = 'aquamarine3',
+     xlim = c(0,1), ylim = c(0,1),
+     xlab = 'Recall', ylab = 'Precision', main = paste('PR Curve\nAUC = ', as.character(round(dropFPs$auc.integral, digits = 5)), sep = ''))
+abline(h = dropFPs$rand$auc.integral, lty = 1, lwd = 2)
+lines(x = c(R,R), y = c(-1,P), lty = 2)
+lines(x = c(-1,R), y = c(P,P), lty = 2)
+points(R,P, pch = 19)
+
+plot(dropFPTNs$curve[,1:2], type = 'l', lwd = 3, col = 'aquamarine3',
+     xlim = c(0,1), ylim = c(0,1),
+     xlab = 'Recall', ylab = 'Precision', main = paste('PR Curve\nAUC = ', as.character(round(dropFPTNs$auc.integral, digits = 5)), sep = ''))
+abline(h = dropFPTNs$rand$auc.integral, lty = 1, lwd = 2)
+lines(x = c(R,R), y = c(-1,P), lty = 2)
+lines(x = c(-1,R), y = c(P,P), lty = 2)
+points(R,P, pch = 19)
+
+
+dev.off()
+par(mfrow = c(2,1))
+plot(density(outcomes[bound_NegBS, "Pred"]), main = 'Pred Scores for unbound sites from bound lectins',
+     xlim = c(0,1), ylim = c(0,2),
+     xlab = 'Prediciton score (% of votes)',
+     lwd = 3,
+     col = 'aquamarine3')
+
+plot(density(outcomes[negBS, "Pred"]), main = 'Pred Scores for all unbound sites',
+     xlim = c(0,1), ylim = c(0,2),
+     xlab = 'Prediciton score (% of votes)',
+     lwd = 3,
+     col = 'aquamarine3')
+
+
+R = validationMetrics[['recall']]
+P = validationMetrics[['precision']]
+
+dev.off()
+par(mar =c(4,4,4,2)) # bottom, left, top, right
+plot(pr$curve[,1:2], type = 'l', lwd = 4, col = 'slateblue',
+     xlim = c(0,1), ylim = c(0,1),
+     xlab = 'Recall', ylab = 'Precision', main = paste('PR Curve\nAUC = ', as.character(round(pr$auc.integral, digits = 5)), sep = ''))
+abline(h = pr$rand$auc.integral, lty = 1, lwd = 2)
+lines(x = c(R,R), y = c(-1,P), lty = 2)
+lines(x = c(-1,R), y = c(P,P), lty = 2)
+points(R,P, pch = 19, col = 'black', cex =1.3)
+tag = pr$curve[,3] %in% outcomes[bound_NegBS, "Pred"]
+rug((pr$curve[tag,1]), col = alpha('black',0.5))
+rug((pr$curve[tag,2]), col = alpha('black',0.5), side = 2)
+
+
+# 0.8398510 0.5895425 0.4395
+nR = 0.8398510
+nP = 0.5895425
+points(nR,nP, pch = 19, col = 'red', cex =0.5)
+lines(x = c(nR,nR), y = c(-1,nP), lty = 2, col ='red')
+
+thresh = 0.4395
+TP = sum(outcomes$Pred >= thresh & outcomes$Obs == "TRUE")
+TN = sum(outcomes$Pred < thresh & outcomes$Obs == "FALSE")
+FN = sum(outcomes$Pred < thresh & outcomes$Obs == "TRUE")
+FP = sum(outcomes$Pred >= thresh & outcomes$Obs == "FALSE")
+
+
+dev.off()
+# par(mar =c(4,4,4,2)) # bottom, left, top, right
+# plot(pr$curve[,1:2], type = 'l', lwd = 4, col = 'aquamarine3',
+#      xlim = c(0,1), ylim = c(0,1),
+#      xlab = 'Recall', ylab = 'Precision', main = paste('PR Curve\nAUC = ', as.character(round(pr$auc.integral, digits = 5)), sep = ''))
+# abline(h = pr$rand$auc.integral, lty = 1, lwd = 2)
+# lines(x = c(R,R), y = c(-1,P), lty = 2)
+# lines(x = c(-1,R), y = c(P,P), lty = 2)
+# points(R,P, pch = 19, col = 'black', cex =1.3)
+# tag = pr$curve[,3] %in% outcomes[bound_fpBS, "Pred"]
+# rug((pr$curve[tag,1]), col = alpha('black',0.5))
+# rug((pr$curve[tag,2]), col = alpha('black',0.5), side = 2)
+
+#
+# bOutcomes = outcomes
+# bFeatImp = featImp
+#
+
+meanImp = apply(featImp, 1, mean)
+sdImp = apply(featImp, 1, sd)
+lb = meanImp - sdImp
+lb = lb[order(meanImp, decreasing = T)][20:1]
+ub = meanImp + sdImp
+ub = ub[order(meanImp, decreasing = T)][20:1]
+
+par(mar=c(4,10,4,2))
+p = barplot(meanImp[order(meanImp, decreasing = T)][20:1], names.arg = row.names(meanImp)[order(meanImp, decreasing = T)][20:1], xlim = c(0,max(ub)),
+        horiz = T, xlab = 'Mean Decrease in Gini Impurity', las=1)
+
+arrows(x0 = lb, y0 = p, x1 = ub, y1 = p, length = 0)
+
+fCorr = cor(predFeats)
+
+corrplot(corr = fCorr, order = 'hclust', addgrid.col = NA)
+
+plot(density(fCorr[upper.tri(fCorr)]))
+
+plot(apply(abs(fCorr), 2, mean), meanImp, xlab = 'mean absolute correlation of feature', ylab = 'mean feat imp')
+plot(apply(abs(fCorr), 2, mean), sdImp, xlab = 'mean absolute correlation of feature', ylab = 'feat imp sd')
+
