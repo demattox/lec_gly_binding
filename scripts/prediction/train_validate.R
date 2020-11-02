@@ -1,3 +1,4 @@
+#!/usr/bin/env Rscript
 
 library(randomForest)
 library(reshape)
@@ -208,7 +209,8 @@ reps = 3
 default_mtry = round(sqrt(ncol(predFeats)), 0)
 default_ntree = 2000
 
-tune.grid = expand.grid(.mtry=default_mtry)
+# tune.grid = expand.grid(.mtry=default_mtry)
+tune.grid <- expand.grid(.mtry= c(-7:7) + default_mtry)
 
 #########################
 # Train and validate based on current ligand class 
@@ -319,6 +321,7 @@ for (j in (1:length(testCases))){
   featImp[, j] = rfFit$finalModel$importance[,4]
   
   cat("train:\n\tRecall = ", trainRecall, "\n\tKappa = ", trainKappa,"\n\tAccuracy = ", trainAcc, '\n')
+  print(rfFit$bestTune)
   
   testDat = predFeats[bsResiDat$seqClust50 == outClust,]
   testObs = factor(lig[bsResiDat$seqClust50 == outClust], levels = levels(trainDat$bound))
@@ -422,3 +425,12 @@ lines(x = c(R,R), y = c(-1,P), lty = 2)
 lines(x = c(-1,R), y = c(P,P), lty = 2)
 points(R,P, pch = 19)
 dev.off()
+
+# Save out files
+write.table(x = outcomes, file = paste(OG_Dir,colnames(ligTags)[dirInd], '_outcomes.csv', sep = ''), quote = F, sep = ',')
+# read.delim(file = paste(OG_Dir,colnames(ligTags)[dirInd], '_outcomes.csv', sep = ''), sep = ',', stringsAsFactors = F)
+
+write.table(x = trainOut, file = paste(OG_Dir,colnames(ligTags)[dirInd], '_training.csv', sep = ''), quote = F, sep = ',')
+write.table(x = testOut, file = paste(OG_Dir,colnames(ligTags)[dirInd], '_testing.csv', sep = ''), quote = F, sep = ',')
+write.table(x = featImp, file = paste(OG_Dir,colnames(ligTags)[dirInd], '_features.csv', sep = ''), quote = F, sep = ',')
+
