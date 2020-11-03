@@ -199,7 +199,7 @@ for(i in 1:ncol(scaledFeats)){
 bwBSiteDists = distance(scaledFeats)
 medPairwiseDist = median(bwBSiteDists[upper.tri(bwBSiteDists)])
 
-clusLst = unique(bsResiDat$seqClust50)
+clusLst = unique(bsResiDat$seqClust80)
 
 # all(row.names(bsResiDat) == row.names(predFeats))
 
@@ -235,14 +235,14 @@ colnames(testOut) = c('TP', 'TN', 'FP', 'FN')
 
 clusBinding = rep(F, length(clusLst)) # Whether a cluster has any positve examples of binding with the current ligand/ligand class
 for (j in (1:length(clusLst))){
-  clusBinding[j] = any(lig[bsResiDat$seqClust50 == clusLst[j]])
+  clusBinding[j] = any(lig[bsResiDat$seqClust80 == clusLst[j]])
 }
 # sum(clusBinding)
 
 testCases = clusLst[clusBinding] # Clusters with any binding occurences to iterativelty withold for validation in LO(C)O validation
 
-predictions = as.list(rep('', length(row.names(bsResiDat)[bsResiDat$seqClust50 %in% testCases])))
-names(predictions) = row.names(bsResiDat)[bsResiDat$seqClust50 %in% testCases]
+predictions = as.list(rep('', length(row.names(bsResiDat)[bsResiDat$seqClust80 %in% testCases])))
+names(predictions) = row.names(bsResiDat)[bsResiDat$seqClust80 %in% testCases]
 
 featImp = as.data.frame(matrix(0, nrow = ncol(predFeats), ncol = length(testCases)))
 row.names(featImp) = colnames(predFeats)
@@ -260,7 +260,7 @@ for (j in (1:length(testCases))){
   
   repDatSampCnt = rep(0, reps)
   for (m in 1:reps){
-    sampDat = sampleDiverseSitesByLig(clusterIDs = bsResiDat$seqClust50, 
+    sampDat = sampleDiverseSitesByLig(clusterIDs = bsResiDat$seqClust80, 
                                       testClust = outClust,
                                       featureSet = predFeats, 
                                       ligandTag = lig, 
@@ -323,8 +323,8 @@ for (j in (1:length(testCases))){
   cat("train:\n\tRecall = ", trainRecall, "\n\tKappa = ", trainKappa,"\n\tAccuracy = ", trainAcc, '\n')
   print(rfFit$bestTune)
   
-  testDat = predFeats[bsResiDat$seqClust50 == outClust,]
-  testObs = factor(lig[bsResiDat$seqClust50 == outClust], levels = levels(trainDat$bound))
+  testDat = predFeats[bsResiDat$seqClust80 == outClust,]
+  testObs = factor(lig[bsResiDat$seqClust80 == outClust], levels = levels(trainDat$bound))
   
   validate = predict(rfFit$finalModel, newdata = testDat, type = 'prob')
   
