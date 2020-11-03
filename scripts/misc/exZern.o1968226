@@ -1,0 +1,1012 @@
+------------------------- Prologue ----------------------------
+         Started: Mon Oct 12 15:38:17 EDT 2020
+          Job ID: 1968226.pearl.hpcc.dartmouth.edu
+         User ID: f002tsy
+        Group ID: rc-users
+        Job Name: exZern
+ Resources Req'd: nodes=1:ppn=16,walltime=24:00:00,neednodes=1:ppn=16
+      Queue Name: default
+    Account Name: 
+------------------------- Prologue ----------------------------
+
+4Z4Z_GLA-D-1
+@31.9243,32,31.964
+*0.0477157
+Reconstructing 3D image inside a 64x64x64 grid.
+Scale factor: 0.0477157
+Thread[0]: Reconstructing layer: 0
+Thread[13]: Reconstructing layer: 52
+Thread[14]: Reconstructing layer: 56
+Thread[1]: Reconstructing layer: 4
+Thread[12]: Reconstructing layer: 48
+Thread[4]: Reconstructing layer: 16
+Thread[1]: Reconstructing layer: 5
+Thread[3]: Reconstructing layer: 12
+Thread[2]: Reconstructing layer: 8
+Thread[14]: Reconstructing layer: 57
+Thread[1]: Reconstructing layer: 6
+Thread[10]: Reconstructing layer: 40
+Thread[2]: Reconstructing layer: 9
+Thread[14]: Reconstructing layer: 58
+Thread[1]: Reconstructing layer: 7
+Thread[8]: Reconstructing layer: 32
+Thread[11]: Reconstructing layer: 44
+Thread[14]: Reconstructing layer: 59
+Thread[2]: Reconstructing layer: 10
+Thread[6]: Reconstructing layer: 24
+Thread[0]: Reconstructing layer: 1
+Thread[7]: Reconstructing layer: 28
+Thread[9]: Reconstructing layer: 36
+Thread[2]: Reconstructing layer: 11
+Thread[0]: Reconstructing layer: 2
+Thread[5]: Reconstructing layer: 20
+Thread[0]: Reconstructing layer: 3
+Thread[15]: Reconstructing layer: 60
+Thread[15]: Reconstructing layer: 61
+Thread[15]: Reconstructing layer: 62
+Thread[15]: Reconstructing layer: 63
+Thread[13]: Reconstructing layer: 53
+Thread[13]: Reconstructing layer: 54
+Thread[13]: Reconstructing layer: 55
+Thread[3]: Reconstructing layer: 13
+Thread[3]: Reconstructing layer: 14
+Thread[12]: Reconstructing layer: 49
+Thread[4]: Reconstructing layer: 17
+Thread[3]: Reconstructing layer: 15
+Thread[11]: Reconstructing layer: 45
+Thread[5]: Reconstructing layer: 21
+Thread[12]: Reconstructing layer: 50
+Thread[10]: Reconstructing layer: 41
+Thread[6]: Reconstructing layer: 25
+Thread[9]: Reconstructing layer: 37
+Thread[4]: Reconstructing layer: 18
+Thread[8]: Reconstructing layer: 33
+Thread[12]: Reconstructing layer: 51
+Thread[7]: Reconstructing layer: 29
+Thread[11]: Reconstructing layer: 46
+Thread[5]: Reconstructing layer: 22
+Thread[4]: Reconstructing layer: 19
+Thread[10]: Reconstructing layer: 42
+Thread[11]: Reconstructing layer: 47
+Thread[6]: Reconstructing layer: 26
+Thread[9]: Reconstructing layer: 38
+Thread[8]: Reconstructing layer: 34
+Thread[7]: Reconstructing layer: 30
+Thread[5]: Reconstructing layer: 23
+Thread[10]: Reconstructing layer: 43
+Thread[9]: Reconstructing layer: 39
+Thread[6]: Reconstructing layer: 27
+Thread[8]: Reconstructing layer: 35
+Thread[7]: Reconstructing layer: 31
+Normalizing 3D complex function image inside a 64x64x64 grid.
+
+Maximal value in grid: 0.360138
+@31.9243,32,31.964
+*0.0477157
+Reconstructing 3D image inside a 64x64x64 grid.
+Scale factor: 0.0477157
+Thread[15]: Reconstructing layer: 60
+Thread[6]: Reconstructing layer: 24
+Thread[9]: Reconstructing layer: 36
+Thread[1]: Reconstructing layer: 4
+Thread[7]: Reconstructing layer: 28
+Thread[3]: Reconstructing layer: 12
+Thread[13]: Reconstructing layer: 52
+Thread[4]: Reconstructing layer: 16
+Thread[15]: Reconstructing layer: 61
+Thread[11]: Reconstructing layer: 44
+Thread[5]: Reconstructing layer: 20
+Thread[8]: Reconstructing layer: 32
+Thread[1]: Reconstructing layer: 5
+Thread[2]: Reconstructing layer: 8
+Thread[15]: Reconstructing layer: 62
+Thread[14]: Reconstructing layer: 56
+Thread[1]: Reconstructing layer: 6
+Thread[15]: Reconstructing layer: 63
+Thread[0]: Reconstructing layer: 0
+Thread[2]: Reconstructing layer: 9
+Thread[12]: Reconstructing layer: 48
+Thread[1]: Reconstructing layer: 7
+Thread[0]: Reconstructing layer: 1
+Thread[14]: Reconstructing layer: 57
+Thread[10]: Reconstructing layer: 40
+Thread[2]: Reconstructing layer: 10
+Thread[0]: Reconstructing layer: 2
+Thread[14]: Reconstructing layer: 58
+Thread[0]: Reconstructing layer: 3
+Thread[2]: Reconstructing layer: 11
+Thread[14]: Reconstructing layer: 59
+Thread[13]: Reconstructing layer: 53
+Thread[13]: Reconstructing layer: 54
+Thread[13]: Reconstructing layer: 55
+Thread[3]: Reconstructing layer: 13
+Thread[3]: Reconstructing layer: 14
+Thread[12]: Reconstructing layer: 49
+Thread[4]: Reconstructing layer: 17
+Thread[3]: Reconstructing layer: 15
+Thread[11]: Reconstructing layer: 45
+Thread[5]: Reconstructing layer: 21
+Thread[12]: Reconstructing layer: 50
+Thread[10]: Reconstructing layer: 41
+Thread[6]: Reconstructing layer: 25
+Thread[9]: Reconstructing layer: 37
+Thread[8]: Reconstructing layer: 33
+Thread[4]: Reconstructing layer: 18
+Thread[12]: Reconstructing layer: 51
+Thread[7]: Reconstructing layer: 29
+Thread[11]: Reconstructing layer: 46
+Thread[5]: Reconstructing layer: 22
+Thread[4]: Reconstructing layer: 19
+Thread[10]: Reconstructing layer: 42
+Thread[11]: Reconstructing layer: 47
+Thread[6]: Reconstructing layer: 26
+Thread[9]: Reconstructing layer: 38
+Thread[8]: Reconstructing layer: 34
+Thread[7]: Reconstructing layer: 30
+Thread[5]: Reconstructing layer: 23
+Thread[10]: Reconstructing layer: 43
+Thread[9]: Reconstructing layer: 39
+Thread[6]: Reconstructing layer: 27
+Thread[8]: Reconstructing layer: 35
+Thread[7]: Reconstructing layer: 31
+Normalizing 3D complex function image inside a 64x64x64 grid.
+
+Maximal value in grid: 2.49496
+4LK7_04G-D-202
+@31.8948,32.0291,32.0793
+*0.0469016
+Reconstructing 3D image inside a 64x64x64 grid.
+Scale factor: 0.0469016
+Thread[2]: Reconstructing layer: 8
+Thread[1]: Reconstructing layer: 4
+Thread[3]: Reconstructing layer: 12
+Thread[4]: Reconstructing layer: 16
+Thread[0]: Reconstructing layer: 0
+Thread[1]: Reconstructing layer: 5
+Thread[7]: Reconstructing layer: 28
+Thread[10]: Reconstructing layer: 40
+Thread[2]: Reconstructing layer: 9
+Thread[0]: Reconstructing layer: 1
+Thread[5]: Reconstructing layer: 20
+Thread[2]: Reconstructing layer: 10
+Thread[1]: Reconstructing layer: 6
+Thread[0]: Reconstructing layer: 2
+Thread[12]: Reconstructing layer: 48
+Thread[8]: Reconstructing layer: 32
+Thread[6]: Reconstructing layer: 24
+Thread[1]: Reconstructing layer: 7
+Thread[2]: Reconstructing layer: 11
+Thread[14]: Reconstructing layer: 56
+Thread[0]: Reconstructing layer: 3
+Thread[9]: Reconstructing layer: 36
+Thread[11]: Reconstructing layer: 44
+Thread[14]: Reconstructing layer: 57
+Thread[13]: Reconstructing layer: 52
+Thread[14]: Reconstructing layer: 58
+Thread[14]: Reconstructing layer: 59
+Thread[15]: Reconstructing layer: 60
+Thread[15]: Reconstructing layer: 61
+Thread[15]: Reconstructing layer: 62
+Thread[15]: Reconstructing layer: 63
+Thread[13]: Reconstructing layer: 53
+Thread[13]: Reconstructing layer: 54
+Thread[13]: Reconstructing layer: 55
+Thread[3]: Reconstructing layer: 13
+Thread[3]: Reconstructing layer: 14
+Thread[12]: Reconstructing layer: 49
+Thread[4]: Reconstructing layer: 17
+Thread[11]: Reconstructing layer: 45
+Thread[3]: Reconstructing layer: 15
+Thread[5]: Reconstructing layer: 21
+Thread[12]: Reconstructing layer: 50
+Thread[10]: Reconstructing layer: 41
+Thread[6]: Reconstructing layer: 25
+Thread[9]: Reconstructing layer: 37
+Thread[8]: Reconstructing layer: 33
+Thread[7]: Reconstructing layer: 29
+Thread[4]: Reconstructing layer: 18
+Thread[12]: Reconstructing layer: 51
+Thread[11]: Reconstructing layer: 46
+Thread[5]: Reconstructing layer: 22
+Thread[4]: Reconstructing layer: 19
+Thread[10]: Reconstructing layer: 42
+Thread[11]: Reconstructing layer: 47
+Thread[6]: Reconstructing layer: 26
+Thread[9]: Reconstructing layer: 38
+Thread[8]: Reconstructing layer: 34
+Thread[7]: Reconstructing layer: 30
+Thread[5]: Reconstructing layer: 23
+Thread[10]: Reconstructing layer: 43
+Thread[6]: Reconstructing layer: 27
+Thread[9]: Reconstructing layer: 39
+Thread[8]: Reconstructing layer: 35
+Thread[7]: Reconstructing layer: 31
+Normalizing 3D complex function image inside a 64x64x64 grid.
+
+Maximal value in grid: 0.534597
+@31.8948,32.0291,32.0793
+*0.0469016
+Reconstructing 3D image inside a 64x64x64 grid.
+Scale factor: 0.0469016
+Thread[15]: Reconstructing layer: 60
+Thread[1]: Reconstructing layer: 4
+Thread[15]: Reconstructing layer: 61
+Thread[12]: Reconstructing layer: 48
+Thread[15]: Reconstructing layer: 62
+Thread[2]: Reconstructing layer: 8
+Thread[0]: Reconstructing layer: 0
+Thread[1]: Reconstructing layer: 5
+Thread[5]: Reconstructing layer: 20
+Thread[0]: Reconstructing layer: 1
+Thread[1]: Reconstructing layer: 6
+Thread[3]: Reconstructing layer: 12
+Thread[9]: Reconstructing layer: 36
+Thread[15]: Reconstructing layer: 63
+Thread[2]: Reconstructing layer: 9
+Thread[7]: Reconstructing layer: 28
+Thread[4]: Reconstructing layer: 16
+Thread[1]: Reconstructing layer: 7
+Thread[10]: Reconstructing layer: 40
+Thread[2]: Reconstructing layer: 10
+Thread[14]: Reconstructing layer: 56
+Thread[6]: Reconstructing layer: 24
+Thread[8]: Reconstructing layer: 32
+Thread[2]: Reconstructing layer: 11
+Thread[13]: Reconstructing layer: 52
+Thread[14]: Reconstructing layer: 57
+Thread[0]: Reconstructing layer: 2
+Thread[14]: Reconstructing layer: 58
+Thread[0]: Reconstructing layer: 3
+Thread[14]: Reconstructing layer: 59
+Thread[11]: Reconstructing layer: 44
+Thread[13]: Reconstructing layer: 53
+Thread[13]: Reconstructing layer: 54
+Thread[13]: Reconstructing layer: 55
+Thread[3]: Reconstructing layer: 13
+Thread[3]: Reconstructing layer: 14
+Thread[12]: Reconstructing layer: 49
+Thread[4]: Reconstructing layer: 17
+Thread[11]: Reconstructing layer: 45
+Thread[3]: Reconstructing layer: 15
+Thread[5]: Reconstructing layer: 21
+Thread[12]: Reconstructing layer: 50
+Thread[10]: Reconstructing layer: 41
+Thread[6]: Reconstructing layer: 25
+Thread[9]: Reconstructing layer: 37
+Thread[8]: Reconstructing layer: 33
+Thread[7]: Reconstructing layer: 29
+Thread[4]: Reconstructing layer: 18
+Thread[12]: Reconstructing layer: 51
+Thread[11]: Reconstructing layer: 46
+Thread[5]: Reconstructing layer: 22
+Thread[4]: Reconstructing layer: 19
+Thread[10]: Reconstructing layer: 42
+Thread[11]: Reconstructing layer: 47
+Thread[6]: Reconstructing layer: 26
+Thread[9]: Reconstructing layer: 38
+Thread[8]: Reconstructing layer: 34
+Thread[7]: Reconstructing layer: 30
+Thread[5]: Reconstructing layer: 23
+Thread[10]: Reconstructing layer: 43
+Thread[9]: Reconstructing layer: 39
+Thread[6]: Reconstructing layer: 27
+Thread[8]: Reconstructing layer: 35
+Thread[7]: Reconstructing layer: 31
+Normalizing 3D complex function image inside a 64x64x64 grid.
+
+Maximal value in grid: 2.00952
+2JDH_TA5-B-1117
+@31.9187,31.9584,32.1248
+*0.0476673
+Reconstructing 3D image inside a 64x64x64 grid.
+Scale factor: 0.0476673
+Thread[0]: Reconstructing layer: 0
+Thread[1]: Reconstructing layer: 4
+Thread[9]: Reconstructing layer: 36
+Thread[13]: Reconstructing layer: 52
+Thread[2]: Reconstructing layer: 8
+Thread[0]: Reconstructing layer: 1
+Thread[8]: Reconstructing layer: 32
+Thread[1]: Reconstructing layer: 5
+Thread[4]: Reconstructing layer: 16
+Thread[10]: Reconstructing layer: 40
+Thread[3]: Reconstructing layer: 12
+Thread[7]: Reconstructing layer: 28
+Thread[1]: Reconstructing layer: 6
+Thread[2]: Reconstructing layer: 9
+Thread[15]: Reconstructing layer: 60
+Thread[0]: Reconstructing layer: 2
+Thread[14]: Reconstructing layer: 56
+Thread[1]: Reconstructing layer: 7
+Thread[2]: Reconstructing layer: 10
+Thread[6]: Reconstructing layer: 24
+Thread[11]: Reconstructing layer: 44
+Thread[15]: Reconstructing layer: 61
+Thread[2]: Reconstructing layer: 11
+Thread[14]: Reconstructing layer: 57
+Thread[12]: Reconstructing layer: 48
+Thread[5]: Reconstructing layer: 20
+Thread[15]: Reconstructing layer: 62
+Thread[14]: Reconstructing layer: 58
+Thread[0]: Reconstructing layer: 3
+Thread[15]: Reconstructing layer: 63
+Thread[14]: Reconstructing layer: 59
+Thread[13]: Reconstructing layer: 53
+Thread[13]: Reconstructing layer: 54
+Thread[13]: Reconstructing layer: 55
+Thread[3]: Reconstructing layer: 13
+Thread[3]: Reconstructing layer: 14
+Thread[12]: Reconstructing layer: 49
+Thread[4]: Reconstructing layer: 17
+Thread[3]: Reconstructing layer: 15
+Thread[11]: Reconstructing layer: 45
+Thread[5]: Reconstructing layer: 21
+Thread[12]: Reconstructing layer: 50
+Thread[10]: Reconstructing layer: 41
+Thread[6]: Reconstructing layer: 25
+Thread[9]: Reconstructing layer: 37
+Thread[4]: Reconstructing layer: 18
+Thread[8]: Reconstructing layer: 33
+Thread[7]: Reconstructing layer: 29
+Thread[12]: Reconstructing layer: 51
+Thread[11]: Reconstructing layer: 46
+Thread[5]: Reconstructing layer: 22
+Thread[4]: Reconstructing layer: 19
+Thread[10]: Reconstructing layer: 42
+Thread[11]: Reconstructing layer: 47
+Thread[6]: Reconstructing layer: 26
+Thread[9]: Reconstructing layer: 38
+Thread[8]: Reconstructing layer: 34
+Thread[7]: Reconstructing layer: 30
+Thread[5]: Reconstructing layer: 23
+Thread[10]: Reconstructing layer: 43
+Thread[9]: Reconstructing layer: 39
+Thread[6]: Reconstructing layer: 27
+Thread[8]: Reconstructing layer: 35
+Thread[7]: Reconstructing layer: 31
+Normalizing 3D complex function image inside a 64x64x64 grid.
+
+Maximal value in grid: 0.431587
+@31.9187,31.9584,32.1248
+*0.0476673
+Reconstructing 3D image inside a 64x64x64 grid.
+Scale factor: 0.0476673
+Thread[5]: Reconstructing layer: 20
+Thread[0]: Reconstructing layer: 0
+Thread[12]: Reconstructing layer: 48
+Thread[6]: Reconstructing layer: 24
+Thread[13]: Reconstructing layer: 52
+Thread[1]: Reconstructing layer: 4
+Thread[2]: Reconstructing layer: 8
+Thread[3]: Reconstructing layer: 12
+Thread[4]: Reconstructing layer: 16
+Thread[7]: Reconstructing layer: 28
+Thread[1]: Reconstructing layer: 5
+Thread[8]: Reconstructing layer: 32
+Thread[11]: Reconstructing layer: 44
+Thread[2]: Reconstructing layer: 9
+Thread[1]: Reconstructing layer: 6
+Thread[9]: Reconstructing layer: 36
+Thread[0]: Reconstructing layer: 1
+Thread[14]: Reconstructing layer: 56
+Thread[10]: Reconstructing layer: 40
+Thread[1]: Reconstructing layer: 7
+Thread[0]: Reconstructing layer: 2
+Thread[2]: Reconstructing layer: 10
+Thread[15]: Reconstructing layer: 60
+Thread[0]: Reconstructing layer: 3
+Thread[14]: Reconstructing layer: 57
+Thread[2]: Reconstructing layer: 11
+Thread[15]: Reconstructing layer: 61
+Thread[14]: Reconstructing layer: 58
+Thread[15]: Reconstructing layer: 62
+Thread[14]: Reconstructing layer: 59
+Thread[15]: Reconstructing layer: 63
+Thread[13]: Reconstructing layer: 53
+Thread[13]: Reconstructing layer: 54
+Thread[13]: Reconstructing layer: 55
+Thread[3]: Reconstructing layer: 13
+Thread[3]: Reconstructing layer: 14
+Thread[12]: Reconstructing layer: 49
+Thread[4]: Reconstructing layer: 17
+Thread[3]: Reconstructing layer: 15
+Thread[11]: Reconstructing layer: 45
+Thread[5]: Reconstructing layer: 21
+Thread[12]: Reconstructing layer: 50
+Thread[10]: Reconstructing layer: 41
+Thread[6]: Reconstructing layer: 25
+Thread[9]: Reconstructing layer: 37
+Thread[8]: Reconstructing layer: 33
+Thread[4]: Reconstructing layer: 18
+Thread[12]: Reconstructing layer: 51
+Thread[7]: Reconstructing layer: 29
+Thread[11]: Reconstructing layer: 46
+Thread[5]: Reconstructing layer: 22
+Thread[4]: Reconstructing layer: 19
+Thread[10]: Reconstructing layer: 42
+Thread[11]: Reconstructing layer: 47
+Thread[6]: Reconstructing layer: 26
+Thread[9]: Reconstructing layer: 38
+Thread[8]: Reconstructing layer: 34
+Thread[7]: Reconstructing layer: 30
+Thread[5]: Reconstructing layer: 23
+Thread[10]: Reconstructing layer: 43
+Thread[9]: Reconstructing layer: 39
+Thread[6]: Reconstructing layer: 27
+Thread[8]: Reconstructing layer: 35
+Thread[7]: Reconstructing layer: 31
+Normalizing 3D complex function image inside a 64x64x64 grid.
+
+Maximal value in grid: 1.27936
+4FMH_GAL-X-1
+@31.9163,31.9833,31.9559
+*0.0475035
+Reconstructing 3D image inside a 64x64x64 grid.
+Scale factor: 0.0475035
+Thread[0]: Reconstructing layer: 0
+Thread[2]: Reconstructing layer: 8
+Thread[15]: Reconstructing layer: 60
+Thread[5]: Reconstructing layer: 20
+Thread[6]: Reconstructing layer: 24
+Thread[7]: Reconstructing layer: 28
+Thread[0]: Reconstructing layer: 1
+Thread[3]: Reconstructing layer: 12
+Thread[8]: Reconstructing layer: 32
+Thread[13]: Reconstructing layer: 52
+Thread[1]: Reconstructing layer: 4
+Thread[11]: Reconstructing layer: 44
+Thread[2]: Reconstructing layer: 9
+Thread[9]: Reconstructing layer: 36
+Thread[1]: Reconstructing layer: 5
+Thread[15]: Reconstructing layer: 61
+Thread[0]: Reconstructing layer: 2
+Thread[2]: Reconstructing layer: 10
+Thread[4]: Reconstructing layer: 16
+Thread[14]: Reconstructing layer: 56
+Thread[1]: Reconstructing layer: 6
+Thread[2]: Reconstructing layer: 11
+Thread[10]: Reconstructing layer: 40
+Thread[0]: Reconstructing layer: 3
+Thread[12]: Reconstructing layer: 48
+Thread[1]: Reconstructing layer: 7
+Thread[14]: Reconstructing layer: 57
+Thread[15]: Reconstructing layer: 62
+Thread[14]: Reconstructing layer: 58
+Thread[15]: Reconstructing layer: 63
+Thread[14]: Reconstructing layer: 59
+Thread[13]: Reconstructing layer: 53
+Thread[13]: Reconstructing layer: 54
+Thread[13]: Reconstructing layer: 55
+Thread[3]: Reconstructing layer: 13
+Thread[3]: Reconstructing layer: 14
+Thread[12]: Reconstructing layer: 49
+Thread[4]: Reconstructing layer: 17
+Thread[3]: Reconstructing layer: 15
+Thread[11]: Reconstructing layer: 45
+Thread[5]: Reconstructing layer: 21
+Thread[12]: Reconstructing layer: 50
+Thread[10]: Reconstructing layer: 41
+Thread[6]: Reconstructing layer: 25
+Thread[9]: Reconstructing layer: 37
+Thread[8]: Reconstructing layer: 33
+Thread[4]: Reconstructing layer: 18
+Thread[7]: Reconstructing layer: 29
+Thread[12]: Reconstructing layer: 51
+Thread[11]: Reconstructing layer: 46
+Thread[5]: Reconstructing layer: 22
+Thread[4]: Reconstructing layer: 19
+Thread[10]: Reconstructing layer: 42
+Thread[11]: Reconstructing layer: 47
+Thread[6]: Reconstructing layer: 26
+Thread[9]: Reconstructing layer: 38
+Thread[8]: Reconstructing layer: 34
+Thread[7]: Reconstructing layer: 30
+Thread[5]: Reconstructing layer: 23
+Thread[10]: Reconstructing layer: 43
+Thread[6]: Reconstructing layer: 27
+Thread[9]: Reconstructing layer: 39
+Thread[8]: Reconstructing layer: 35
+Thread[7]: Reconstructing layer: 31
+Normalizing 3D complex function image inside a 64x64x64 grid.
+
+Maximal value in grid: 1.36043
+@31.9163,31.9833,31.9559
+*0.0475035
+Reconstructing 3D image inside a 64x64x64 grid.
+Scale factor: 0.0475035
+Thread[0]: Reconstructing layer: 0
+Thread[4]: Reconstructing layer: 16
+Thread[0]: Reconstructing layer: 1
+Thread[10]: Reconstructing layer: 40
+Thread[1]: Reconstructing layer: 4
+Thread[15]: Reconstructing layer: 60
+Thread[8]: Reconstructing layer: 32
+Thread[13]: Reconstructing layer: 52
+Thread[6]: Reconstructing layer: 24
+Thread[0]: Reconstructing layer: 2
+Thread[2]: Reconstructing layer: 8
+Thread[1]: Reconstructing layer: 5
+Thread[3]: Reconstructing layer: 12
+Thread[12]: Reconstructing layer: 48
+Thread[1]: Reconstructing layer: 6
+Thread[9]: Reconstructing layer: 36
+Thread[2]: Reconstructing layer: 9
+Thread[1]: Reconstructing layer: 7
+Thread[7]: Reconstructing layer: 28
+Thread[0]: Reconstructing layer: 3
+Thread[14]: Reconstructing layer: 56
+Thread[2]: Reconstructing layer: 10
+Thread[5]: Reconstructing layer: 20
+Thread[15]: Reconstructing layer: 61
+Thread[11]: Reconstructing layer: 44
+Thread[14]: Reconstructing layer: 57
+Thread[2]: Reconstructing layer: 11
+Thread[15]: Reconstructing layer: 62
+Thread[15]: Reconstructing layer: 63
+Thread[14]: Reconstructing layer: 58
+Thread[14]: Reconstructing layer: 59
+Thread[13]: Reconstructing layer: 53
+Thread[13]: Reconstructing layer: 54
+Thread[13]: Reconstructing layer: 55
+Thread[3]: Reconstructing layer: 13
+Thread[3]: Reconstructing layer: 14
+Thread[12]: Reconstructing layer: 49
+Thread[4]: Reconstructing layer: 17
+Thread[3]: Reconstructing layer: 15
+Thread[11]: Reconstructing layer: 45
+Thread[5]: Reconstructing layer: 21
+Thread[12]: Reconstructing layer: 50
+Thread[10]: Reconstructing layer: 41
+Thread[6]: Reconstructing layer: 25
+Thread[9]: Reconstructing layer: 37
+Thread[8]: Reconstructing layer: 33
+Thread[4]: Reconstructing layer: 18
+Thread[7]: Reconstructing layer: 29
+Thread[12]: Reconstructing layer: 51
+Thread[11]: Reconstructing layer: 46
+Thread[5]: Reconstructing layer: 22
+Thread[4]: Reconstructing layer: 19
+Thread[10]: Reconstructing layer: 42
+Thread[11]: Reconstructing layer: 47
+Thread[6]: Reconstructing layer: 26
+Thread[9]: Reconstructing layer: 38
+Thread[8]: Reconstructing layer: 34
+Thread[7]: Reconstructing layer: 30
+Thread[5]: Reconstructing layer: 23
+Thread[10]: Reconstructing layer: 43
+Thread[9]: Reconstructing layer: 39
+Thread[6]: Reconstructing layer: 27
+Thread[8]: Reconstructing layer: 35
+Thread[7]: Reconstructing layer: 31
+Normalizing 3D complex function image inside a 64x64x64 grid.
+
+Maximal value in grid: 1.98088
+1BOS_GAL-R-4370
+@32.0402,32.0013,32.0078
+*0.0489282
+Reconstructing 3D image inside a 64x64x64 grid.
+Scale factor: 0.0489282
+Thread[0]: Reconstructing layer: 0
+Thread[13]: Reconstructing layer: 52
+Thread[2]: Reconstructing layer: 8
+Thread[6]: Reconstructing layer: 24
+Thread[1]: Reconstructing layer: 4
+Thread[8]: Reconstructing layer: 32
+Thread[10]: Reconstructing layer: 40
+Thread[9]: Reconstructing layer: 36
+Thread[15]: Reconstructing layer: 60
+Thread[4]: Reconstructing layer: 16
+Thread[14]: Reconstructing layer: 56
+Thread[7]: Reconstructing layer: 28
+Thread[11]: Reconstructing layer: 44
+Thread[3]: Reconstructing layer: 12
+Thread[1]: Reconstructing layer: 5
+Thread[2]: Reconstructing layer: 9
+Thread[15]: Reconstructing layer: 61
+Thread[14]: Reconstructing layer: 57
+Thread[5]: Reconstructing layer: 20
+Thread[15]: Reconstructing layer: 62
+Thread[0]: Reconstructing layer: 1
+Thread[12]: Reconstructing layer: 48
+Thread[1]: Reconstructing layer: 6
+Thread[2]: Reconstructing layer: 10
+Thread[14]: Reconstructing layer: 58
+Thread[15]: Reconstructing layer: 63
+Thread[0]: Reconstructing layer: 2
+Thread[1]: Reconstructing layer: 7
+Thread[2]: Reconstructing layer: 11
+Thread[0]: Reconstructing layer: 3
+Thread[14]: Reconstructing layer: 59
+Thread[3]: Reconstructing layer: 13
+Thread[13]: Reconstructing layer: 53
+Thread[13]: Reconstructing layer: 54
+Thread[13]: Reconstructing layer: 55
+Thread[3]: Reconstructing layer: 14
+Thread[12]: Reconstructing layer: 49
+Thread[4]: Reconstructing layer: 17
+Thread[3]: Reconstructing layer: 15
+Thread[11]: Reconstructing layer: 45
+Thread[5]: Reconstructing layer: 21
+Thread[12]: Reconstructing layer: 50
+Thread[10]: Reconstructing layer: 41
+Thread[4]: Reconstructing layer: 18
+Thread[6]: Reconstructing layer: 25
+Thread[12]: Reconstructing layer: 51
+Thread[9]: Reconstructing layer: 37
+Thread[7]: Reconstructing layer: 29
+Thread[8]: Reconstructing layer: 33
+Thread[11]: Reconstructing layer: 46
+Thread[5]: Reconstructing layer: 22
+Thread[4]: Reconstructing layer: 19
+Thread[10]: Reconstructing layer: 42
+Thread[11]: Reconstructing layer: 47
+Thread[6]: Reconstructing layer: 26
+Thread[9]: Reconstructing layer: 38
+Thread[8]: Reconstructing layer: 34
+Thread[7]: Reconstructing layer: 30
+Thread[5]: Reconstructing layer: 23
+Thread[10]: Reconstructing layer: 43
+Thread[9]: Reconstructing layer: 39
+Thread[6]: Reconstructing layer: 27
+Thread[8]: Reconstructing layer: 35
+Thread[7]: Reconstructing layer: 31
+Normalizing 3D complex function image inside a 64x64x64 grid.
+
+Maximal value in grid: 0.407025
+@32.0402,32.0013,32.0078
+*0.0489282
+Reconstructing 3D image inside a 64x64x64 grid.
+Scale factor: 0.0489282
+Thread[4]: Reconstructing layer: 16
+Thread[9]: Reconstructing layer: 36
+Thread[12]: Reconstructing layer: 48
+Thread[11]: Reconstructing layer: 44
+Thread[0]: Reconstructing layer: 0
+Thread[3]: Reconstructing layer: 12
+Thread[0]: Reconstructing layer: 1
+Thread[1]: Reconstructing layer: 4
+Thread[2]: Reconstructing layer: 8
+Thread[7]: Reconstructing layer: 28
+Thread[13]: Reconstructing layer: 52
+Thread[2]: Reconstructing layer: 9
+Thread[1]: Reconstructing layer: 5
+Thread[0]: Reconstructing layer: 2
+Thread[5]: Reconstructing layer: 20
+Thread[2]: Reconstructing layer: 10
+Thread[14]: Reconstructing layer: 56
+Thread[1]: Reconstructing layer: 6
+Thread[0]: Reconstructing layer: 3
+Thread[2]: Reconstructing layer: 11
+Thread[8]: Reconstructing layer: 32
+Thread[10]: Reconstructing layer: 40
+Thread[14]: Reconstructing layer: 57
+Thread[1]: Reconstructing layer: 7
+Thread[6]: Reconstructing layer: 24
+Thread[14]: Reconstructing layer: 58
+Thread[14]: Reconstructing layer: 59
+Thread[15]: Reconstructing layer: 60
+Thread[15]: Reconstructing layer: 61
+Thread[15]: Reconstructing layer: 62
+Thread[15]: Reconstructing layer: 63
+Thread[3]: Reconstructing layer: 13
+Thread[13]: Reconstructing layer: 53
+Thread[13]: Reconstructing layer: 54
+Thread[13]: Reconstructing layer: 55
+Thread[3]: Reconstructing layer: 14
+Thread[12]: Reconstructing layer: 49
+Thread[4]: Reconstructing layer: 17
+Thread[3]: Reconstructing layer: 15
+Thread[11]: Reconstructing layer: 45
+Thread[5]: Reconstructing layer: 21
+Thread[12]: Reconstructing layer: 50
+Thread[10]: Reconstructing layer: 41
+Thread[6]: Reconstructing layer: 25
+Thread[4]: Reconstructing layer: 18
+Thread[12]: Reconstructing layer: 51
+Thread[9]: Reconstructing layer: 37
+Thread[7]: Reconstructing layer: 29
+Thread[8]: Reconstructing layer: 33
+Thread[11]: Reconstructing layer: 46
+Thread[5]: Reconstructing layer: 22
+Thread[4]: Reconstructing layer: 19
+Thread[10]: Reconstructing layer: 42
+Thread[11]: Reconstructing layer: 47
+Thread[6]: Reconstructing layer: 26
+Thread[9]: Reconstructing layer: 38
+Thread[8]: Reconstructing layer: 34
+Thread[7]: Reconstructing layer: 30
+Thread[5]: Reconstructing layer: 23
+Thread[10]: Reconstructing layer: 43
+Thread[9]: Reconstructing layer: 39
+Thread[6]: Reconstructing layer: 27
+Thread[8]: Reconstructing layer: 35
+Thread[7]: Reconstructing layer: 31
+Normalizing 3D complex function image inside a 64x64x64 grid.
+
+Maximal value in grid: 1.432
+4X07_GLA-D-1
+@32.0216,31.9723,31.9699
+*0.0481008
+Reconstructing 3D image inside a 64x64x64 grid.
+Scale factor: 0.0481008
+Thread[14]: Reconstructing layer: 56
+Thread[5]: Reconstructing layer: 20
+Thread[9]: Reconstructing layer: 36
+Thread[2]: Reconstructing layer: 8
+Thread[8]: Reconstructing layer: 32
+Thread[3]: Reconstructing layer: 12
+Thread[1]: Reconstructing layer: 4
+Thread[15]: Reconstructing layer: 60
+Thread[11]: Reconstructing layer: 44
+Thread[12]: Reconstructing layer: 48
+Thread[7]: Reconstructing layer: 28
+Thread[1]: Reconstructing layer: 5
+Thread[14]: Reconstructing layer: 57
+Thread[0]: Reconstructing layer: 0
+Thread[10]: Reconstructing layer: 40
+Thread[2]: Reconstructing layer: 9
+Thread[4]: Reconstructing layer: 16
+Thread[1]: Reconstructing layer: 6
+Thread[13]: Reconstructing layer: 52
+Thread[2]: Reconstructing layer: 10
+Thread[6]: Reconstructing layer: 24
+Thread[1]: Reconstructing layer: 7
+Thread[14]: Reconstructing layer: 58
+Thread[15]: Reconstructing layer: 61
+Thread[0]: Reconstructing layer: 1
+Thread[2]: Reconstructing layer: 11
+Thread[14]: Reconstructing layer: 59
+Thread[15]: Reconstructing layer: 62
+Thread[0]: Reconstructing layer: 2
+Thread[15]: Reconstructing layer: 63
+Thread[0]: Reconstructing layer: 3
+Thread[13]: Reconstructing layer: 53
+Thread[13]: Reconstructing layer: 54
+Thread[13]: Reconstructing layer: 55
+Thread[3]: Reconstructing layer: 13
+Thread[3]: Reconstructing layer: 14
+Thread[12]: Reconstructing layer: 49
+Thread[4]: Reconstructing layer: 17
+Thread[3]: Reconstructing layer: 15
+Thread[11]: Reconstructing layer: 45
+Thread[5]: Reconstructing layer: 21
+Thread[12]: Reconstructing layer: 50
+Thread[10]: Reconstructing layer: 41
+Thread[6]: Reconstructing layer: 25
+Thread[9]: Reconstructing layer: 37
+Thread[4]: Reconstructing layer: 18
+Thread[12]: Reconstructing layer: 51
+Thread[7]: Reconstructing layer: 29
+Thread[8]: Reconstructing layer: 33
+Thread[11]: Reconstructing layer: 46
+Thread[5]: Reconstructing layer: 22
+Thread[4]: Reconstructing layer: 19
+Thread[10]: Reconstructing layer: 42
+Thread[11]: Reconstructing layer: 47
+Thread[6]: Reconstructing layer: 26
+Thread[9]: Reconstructing layer: 38
+Thread[8]: Reconstructing layer: 34
+Thread[7]: Reconstructing layer: 30
+Thread[5]: Reconstructing layer: 23
+Thread[10]: Reconstructing layer: 43
+Thread[9]: Reconstructing layer: 39
+Thread[6]: Reconstructing layer: 27
+Thread[8]: Reconstructing layer: 35
+Thread[7]: Reconstructing layer: 31
+Normalizing 3D complex function image inside a 64x64x64 grid.
+
+Maximal value in grid: 0.408171
+@32.0216,31.9723,31.9699
+*0.0481008
+Reconstructing 3D image inside a 64x64x64 grid.
+Scale factor: 0.0481008
+Thread[0]: Reconstructing layer: 0
+Thread[11]: Reconstructing layer: 44
+Thread[1]: Reconstructing layer: 4
+Thread[0]: Reconstructing layer: 1
+Thread[4]: Reconstructing layer: 16
+Thread[7]: Reconstructing layer: 28
+Thread[10]: Reconstructing layer: 40
+Thread[0]: Reconstructing layer: 2
+Thread[5]: Reconstructing layer: 20
+Thread[3]: Reconstructing layer: 12
+Thread[1]: Reconstructing layer: 5
+Thread[0]: Reconstructing layer: 3
+Thread[2]: Reconstructing layer: 8
+Thread[6]: Reconstructing layer: 24
+Thread[8]: Reconstructing layer: 32
+Thread[15]: Reconstructing layer: 60
+Thread[1]: Reconstructing layer: 6
+Thread[2]: Reconstructing layer: 9
+Thread[12]: Reconstructing layer: 48
+Thread[14]: Reconstructing layer: 56
+Thread[2]: Reconstructing layer: 10
+Thread[1]: Reconstructing layer: 7
+Thread[15]: Reconstructing layer: 61
+Thread[9]: Reconstructing layer: 36
+Thread[2]: Reconstructing layer: 11
+Thread[14]: Reconstructing layer: 57
+Thread[15]: Reconstructing layer: 62
+Thread[14]: Reconstructing layer: 58
+Thread[15]: Reconstructing layer: 63
+Thread[14]: Reconstructing layer: 59
+Thread[13]: Reconstructing layer: 52
+Thread[13]: Reconstructing layer: 53
+Thread[13]: Reconstructing layer: 54
+Thread[13]: Reconstructing layer: 55
+Thread[3]: Reconstructing layer: 13
+Thread[3]: Reconstructing layer: 14
+Thread[12]: Reconstructing layer: 49
+Thread[4]: Reconstructing layer: 17
+Thread[3]: Reconstructing layer: 15
+Thread[11]: Reconstructing layer: 45
+Thread[5]: Reconstructing layer: 21
+Thread[12]: Reconstructing layer: 50
+Thread[10]: Reconstructing layer: 41
+Thread[6]: Reconstructing layer: 25
+Thread[9]: Reconstructing layer: 37
+Thread[4]: Reconstructing layer: 18
+Thread[12]: Reconstructing layer: 51
+Thread[7]: Reconstructing layer: 29
+Thread[8]: Reconstructing layer: 33
+Thread[11]: Reconstructing layer: 46
+Thread[5]: Reconstructing layer: 22
+Thread[4]: Reconstructing layer: 19
+Thread[10]: Reconstructing layer: 42
+Thread[11]: Reconstructing layer: 47
+Thread[6]: Reconstructing layer: 26
+Thread[9]: Reconstructing layer: 38
+Thread[8]: Reconstructing layer: 34
+Thread[7]: Reconstructing layer: 30
+Thread[5]: Reconstructing layer: 23
+Thread[10]: Reconstructing layer: 43
+Thread[9]: Reconstructing layer: 39
+Thread[6]: Reconstructing layer: 27
+Thread[8]: Reconstructing layer: 35
+Thread[7]: Reconstructing layer: 31
+Normalizing 3D complex function image inside a 64x64x64 grid.
+
+Maximal value in grid: 2.06074
+4E52_GMH-E-1
+@31.8889,32.0444,31.96
+*0.0474995
+Reconstructing 3D image inside a 64x64x64 grid.
+Scale factor: 0.0474995
+Thread[14]: Reconstructing layer: 56
+Thread[13]: Reconstructing layer: 52
+Thread[1]: Reconstructing layer: 4
+Thread[0]: Reconstructing layer: 0
+Thread[3]: Reconstructing layer: 12
+Thread[8]: Reconstructing layer: 32
+Thread[4]: Reconstructing layer: 16
+Thread[1]: Reconstructing layer: 5
+Thread[10]: Reconstructing layer: 40
+Thread[2]: Reconstructing layer: 8
+Thread[1]: Reconstructing layer: 6
+Thread[7]: Reconstructing layer: 28
+Thread[15]: Reconstructing layer: 60
+Thread[0]: Reconstructing layer: 1
+Thread[1]: Reconstructing layer: 7
+Thread[2]: Reconstructing layer: 9
+Thread[5]: Reconstructing layer: 20
+Thread[14]: Reconstructing layer: 57
+Thread[6]: Reconstructing layer: 24
+Thread[2]: Reconstructing layer: 10
+Thread[11]: Reconstructing layer: 44
+Thread[12]: Reconstructing layer: 48
+Thread[14]: Reconstructing layer: 58
+Thread[2]: Reconstructing layer: 11
+Thread[9]: Reconstructing layer: 36
+Thread[15]: Reconstructing layer: 61
+Thread[0]: Reconstructing layer: 2
+Thread[14]: Reconstructing layer: 59
+Thread[15]: Reconstructing layer: 62
+Thread[0]: Reconstructing layer: 3
+Thread[15]: Reconstructing layer: 63
+Thread[13]: Reconstructing layer: 53
+Thread[13]: Reconstructing layer: 54
+Thread[13]: Reconstructing layer: 55
+Thread[3]: Reconstructing layer: 13
+Thread[3]: Reconstructing layer: 14
+Thread[12]: Reconstructing layer: 49
+Thread[4]: Reconstructing layer: 17
+Thread[3]: Reconstructing layer: 15
+Thread[11]: Reconstructing layer: 45
+Thread[5]: Reconstructing layer: 21
+Thread[12]: Reconstructing layer: 50
+Thread[10]: Reconstructing layer: 41
+Thread[6]: Reconstructing layer: 25
+Thread[9]: Reconstructing layer: 37
+Thread[8]: Reconstructing layer: 33
+Thread[4]: Reconstructing layer: 18
+Thread[12]: Reconstructing layer: 51
+Thread[7]: Reconstructing layer: 29
+Thread[11]: Reconstructing layer: 46
+Thread[5]: Reconstructing layer: 22
+Thread[4]: Reconstructing layer: 19
+Thread[10]: Reconstructing layer: 42
+Thread[11]: Reconstructing layer: 47
+Thread[6]: Reconstructing layer: 26
+Thread[9]: Reconstructing layer: 38
+Thread[8]: Reconstructing layer: 34
+Thread[7]: Reconstructing layer: 30
+Thread[5]: Reconstructing layer: 23
+Thread[10]: Reconstructing layer: 43
+Thread[9]: Reconstructing layer: 39
+Thread[6]: Reconstructing layer: 27
+Thread[8]: Reconstructing layer: 35
+Thread[7]: Reconstructing layer: 31
+Normalizing 3D complex function image inside a 64x64x64 grid.
+
+Maximal value in grid: 0.0659604
+@31.8889,32.0444,31.96
+*0.0474995
+Reconstructing 3D image inside a 64x64x64 grid.
+Scale factor: 0.0474995
+Thread[0]: Reconstructing layer: 0
+Thread[6]: Reconstructing layer: 24
+Thread[13]: Reconstructing layer: 52
+Thread[0]: Reconstructing layer: 1
+Thread[10]: Reconstructing layer: 40
+Thread[7]: Reconstructing layer: 28
+Thread[3]: Reconstructing layer: 12
+Thread[8]: Reconstructing layer: 32
+Thread[12]: Reconstructing layer: 48
+Thread[14]: Reconstructing layer: 56
+Thread[1]: Reconstructing layer: 4
+Thread[2]: Reconstructing layer: 8
+Thread[14]: Reconstructing layer: 57
+Thread[15]: Reconstructing layer: 60
+Thread[1]: Reconstructing layer: 5
+Thread[14]: Reconstructing layer: 58
+Thread[9]: Reconstructing layer: 36
+Thread[2]: Reconstructing layer: 9
+Thread[1]: Reconstructing layer: 6
+Thread[14]: Reconstructing layer: 59
+Thread[0]: Reconstructing layer: 2
+Thread[4]: Reconstructing layer: 16
+Thread[1]: Reconstructing layer: 7
+Thread[5]: Reconstructing layer: 20
+Thread[2]: Reconstructing layer: 10
+Thread[15]: Reconstructing layer: 61
+Thread[0]: Reconstructing layer: 3
+Thread[11]: Reconstructing layer: 44
+Thread[2]: Reconstructing layer: 11
+Thread[15]: Reconstructing layer: 62
+Thread[15]: Reconstructing layer: 63
+Thread[13]: Reconstructing layer: 53
+Thread[13]: Reconstructing layer: 54
+Thread[13]: Reconstructing layer: 55
+Thread[3]: Reconstructing layer: 13
+Thread[3]: Reconstructing layer: 14
+Thread[12]: Reconstructing layer: 49
+Thread[4]: Reconstructing layer: 17
+Thread[3]: Reconstructing layer: 15
+Thread[11]: Reconstructing layer: 45
+Thread[5]: Reconstructing layer: 21
+Thread[12]: Reconstructing layer: 50
+Thread[10]: Reconstructing layer: 41
+Thread[6]: Reconstructing layer: 25
+Thread[9]: Reconstructing layer: 37
+Thread[8]: Reconstructing layer: 33
+Thread[4]: Reconstructing layer: 18
+Thread[12]: Reconstructing layer: 51
+Thread[7]: Reconstructing layer: 29
+Thread[11]: Reconstructing layer: 46
+Thread[5]: Reconstructing layer: 22
+Thread[4]: Reconstructing layer: 19
+Thread[10]: Reconstructing layer: 42
+Thread[11]: Reconstructing layer: 47
+Thread[6]: Reconstructing layer: 26
+Thread[9]: Reconstructing layer: 38
+Thread[8]: Reconstructing layer: 34
+Thread[7]: Reconstructing layer: 30
+Thread[5]: Reconstructing layer: 23
+Thread[10]: Reconstructing layer: 43
+Thread[9]: Reconstructing layer: 39
+Thread[6]: Reconstructing layer: 27
+Thread[8]: Reconstructing layer: 35
+Thread[7]: Reconstructing layer: 31
+Normalizing 3D complex function image inside a 64x64x64 grid.
+
+Maximal value in grid: 0.271519
