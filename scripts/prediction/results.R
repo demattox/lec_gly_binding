@@ -50,6 +50,7 @@ bsResiDat = read.delim(file = './analysis/training/data_in/bsResiDat.tsv', sep =
 ligColors = colfunc(ncol(ligTags))
 
 inDir = './analysis/training/train_and_validate/seqID50/'
+inDir = './analysis/training/train_and_validate/seqID80/'
 
 inFiles = dir(inDir)
 inTrain = inFiles[grepl('training.csv', inFiles)]
@@ -134,25 +135,25 @@ colnames(mTrain) = c('ligand', 'metric', 'value')
 
 
 
-ggplot(data = mTrain, aes(x = metric, y = value, col = ligand)) +
-  geom_point(position = position_jitterdodge(jitter.width = 0.05), alpha = 0.4) +
-  geom_boxplot(outlier.alpha = 0) +
-  ylim(c(0.5, 1)) +
-  scale_fill_manual(values = alpha(c('navajowhite','navajowhite'), 0.6), guide =F) +
-  scale_color_manual(values = ligColors) +
-  labs(title = '5x CV with LOCO validation - Training Performance', x = "Metric type", y = "Metric value") +
-  theme_dark(base_size = 22) +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
-
-ggplot(data = mTrain, aes(x = ligand, y = value, col = metric)) +
-  geom_point(position = position_jitterdodge(jitter.width = 0.05), alpha = 0.4) +
-  geom_boxplot(outlier.alpha = 0) +
-  ylim(c(0.5, 1)) +
-  scale_fill_manual(values = alpha(c('navajowhite','navajowhite'), 0.6), guide =F) +
-  scale_color_manual(values = c('darkgreen', 'firebrick1', 'darkorchid1', 'dodgerblue')) +
-  labs(title = '5x CV with LOCO validation - Training Performance', x = "Ligand for prediciton", y = "Metric value") +
-  theme_dark(base_size = 22) +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
+# ggplot(data = mTrain, aes(x = metric, y = value, col = ligand)) +
+#   geom_point(position = position_jitterdodge(jitter.width = 0.05), alpha = 0.4) +
+#   geom_boxplot(outlier.alpha = 0) +
+#   ylim(c(0.5, 1)) +
+#   scale_fill_manual(values = alpha(c('navajowhite','navajowhite'), 0.6), guide =F) +
+#   scale_color_manual(values = ligColors) +
+#   labs(title = '5x CV with LOCO validation - Training Performance', x = "Metric type", y = "Metric value") +
+#   theme_dark(base_size = 22) +
+#   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
+# 
+# ggplot(data = mTrain, aes(x = ligand, y = value, col = metric)) +
+#   geom_point(position = position_jitterdodge(jitter.width = 0.05), alpha = 0.4) +
+#   geom_boxplot(outlier.alpha = 0) +
+#   ylim(c(0.5, 1)) +
+#   scale_fill_manual(values = alpha(c('navajowhite','navajowhite'), 0.6), guide =F) +
+#   scale_color_manual(values = c('darkgreen', 'firebrick1', 'darkorchid1', 'dodgerblue')) +
+#   labs(title = '5x CV with LOCO validation - Training Performance', x = "Ligand for prediciton", y = "Metric value") +
+#   theme_dark(base_size = 22) +
+#   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
 
 
 # Light colors
@@ -269,7 +270,7 @@ for(i in 1:ncol(ligTags)){
   rug((pr$curve[tag,1][pr$curve[tag,1] <= R]), col = alpha('red',0.7))
   rug((pr$curve[tag,2][pr$curve[tag,1] > R]), col = alpha('black',0.7), side = 2)
   rug((pr$curve[tag,2][pr$curve[tag,1] <= R]), col = alpha('red',0.7), side = 2)
-  text(x= 0.5, y = 0.9, labels = paste(round(100 * sum(fpIDs %in% boundIDs)/length(fpIDs),2), '% of ', length(fpIDs), ' FPs', sep = ''), col = 'red', cex = 1.2)
+  text(x= 0.7, y = 0.9, labels = paste(round(100 * sum(fpIDs %in% boundIDs)/length(fpIDs),2), '% of ', length(fpIDs), ' FPs', sep = ''), col = 'red', cex = 1.2)
 }
 
 
