@@ -248,8 +248,6 @@ for(i in 1:ncol(ligTags)){
   fpLecs = unique(bsResiDat$uniparc[row.names(bsResiDat) %in% fpBS]) # unique lectin uniprot ids of lectins that show up as false positives
   fpIDs = bsResiDat$uniparc[row.names(bsResiDat) %in% fpBS] # UniProt ID for FP binding site
   
-  paste(sum(fpIDs %in% siaIDs), 'FPs (of', length(fpIDs), 'FPs)', 'from lectins that bind glycan in other structures', sep = ' ')
-  
   negBS = row.names(outcomes)[outcomes$Obs == F]
   negIDs = bsResiDat$uniparc[row.names(bsResiDat) %in% negBS] # UniProt IDs of lectins with negative binding sites that DO bind ligand in other structures
   bound_NegBS = negBS[negIDs %in% boundIDs] # Negative binding sites from 
@@ -267,40 +265,12 @@ for(i in 1:ncol(ligTags)){
   lines(x = c(-1,R), y = c(P,P), lty = 2)
   points(R,P, pch = 19)
   tag = pr$curve[,3] %in% outcomes[bound_NegBS, "Pred"]
-  rug((pr$curve[tag,1]), col = alpha('black',0.5))
-  rug((pr$curve[tag,2]), col = alpha('black',0.5), side = 2)
-  
+  rug((pr$curve[tag,1][pr$curve[tag,1] > R]), col = alpha('black',0.7))
+  rug((pr$curve[tag,1][pr$curve[tag,1] <= R]), col = alpha('red',0.7))
+  rug((pr$curve[tag,2][pr$curve[tag,1] > R]), col = alpha('black',0.7), side = 2)
+  rug((pr$curve[tag,2][pr$curve[tag,1] <= R]), col = alpha('red',0.7), side = 2)
+  text(x= 0.5, y = 0.9, labels = paste(round(100 * sum(fpIDs %in% boundIDs)/length(fpIDs),2), '% of ', length(fpIDs), ' FPs', sep = ''), col = 'red', cex = 1.2)
 }
 
-
-
-
-
-
-
-
-all(row.names(lecSpec)[apply(lecSpec[,neuTag], 1, any)] == unique(bsResiDat$uniparc[bsResiDat$iupac %in% uniLigs[neuTag]])) # confirming ligTags match
-
-siaIDs = unique(bsResiDat$uniparc[bsResiDat$iupac %in% uniLigs[neuTag]])
-
-fpBS = row.names(outcomes)[outcomes$Pred >= 0.5 & outcomes$Obs == F] # Binding sites that ended up as false positives
-fpLecs = unique(bsResiDat$uniparc[row.names(bsResiDat) %in% fpBS]) # unique lectin uniprot ids of lectins that show up as false positives
-fpIDs = bsResiDat$uniparc[row.names(bsResiDat) %in% fpBS] # UniProt ID for FP binding site
-length(fpLecs)
-
-sum(fpLecs %in% siaIDs) # number of FP lectins that do bind sialic acid
-sum(fpIDs %in% siaIDs) # Number of False Positives that come from lectins that DO bind sialic acid in other structures
-
-
-sum(outcomes$Obs == F)
-negBS = row.names(outcomes)[outcomes$Obs == F]
-negIDs = bsResiDat$uniparc[row.names(bsResiDat) %in% negBS]
-sum(negIDs %in% siaIDs) # Number of negative binding sites that come from lectins that DO bind sialic acid in other structures             
-
-bound_fpBS = fpBS[fpIDs %in% siaIDs]
-noFP_out = outcomes[! row.names(outcomes) %in% bound_fpBS,]
-dropFPs = pr.curve(noFP_out$Pred[noFP_out$Obs == T], noFP_out$Pred[noFP_out$Obs == F], curve= T, rand.compute = T)
-
-bound_NegBS = negBS[negIDs %in% siaIDs]
 
 
