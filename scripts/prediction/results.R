@@ -3,8 +3,9 @@
 library(reshape)
 library(ggplot2)
 library(philentropy)
-
 library(pheatmap)
+library(PRROC)
+
 
 ###############
 # Functions
@@ -241,6 +242,18 @@ for(i in 1:ncol(ligTags)){
   lig = gsub('(.*)_outcomes.csv', '\\1', inOutcomes)[i]
   outcomes = read.delim(file = paste(inDir, inOutcomes[i], sep = ''), header = T, sep = ',', stringsAsFactors = F)
   
+  boundLigs = unique(bsResiDat$iupac[ligTags[,i]]) # UniProt IDs of all lectins that do have any examples of binding
+  boundIDs = unique(bsResiDat$uniparc[bsResiDat$iupac %in% boundLigs])
+  fpBS = row.names(outcomes)[outcomes$Pred >= 0.5 & outcomes$Obs == F] # Binding sites that ended up as false positives
+  fpLecs = unique(bsResiDat$uniparc[row.names(bsResiDat) %in% fpBS]) # unique lectin uniprot ids of lectins that show up as false positives
+  fpIDs = bsResiDat$uniparc[row.names(bsResiDat) %in% fpBS] # UniProt ID for FP binding site
+  
+  paste(sum(fpIDs %in% siaIDs), 'FPs (of', length(fpIDs), 'FPs)', 'from lectins that bind glycan in other structures', sep = ' ')
+  
+  negBS = row.names(outcomes)[outcomes$Obs == F]
+  negIDs = bsResiDat$uniparc[row.names(bsResiDat) %in% negBS] # UniProt IDs of lectins with negative binding sites that DO bind ligand in other structures
+  bound_NegBS = negBS[negIDs %in% boundIDs] # Negative binding sites from 
+
   pr = pr.curve(outcomes$Pred[outcomes$Obs == T], outcomes$Pred[outcomes$Obs == F], curve= T, rand.compute = T)
   
   R = test$recall[i]
@@ -253,7 +266,16 @@ for(i in 1:ncol(ligTags)){
   lines(x = c(R,R), y = c(-1,P), lty = 2)
   lines(x = c(-1,R), y = c(P,P), lty = 2)
   points(R,P, pch = 19)
+  tag = pr$curve[,3] %in% outcomes[bound_NegBS, "Pred"]
+  rug((pr$curve[tag,1]), col = alpha('black',0.5))
+  rug((pr$curve[tag,2]), col = alpha('black',0.5), side = 2)
+  
 }
+
+
+
+
+
 
 
 
@@ -280,3 +302,5 @@ noFP_out = outcomes[! row.names(outcomes) %in% bound_fpBS,]
 dropFPs = pr.curve(noFP_out$Pred[noFP_out$Obs == T], noFP_out$Pred[noFP_out$Obs == F], curve= T, rand.compute = T)
 
 bound_NegBS = negBS[negIDs %in% siaIDs]
+
+
