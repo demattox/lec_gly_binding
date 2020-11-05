@@ -138,13 +138,13 @@ f2 <- function (data, lev = NULL, model = NULL, beta = 2) {
   f2_val
 }
 
-f3 <- function (data, lev = NULL, model = NULL, beta = 3) {
-  precision <- posPredValue(data$pred, data$obs, positive = "TRUE")
-  recall  <- sensitivity(data$pred, data$obs, postive = "TRUE")
-  f3_val <- ((1 + beta^2) * precision * recall) / (beta^2 * precision + recall)
-  names(f3_val) <- c("F3")
-  f3_val
-}
+# f3 <- function (data, lev = NULL, model = NULL, beta = 3) {
+#   precision <- posPredValue(data$pred, data$obs, positive = "TRUE")
+#   recall  <- sensitivity(data$pred, data$obs, postive = "TRUE")
+#   f3_val <- ((1 + beta^2) * precision * recall) / (beta^2 * precision + recall)
+#   names(f3_val) <- c("F3")
+#   f3_val
+# }
 
 pCnt <- function(x){
   return(x/sum(x))
@@ -301,7 +301,7 @@ for (j in (1:length(testCases))){
                                number = folds,
                                repeats = reps,
                                sampling = 'down',
-                               summaryFunction = f3)
+                               summaryFunction = f2)
   
   rfFit <- train(bound ~ .,
                  data = trainDat, 
@@ -312,7 +312,7 @@ for (j in (1:length(testCases))){
                  verbose = TRUE,
                  importance = TRUE, 
                  ntree = default_ntree,
-                 metric = "F3")
+                 metric = "F2")
   
   trainKappa = Kappa(rfFit$finalModel$confusion[1:2,1:2])$Unweighted[1]
   trainRecall = 1 - rfFit$finalModel$confusion[2,3]

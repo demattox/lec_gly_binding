@@ -49,8 +49,9 @@ bsResiDat = read.delim(file = './analysis/training/data_in/bsResiDat.tsv', sep =
 
 ligColors = colfunc(ncol(ligTags))
 
-inDir = './analysis/training/train_and_validate/seqID50/'
-inDir = './analysis/training/train_and_validate/seqID80/'
+# inDir = './analysis/training/train_and_validate/seqID50/'
+# inDir = './analysis/training/train_and_validate/seqID80/'
+# inDir = './analysis/training/train_and_validate/beta3id50/'
 
 inFiles = dir(inDir)
 inTrain = inFiles[grepl('training.csv', inFiles)]
@@ -79,28 +80,28 @@ for (i in 1:length(lecIDs)){
 # Get ligand tags again
 uniLigs = unique(bsResiDat$iupac)
 
-parenCnt = bracCnt = manCnt = neuCnt = bracCnt = rep(0,length(uniLigs))
-for (i in 1:length(uniLigs)){
-  lig = uniLigs[i]
-  parenCnt[i] = lengths(regmatches(lig, gregexpr("\\(", lig)))
-  bracCnt[i] = lengths(regmatches(lig, gregexpr("\\[", lig)))
-  manCnt[i] = lengths(regmatches(lig, gregexpr("Man", lig)))
-  neuCnt[i] = lengths(regmatches(lig, gregexpr("NeuAc", lig)))
-}
-
-mTag = parenCnt == 0 & bracCnt == 0 # Monosaccharides
-dTag = parenCnt == 1 & bracCnt == 0 # Disaccharides
-tTag = (parenCnt == 2 & bracCnt == 0) | (parenCnt == 2 & bracCnt == 1) # Trisaccharides
-qTag = (parenCnt == 3 & bracCnt == 0) | (parenCnt == 3 & bracCnt == 1) | (parenCnt == 1 & bracCnt == 2) # Tetrasaccharides
-pTag = !(mTag | dTag | tTag | qTag) # 5+ sugars
-bTag = bracCnt >= 1 # Branched glycans
-
-manTag = manCnt > 3 # High mannose
-# uniLigs[manTag]
-neuTag = neuCnt >= 1 # Has sialic acid
-# uniLigs[neuTag]
-fucTag = grepl('^Fuc',uniLigs) # Has a terminal fucose
-# uniLigs[fucTag]
+# parenCnt = bracCnt = manCnt = neuCnt = bracCnt = rep(0,length(uniLigs))
+# for (i in 1:length(uniLigs)){
+#   lig = uniLigs[i]
+#   parenCnt[i] = lengths(regmatches(lig, gregexpr("\\(", lig)))
+#   bracCnt[i] = lengths(regmatches(lig, gregexpr("\\[", lig)))
+#   manCnt[i] = lengths(regmatches(lig, gregexpr("Man", lig)))
+#   neuCnt[i] = lengths(regmatches(lig, gregexpr("NeuAc", lig)))
+# }
+# 
+# mTag = parenCnt == 0 & bracCnt == 0 # Monosaccharides
+# dTag = parenCnt == 1 & bracCnt == 0 # Disaccharides
+# tTag = (parenCnt == 2 & bracCnt == 0) | (parenCnt == 2 & bracCnt == 1) # Trisaccharides
+# qTag = (parenCnt == 3 & bracCnt == 0) | (parenCnt == 3 & bracCnt == 1) | (parenCnt == 1 & bracCnt == 2) # Tetrasaccharides
+# pTag = !(mTag | dTag | tTag | qTag) # 5+ sugars
+# bTag = bracCnt >= 1 # Branched glycans
+# 
+# manTag = manCnt > 3 # High mannose
+# # uniLigs[manTag]
+# neuTag = neuCnt >= 1 # Has sialic acid
+# # uniLigs[neuTag]
+# fucTag = grepl('^Fuc',uniLigs) # Has a terminal fucose
+# # uniLigs[fucTag]
 
 # Look at lectin specificity
 lecSpec = as.data.frame(matrix(nrow = length(lecIDs), ncol = length(uniLigs)))
@@ -205,6 +206,21 @@ for(i in 1:length(inTest)){
 }
 # mTest= melt(test, id.vars = 'ligand')
 
+recall$recall = as.numeric(as.character(recall$recall))
+
+ggplot(data = recall, aes(x = ligand, y = recall, col = ligand, fill = ligand)) +
+  geom_point(position = position_jitterdodge(jitter.width = 0.05), alpha = 0.4) +
+  geom_boxplot(outlier.alpha = 0) +
+  ylim(c(0, 1)) +
+  scale_fill_manual(values = alpha(rep('snow3',ncol(ligTags)), 0.6), guide =F) +
+  scale_color_manual(values = ligColors, guide = F) +
+  labs(title = 'Validation Recall for each excluded cluster', x = "Ligand for prediciton", y = "Cluster-specific Recall value") +
+  theme_light(base_size = 22) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
+
+
+
+
 breakLst = seq(0,1,0.01)
 mycol = colorRampPalette(c("ivory", "cornflowerblue", "navy"))(n = length(breakLst))
 
@@ -224,18 +240,6 @@ plot(sampSizes, test$kappa, pch = 19, cex = 1.5,
 
 cor.test(sampSizes, test$kappa)
 
-
-recall$recall = as.numeric(as.character(recall$recall))
-
-ggplot(data = recall, aes(x = ligand, y = recall, col = ligand, fill = ligand)) +
-  geom_point(position = position_jitterdodge(jitter.width = 0.05), alpha = 0.4) +
-  geom_boxplot(outlier.alpha = 0) +
-  ylim(c(0, 1)) +
-  scale_fill_manual(values = alpha(rep('snow3',ncol(ligTags)), 0.6), guide =F) +
-  scale_color_manual(values = ligColors, guide = F) +
-  labs(title = 'Validation Recall for each excluded cluster', x = "Ligand for prediciton", y = "Cluster-specific Recall value") +
-  theme_light(base_size = 22) +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
 
 # PR curves
 par(mfrow = c(3,5))
@@ -268,8 +272,8 @@ for(i in 1:ncol(ligTags)){
   tag = pr$curve[,3] %in% outcomes[bound_NegBS, "Pred"]
   rug((pr$curve[tag,1][pr$curve[tag,1] > R]), col = alpha('black',0.7))
   rug((pr$curve[tag,1][pr$curve[tag,1] <= R]), col = alpha('red',0.7))
-  rug((pr$curve[tag,2][pr$curve[tag,1] > R]), col = alpha('black',0.7), side = 2)
-  rug((pr$curve[tag,2][pr$curve[tag,1] <= R]), col = alpha('red',0.7), side = 2)
+  rug((pr$curve[tag,2][pr$curve[tag,2] < P]), col = alpha('black',0.7), side = 2)
+  rug((pr$curve[tag,2][pr$curve[tag,2] >= P]), col = alpha('red',0.7), side = 2)
   text(x= 0.7, y = 0.9, labels = paste(round(100 * sum(fpIDs %in% boundIDs)/length(fpIDs),2), '% of ', length(fpIDs), ' FPs', sep = ''), col = 'red', cex = 1.2)
 }
 
