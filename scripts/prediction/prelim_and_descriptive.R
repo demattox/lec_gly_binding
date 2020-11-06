@@ -409,6 +409,10 @@ for (i in 1:length(unique(lpc80))){
 }
 
 
+pdf(file = paste(OG_Dir,colnames(ligTags)[dirInd], '_PRcurve.pdf', sep = ''),
+    width = 6, # The width of the plot in inches
+    height = 6.25) # The height of the plot in inches
+
 par(mfrow=c(2,1), mar = c(5, 4, 4, 4) + 0.3)              # Additional space for second y-axis
 plot(0,0,pch='', xlim = c(0,250), ylim = c(0,17), xlab = '', ylab = '')
 title(main="Number of ligands per cluster (with cluster size)", col.main="black", cex.main = 2,
