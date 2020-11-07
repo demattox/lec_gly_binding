@@ -409,10 +409,11 @@ for (i in 1:length(unique(lpc80))){
 }
 
 
-pdf(file = paste(OG_Dir,colnames(ligTags)[dirInd], '_PRcurve.pdf', sep = ''),
-    width = 6, # The width of the plot in inches
-    height = 6.25) # The height of the plot in inches
-
+pdf(file = paste('./analysis/sfgPlots/', 
+                 'ligands_per_clust',
+                 '.pdf', sep = ''),
+    width = 12,
+    height = 10)
 par(mfrow=c(2,1), mar = c(5, 4, 4, 4) + 0.3)              # Additional space for second y-axis
 plot(0,0,pch='', xlim = c(0,250), ylim = c(0,17), xlab = '', ylab = '')
 title(main="Number of ligands per cluster (with cluster size)", col.main="black", cex.main = 2,
@@ -443,7 +444,6 @@ lines(x = sort(rep(1.5:(length(lpc80Len)+0.5),3)), y = c(rbind(rep(0,length(lpc8
 axis(side = 4, at = pretty(c(0,60)))      # Add second axis
 mtext("Number of structures per cluster", side = 4, line = 3, cex = 1.5, col = 'black')             # Add second axis label
 legend(x= 'topright', legend = '80% Identity', pch = 15, col = mycol[4], bty = 'n', cex = 2, pt.cex = 3)
-
 dev.off()
 
 
@@ -508,6 +508,11 @@ fucTag = grepl('^Fuc',ligSort50) # Has a terminal fucose
 
 sacc_col =  colorRampPalette(c("plum1","tomato", "firebrick4"))(5)
 
+pdf(file = paste('./analysis/sfgPlots/', 
+                 'clusts_with_ligands_id50',
+                 '.pdf', sep = ''),
+    width = 18,
+    height = 10)
 plot(0,0,pch='', xlim = c(0.5,230), ylim = c(-1,20), xlab = '', ylab = '')
 title(main="Number of clusters with any binding for each unique ligand (50% id)", col.main="black", cex.main = 2,
       xlab='Individual ligands (sorted)',
@@ -533,7 +538,7 @@ legend(x = 'topright', pch = c(rep(15,9),21,23, 24),
                   '',
                   'Branching','No Branching',
                   '',
-                  'High Mannose', 'Neu5Ac containing', 'Terminal Fucose'),
+                  'High Mannose', 'NeuAc containing', 'Terminal Fucose'),
        col = c(sacc_col,
                'white',
                'navy', 'grey85',
@@ -542,7 +547,7 @@ legend(x = 'topright', pch = c(rep(15,9),21,23, 24),
        pt.bg = c(rep(NA,9),
               'forestgreen', 'darkorchid', 'firebrick1'),
        pt.cex =1.8)
-
+dev.off()
 
 topLigOccurences$High_Mannose[1] = 0
 topLigOccurences$Sialic_Acid[1] = 0
@@ -589,6 +594,11 @@ manTag = manCnt > 3 # High mannose
 neuTag = neuCnt >= 1 # Has sialic acid
 fucTag = grepl('^Fuc',ligSort80) # Has a terminal fucose
 
+pdf(file = paste('./analysis/sfgPlots/', 
+                 'clusts_with_ligands_id80',
+                 '.pdf', sep = ''),
+    width = 18,
+    height = 10)
 plot(0,0,pch='', xlim = c(0.5,230), ylim = c(-1,20), xlab = '', ylab = '')
 title(main="Number of clusters with any binding for each unique ligand (80% id)", col.main="black", cex.main = 2,
       xlab='Individual ligands (sorted)',
@@ -614,7 +624,7 @@ legend(x = 'topright', pch = c(rep(15,9),21,23, 24),
                   '',
                   'Branching','No Branching',
                   '',
-                  'High Mannose', 'Neu5Ac containing', 'Terminal Fucose'),
+                  'High Mannose', 'NeuAc containing', 'Terminal Fucose'),
        col = c(sacc_col,
                'white',
                'navy', 'grey85',
@@ -623,6 +633,7 @@ legend(x = 'topright', pch = c(rep(15,9),21,23, 24),
        pt.bg = c(rep(NA,9),
                  'forestgreen', 'darkorchid', 'firebrick1'),
        pt.cex =1.8)
+dev.off()
 
 topLigOccurences$High_Mannose[2] = 0
 topLigOccurences$Sialic_Acid[2] = 0
@@ -670,7 +681,11 @@ for (i in 5:16){
 melt_ligOccur = melt(data =topLigOccurences, id.vars = 'id_cutoff')
 colnames(melt_ligOccur) = c('Clust_ID', 'Ligand', 'Cluster_Percent_w_ligand')
 
-
+pdf(file = paste('./analysis/sfgPlots/', 
+                 'clust_pcts_w_ligands',
+                 '.pdf', sep = ''),
+    width = 15,
+    height = 10.5)
 ggplot(melt_ligOccur, aes(fill = Clust_ID, x = Ligand, alpha = Ligand, y = Cluster_Percent_w_ligand)) + geom_bar(stat="identity", color="black", position=position_dodge())+
   scale_fill_manual(values=mycol[c(1,4)]) +
   scale_alpha_manual(values=c(rep(0.6,3), rep(1,12)), guide = F) +
@@ -680,7 +695,7 @@ ggplot(melt_ligOccur, aes(fill = Clust_ID, x = Ligand, alpha = Ligand, y = Clust
   theme_linedraw(base_size = 22) +
   labs(title = "Well-represented ligands in lectin clusters", x = "IUPAC Ligands", y = "Percent of clusters with ligand") +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
-
+dev.off()
 
 ###########################
 # McCaldon analysis
@@ -1149,11 +1164,14 @@ sum(dropCols)
 
 bsResiDat = bsResiDat[,!dropCols]
 
-# Limit to columns with number of residues, AA-specifc frequencies, and secStruct frequencies
-resiPredFeats = bsResiDat[,grepl('_bin', colnames(bsResiDat))]
+# Limit to columns with number of residues, AA-specifc frequencies, secStruct frequencies, and Ca2+ ion count
+resiPredFeats = bsResiDat[,grepl('(_bin)', colnames(bsResiDat)) | grepl('(^CA$)', colnames(bsResiDat))]
+
+# Limit to columns with counts of the various interactions
+intPredFeats = bsResiDat[,18:28]
 
 # Combine resi features with pocket features for premlinary feature set
-all(row.names(resiPredFeats) == row.names(pca.z10)) & all(row.names(resiPredFeats) == row.names(d2Feats)) & all(row.names(resiPredFeats) == row.names(pca.scaleBins$x))
+all(row.names(resiPredFeats) == row.names(pca.z10)) & all(row.names(resiPredFeats) == row.names(d2Feats)) & all(row.names(resiPredFeats) == row.names(pca.scaleBins$x)) & all(row.names(resiPredFeats) == row.names(intPredFeats))
 
 runSum = rep(0, ncol(zern10thNorm))
 sum = 0
@@ -1178,7 +1196,7 @@ topBinPCs = pca.scaleBins$x[, runSum <= 80]
 colnames(topBinPCs) = gsub('^', 'binnedD2_', colnames(topBinPCs))
 
 
-predFeats = cbind(resiPredFeats, d2Feats, topBinPCs, topZernPCs) # Preliminary predictive feature set
+predFeats = cbind(intPredFeats, resiPredFeats, d2Feats, topBinPCs, topZernPCs) # Preliminary predictive feature set
 
 ###########################
 # Explore predictive feature set
@@ -1195,9 +1213,10 @@ for (i in 1:length(labels.u)){
 # initial UMAP
 umap.rawfeats = umap(predFeats)
 
+
 plot(umap.rawfeats$layout, #xlim = c(-5.5,7), ylim = c(-6.5,6.5),
      pch = 19, col = alpha(colors[labels.int], 0.6),
-     xlab = 'UMAP 1', ylab = 'UMAP 2', main = 'UMAP vis for 209 predictive features (colored by 50% id clusters)')
+     xlab = 'UMAP 1', ylab = 'UMAP 2', main = 'UMAP vis for 229 predictive features (colored by 50% id clusters)')
 
 # corrplot(cor(umap.rawfeats$layout, d2Feats))
 
@@ -1209,10 +1228,15 @@ for(i in 1:ncol(scaledFeats)){
 
 umap.scaledfeats = umap(scaledFeats)
 
+pdf(file = paste('./analysis/sfgPlots/', 
+                 'predFeats_UMAP_50',
+                 '.pdf', sep = ''),
+    width = 11,
+    height = 11.25)
 plot(umap.scaledfeats$layout, #xlim = c(-5.5,7), ylim = c(-6.5,6.5),
      pch = 19, col = alpha(colors[labels.int], 0.6),
-     xlab = 'UMAP 1', ylab = 'UMAP 2', main = 'UMAP vis for 209 predictive features - Scaled (colored by 50% id clusters)')
-
+     xlab = 'UMAP 1', ylab = 'UMAP 2', main = 'UMAP vis for 221 predictive features - Scaled (colored by 50% id clusters)')
+dev.off()
 
 colors = colfunc(length(unique(bsResiDat$seqClust80)))
 labels = bsResiDat$seqClust80
@@ -1222,9 +1246,15 @@ for (i in 1:length(labels.u)){
   labels.int[labels == labels.u[i]] = i
 }
 
+pdf(file = paste('./analysis/sfgPlots/', 
+                 'predFeats_UMAP_80',
+                 '.pdf', sep = ''),
+    width = 11,
+    height = 11.25)
 plot(umap.scaledfeats$layout, #xlim = c(-5.5,7), ylim = c(-6.5,6.5),
      pch = 19, col = alpha(colors[labels.int], 0.6),
-     xlab = 'UMAP 1', ylab = 'UMAP 2', main = 'UMAP vis for 209 predictive features - Scaled (colored by 80% id clusters)')
+     xlab = 'UMAP 1', ylab = 'UMAP 2', main = 'UMAP vis for 221 predictive features - Scaled (colored by 80% id clusters)')
+dev.off()
 
 ### Variance within clusters vs between clusters
 
@@ -1327,12 +1357,18 @@ mclusdf = rbind(data.frame('type' = c('All binding sites'), 'seqID' = c('NA'),'v
                 data.frame('type' = c('Cluster means (no shared clusts)'), 'seqID' = c('50'), 'value' = outClus50Mean),
                 data.frame('type' = c('Cluster means (no shared clusts)'), 'seqID' = c('80'), 'value' = outClus80Mean))
 
+pdf(file = paste('./analysis/sfgPlots/', 
+                 'interclust_distances',
+                 '.pdf', sep = ''),
+    width = 18,
+    height = 11.3)
 ggplot(data = mclusdf, aes(x = type, y = value, col = seqID, fill = seqID)) + geom_boxplot(notch = T, outlier.alpha = 0.5) +
   scale_fill_manual(values = rep('grey80',3), guide = F) + 
   scale_color_manual(values = c('black', mycol[1], mycol[4])) +
   labs(title = 'Inter- & intracluster distances (from predictive features)', x = "Pairwise grouping", y = "Euclidean distance") +
   theme_dark(base_size = 22) + 
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
+dev.off()
 
 # # Cosine similarity based on one-hot encoding of binned BS residues
 # oneHotTag = grepl('^[[:upper:]]{3}_', colnames(predFeats))
@@ -1395,10 +1431,10 @@ for (i in 1:length(clusLst50)){
       }
       
     }
-    legend(x = 'bottomright', legend = c(1:length(tmpCol)), col = tmpCol, pch = 19, pt.cex = 2)
+    # legend(x = 'bottomright', legend = c(1:length(tmpCol)), col = tmpCol, pch = 19, pt.cex = 2)
     
     sampInds = sampInds[sampInds != 0]
-    # length(sampInds)
+    sampCnt[i] = length(sampInds)
   }
 }
 
@@ -1549,6 +1585,8 @@ featColors = rep('', nrow(stats))
 resiFeats = colorRampPalette(c("plum1","tomato", "firebrick4"))(4)
 pocketFeats = colorRampPalette(c('turquoise', 'dodgerblue1', 'blue2'))(3)
 
+featColors[1:11] = 'forestgreen'
+
 featColors[grep('^vol_4Ang$', row.names(stats)) : grep('^leftskew_10Ang$', row.names(stats))] = pocketFeats[1] # features within the d2Feats range
 featColors[grepl('^binnedD2', row.names(stats))] = pocketFeats[2] # PCs from the binned D2 measures
 featColors[grepl('^zern', row.names(stats))] = pocketFeats[3] # PCs from the 3DZDs
@@ -1556,7 +1594,7 @@ featColors[grepl('^zern', row.names(stats))] = pocketFeats[3] # PCs from the 3DZ
 featColors[grepl('^numBSresis', row.names(stats))] = resiFeats[1] # number of residues in binding site features
 featColors[gsub('_bin\\d{1}', '', row.names(stats)) %in% c('H', 'B', 'E', 'G', 'T', 'S', 'X.')] = resiFeats[2] # secondary structure features
 featColors[gsub('_bin\\d{1}', '', row.names(stats)) %in% c('nonpolar', 'polar', 'posCharge', 'negCharge', 'aromatic')] = resiFeats[3] # amino acid properties
-featColors[grepl('^[[:upper:]]{3}_', row.names(stats))] = resiFeats[4] # amino acid identities
+featColors[grepl('^[[:upper:]]{3}_', row.names(stats)) | grepl('^CA$', row.names(stats))] = resiFeats[4] # amino acid identities
 
 resiFeatTag = featColors %in% resiFeats
 pocketFeatTag = featColors %in% pocketFeats
@@ -1564,6 +1602,11 @@ pocketFeatTag = featColors %in% pocketFeats
 # Plot volcano plots from raw features
 
 dev.off()
+pdf(file = paste('./analysis/sfgPlots/', 
+                 'commonEffect_volcanoes',
+                 '.pdf', sep = ''),
+    width = 21,
+    height = 13)
 par(mfrow=c(3,5))
 xLim = c(0,1)
 # yLim = c(0,10)
@@ -1605,8 +1648,10 @@ for(i in 1:ncol(ligTags)){
 
 dev.off()
 plot(0,0,axes = F, main = '', xlab = '', ylab = '', pch = NA)
-legend(x = 'center', col = c(resiFeats, pocketFeats),
-       legend = c('bs resi cnt', 'sec struct', 'aa type', 'aa ident',
+legend(x = 'center',
+       col = c('forestgreen', resiFeats, pocketFeats),
+       legend = c('PLIP interactions',
+                  'bs resi cnt', 'sec struct', 'aa type', 'aa ident',
                   'D2 feats', 'D2 PCs', 'Zern PCs'),
        pch = 19)
 
@@ -1629,6 +1674,11 @@ for (i in 1:ncol(ligTags)){
 # Plot volcano plots from scaled features
 
 dev.off()
+pdf(file = paste('./analysis/sfgPlots/', 
+                 'medFC_volcanoes',
+                 '.pdf', sep = ''),
+    width = 21,
+    height = 13)
 par(mfrow=c(3,5))
 xLim = c(-10,10)
 # yLim = c(0,10)
@@ -1667,9 +1717,14 @@ for(i in 1:ncol(ligTags)){
   abline(h= -log10(0.1), lwd = 2)
   abline(v = 0, lty=2, lwd = 2)
 }
+dev.off()
 
 # Correlation between features for each ligand
-dev.off()
+pdf(file = paste('./analysis/sfgPlots/', 
+                 'allFeat_MWM_corplot',
+                 '.pdf', sep = ''),
+    width = 11.5,
+    height = 8.25)
 breakLst = seq(-1,1,0.05)
 pheatmap(cor(stats[,grepl('_effectSize$', colnames(stats))], scaled_stats[,grepl('_effectSize$', colnames(scaled_stats))], method = 'spearman'),
         color = colorRampPalette(c("royalblue1", "grey90", "gold1"))(length(breakLst)),
@@ -1679,9 +1734,14 @@ pheatmap(cor(stats[,grepl('_effectSize$', colnames(stats))], scaled_stats[,grepl
         show_colnames = F,
         cutree_rows = 1,
         treeheight_col = 0)
+dev.off()
 
 # Correlations by feature type
-dev.off()
+pdf(file = paste('./analysis/sfgPlots/', 
+                 'resiFeat_MWM_corplot',
+                 '.pdf', sep = ''),
+    width = 11.5,
+    height = 8.25)
 breakLst = seq(-1,1,0.05)
 pheatmap(cor(stats[resiFeatTag,grepl('_effectSize$', colnames(stats))], scaled_stats[resiFeatTag,grepl('_effectSize$', colnames(scaled_stats))], method = 'spearman'),
          color = colorRampPalette(c("royalblue1", "grey90", "gold1"))(length(breakLst)),
@@ -1689,7 +1749,13 @@ pheatmap(cor(stats[resiFeatTag,grepl('_effectSize$', colnames(stats))], scaled_s
          main = 'Spearman correlation between RESIDUE feature effect sizes across ligand classes',
          breaks = breakLst,
          show_colnames = F,
-         treeheight_col = 0)
+         treeheight_col = 0, cutree_rows = 4)
+dev.off()
+pdf(file = paste('./analysis/sfgPlots/', 
+                 'pocketFeat_MWM_corplot',
+                 '.pdf', sep = ''),
+    width = 11.5,
+    height = 8.25)
 pheatmap(cor(stats[pocketFeatTag,grepl('_effectSize$', colnames(stats))], scaled_stats[pocketFeatTag,grepl('_effectSize$', colnames(scaled_stats))], method = 'spearman'),
          color = colorRampPalette(c("royalblue1", "grey90", "gold1"))(length(breakLst)),
          labels_row = gsub('_effectSize$', '', colnames(stats[,grepl('_effectSize$', colnames(stats))])),
@@ -1697,6 +1763,7 @@ pheatmap(cor(stats[pocketFeatTag,grepl('_effectSize$', colnames(stats))], scaled
          breaks = breakLst,
          show_colnames = F,
          treeheight_col = 0)
+dev.off()
 
 
 # Shared significant features
@@ -1705,7 +1772,7 @@ siaBindingFeats = list(row.names(stats)[stats$Sialic_Acid_adj < 0.1], row.names(
 venn.diagram(
   x = siaBindingFeats,
   category.names = c("Sialic acid" , "NeuAc" , "NeuAc(a2-3)Gal(b1-4)Glc"),
-  filename = '~/Desktop/tmp.png',
+  filename = './analysis/sfgPlots/neuac_feats.png',
   output=F,
   imagetype="png" ,
   height = 480 , 
@@ -1743,6 +1810,37 @@ draw.pairwise.venn(area1 = length(fucBindingFeats[[1]]),
                    cat.fontfamily = "sans",
                    fontfamily = "sans"
                    )
+
+# Mannose binding
+manBindingFeats = list(row.names(stats)[stats$Man_adj < 0.1], row.names(stats)[stats$High_Mannose_adj < 0.1], row.names(stats)[stats$`Man(a1-2)Man_adj` < 0.1])
+intersect(intersect(manBindingFeats[[1]], manBindingFeats[[2]]), manBindingFeats[[3]])
+dev.off()
+venn.diagram(
+  x = manBindingFeats,
+  category.names = c("Man" , "High_mannose" , "Man(a1-2)Man"),
+  filename = './analysis/sfgPlots/man_feats.png',
+  output=F,
+  imagetype="png" ,
+  height = 480 , 
+  width = 480 , 
+  resolution = 300,
+  compression = "lzw",
+  lwd = 1,
+  col=c("#440154ff", '#21908dff', '#DAA520FF'),
+  fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3), alpha('#DAA520FF',0.3)),
+  cex = 0.5,
+  fontfamily = "sans",
+  cat.cex = 0.3,
+  cat.default.pos = "outer",
+  cat.pos = c(-27, 27, 135),
+  cat.dist = c(0.055, 0.055, 0.085),
+  cat.fontfamily = "sans",
+  cat.col = c("#440154ff", '#21908dff', '#DAA520FF'),
+  rotation = 1
+)
+
+
+
 
 d2FeatCor = cor(d2Feats)
 corrplot(d2FeatCor)
