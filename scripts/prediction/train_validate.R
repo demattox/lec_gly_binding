@@ -214,11 +214,14 @@ clusLst = unique(bsResiDat$seqClust50)
 folds = 5
 reps = 3
 
+testReps = 10
+
 default_mtry = round(sqrt(ncol(predFeats)), 0)
 default_ntree = 2000
 
 # tune.grid = expand.grid(.mtry=default_mtry)
-tune.grid <- expand.grid(.mtry= c(-7:7) + default_mtry)
+half_mtry = round(0.5*default_mtry,0)
+tune.grid <- expand.grid(.mtry= c(-half_mtry:half_mtry) + default_mtry)
 
 #########################
 # Train and validate based on current ligand class 
@@ -233,12 +236,14 @@ dirInd = as.integer(dirInd) # Subdirectory from which script was called to indic
 lig = ligTags[,dirInd]
 
 # Define dataframes to hold model results
-trainOut = as.data.frame(matrix(0, nrow = length(clusLst), ncol = 6))
+trainOut = as.data.frame(matrix(0, nrow = length(clusLst), ncol = 7))
 row.names(trainOut) = clusLst
-colnames(trainOut) = c('kappa', 'recall', 'TP', 'TN', 'FP', 'FN')
+colnames(trainOut) = c('mtry', 'kappa', 'recall', 'TP', 'TN', 'FP', 'FN')
 
-testOut = as.data.frame(matrix(0, nrow = length(clusLst), ncol = 4))
-row.names(testOut) = clusLst
+testOut = as.data.frame(matrix(0, nrow = testReps * length(clusLst), ncol = 4))
+for (j in 1:testReps){
+  row.names(testOut)[(1:length(clusLst)) + (length(clusLst) * (j-1))] = paste(clusLst, j, sep = '_')
+}
 colnames(testOut) = c('TP', 'TN', 'FP', 'FN')
 
 clusBinding = rep(F, length(clusLst)) # Whether a cluster has any positve examples of binding with the current ligand/ligand class
@@ -249,8 +254,8 @@ for (j in (1:length(clusLst))){
 
 testCases = clusLst[clusBinding] # Clusters with any binding occurences to iterativelty withold for validation in LO(C)O validation
 
-predictions = as.list(rep('', length(row.names(bsResiDat)[bsResiDat$seqClust50 %in% testCases])))
-names(predictions) = row.names(bsResiDat)[bsResiDat$seqClust50 %in% testCases]
+predictions = as.data.frame(matrix(nrow = length(row.names(bsResiDat)[bsResiDat$seqClust50 %in% testCases]), ncol = testReps))
+row.names(predictions) = row.names(bsResiDat)[bsResiDat$seqClust50 %in% testCases]
 
 featImp = as.data.frame(matrix(0, nrow = ncol(predFeats), ncol = length(testCases)))
 row.names(featImp) = colnames(predFeats)
@@ -259,8 +264,8 @@ colnames(featImp) = testCases
 for (j in (1:length(testCases))){
   
   outClust = testCases[j]
-  cat("testing on clust #", outClust, '\n')
-  
+  cat("testing on clust #", outClust, '[',as.character(round(100*j/length(testCases), 2)),'% done ]\n')
+
   trainingClusts = clusLst[! clusLst == outClust]
   trainingClustBinding = clusBinding[! clusLst == outClust]
   
@@ -319,6 +324,7 @@ for (j in (1:length(testCases))){
   trainAcc = (rfFit$finalModel$confusion[1,1] + rfFit$finalModel$confusion[2,2]) / sum(rfFit$finalModel$confusion)
   
   trainTag = row.names(trainOut) == outClust
+  trainOut$mtry[trainTag] = unname(rfFit$bestTune)[,1]
   trainOut$kappa[trainTag] = trainKappa
   trainOut$recall[trainTag] = trainRecall
   trainOut$TP[trainTag] = rfFit$finalModel$confusion[2,2]
@@ -328,36 +334,47 @@ for (j in (1:length(testCases))){
   
   featImp[, j] = rfFit$finalModel$importance[,4]
   
-  cat("train:\n\tRecall = ", trainRecall, "\n\tKappa = ", trainKappa,"\n\tAccuracy = ", trainAcc, '\n')
-  print(rfFit$bestTune)
-  
-  testDat = predFeats[bsResiDat$seqClust50 == outClust,]
-  testObs = factor(lig[bsResiDat$seqClust50 == outClust], levels = levels(trainDat$bound))
-  
-  validate = predict(rfFit$finalModel, newdata = testDat, type = 'prob')
-  
-  for(m in 1:nrow(validate)) {
-    bsName = row.names(validate)[m]
-    predictions[[bsName]] = validate[bsName,2]
+  cat("train:\n\tRecall = ", trainRecall, "\n\tKappa = ", trainKappa,"\n\tAccuracy = ", trainAcc, '\n\tMtry = ', trainOut$mtry[trainTag], '\n\n')
+
+  for(m in 1:testReps){
+    inds =  (1:nrow(predFeats))[bsResiDat$seqClust50 == outClust] # all the row indices matching the validation cluster
+    negInds = inds[! lig[inds]] # Indices of binding sites w/o ligand
+    posInds = inds[lig[inds]] # Indices of binding sites w/ ligand
+    
+    outInds = pullDiverseCases(scaledData = scaledFeats, startInds = posInds, thresh = medPairwiseDist) # Diverse sample from examples of positive interactions
+    if (length(negInds > 0)){
+      outInds = pullDiverseCases(scaledData = scaledFeats, startInds = negInds, thresh = medPairwiseDist, prevSampled = outInds) # Diverse sample from examples of negative interactions
+    }
+    
+    testDat = predFeats[outInds,]
+    testObs = factor(lig[outInds], levels = levels(trainDat$bound))
+    
+    validate = predict(rfFit$finalModel, newdata = testDat, type = 'prob')
+    
+    for(n in 1:nrow(validate)) {
+      bsName = row.names(validate)[n]
+      predictions[bsName, m] = validate[bsName,2]
+    }
+    
+    TP = sum(validate[,2] >= 0.5 & testObs == "TRUE")
+    TN = sum(validate[,2] < 0.5 & testObs == "FALSE")
+    FN = sum(validate[,2] < 0.5 & testObs == "TRUE")
+    FP = sum(validate[,2] >= 0.5 & testObs == "FALSE")
+    
+    randAcc = ((TN+FP)*(TN+FN) + (FN+TP)*(FP+TP)) / nrow(validate)^2
+    testAcc = (TP+TN)/(TP+TN+FP+FN)
+    testKappa = (testAcc - randAcc) / (1 - randAcc)
+    testRecall = TP / (TP + FN)
+    
+    testTag = row.names(testOut) == paste(outClust, m, sep = '_')
+    testOut$TP[testTag] = TP
+    testOut$TN[testTag] = TN
+    testOut$FN[testTag] = FN
+    testOut$FP[testTag] = FP
+    
+    cat("test:\n\tRecall = ", testRecall, "\n\tKappa = ", testKappa,"\n\tAccuracy = ", testAcc, '\n\n')
   }
-  
-  TP = sum(validate[,2] >= 0.5 & testObs == "TRUE")
-  TN = sum(validate[,2] < 0.5 & testObs == "FALSE")
-  FN = sum(validate[,2] < 0.5 & testObs == "TRUE")
-  FP = sum(validate[,2] >= 0.5 & testObs == "FALSE")
-  
-  randAcc = ((TN+FP)*(TN+FN) + (FN+TP)*(FP+TP)) / nrow(validate)^2
-  testAcc = (TP+TN)/(TP+TN+FP+FN)
-  testKappa = (testAcc - randAcc) / (1 - randAcc)
-  testRecall = TP / (TP + FN)
-  
-  testTag = row.names(testOut) == outClust
-  testOut$TP[testTag] = TP
-  testOut$TN[testTag] = TN
-  testOut$FN[testTag] = FN
-  testOut$FP[testTag] = FP
-  
-  cat("test:\n\tRecall = ", testRecall, "\n\tKappa = ", testKappa,"\n\tAccuracy = ", testAcc, '\n__________________\n\n')
+  cat('__________________\n\n')
 }
 
 #########################
@@ -371,15 +388,15 @@ OG_Dir = addSlash(OG_Dir)
 cat("Ligand: ", colnames(ligTags)[dirInd], '\n\n')
 
 trainOut = trainOut[as.character(testCases),]
-testOut = testOut[as.character(testCases),]
+testOut = testOut[gsub('_\\d$', '', row.names(testOut)) %in% as.character(testCases),]
 
 
 
 # Training
 cat('Training performance\n')
 
-print(apply(trainOut[,3:6], 2, mean))
-print(apply(apply(trainOut[,3:6], 1, pCnt), 1, mean))
+print(apply(trainOut[,4:7], 2, mean))
+print(apply(apply(trainOut[,4:7], 1, pCnt), 1, mean))
 
 trainOut$f2 = 0
 trainOut$prec = 0
@@ -405,24 +422,30 @@ dev.off()
 # Validation
 cat('Validation performance\n')
 
-outcomes = as.data.frame(matrix('', nrow = length(predictions), ncol = 2))
-row.names(outcomes) = names(predictions)
-colnames(outcomes) = c("Obs", "Pred")
+outcomes = as.data.frame(matrix('', nrow = nrow(predictions), ncol = (1+testReps)))
+row.names(outcomes) = row.names(predictions)
+colnames(outcomes) = c("Obs", paste('rep',1:testReps, sep =''))
 
 outcomes$Obs = ligTags[row.names(outcomes), dirInd]
-outcomes$Pred = as.numeric(predictions[row.names(outcomes)])
+for( j in 1:testReps){
+  outcomes[,j+1] = as.numeric(predictions[row.names(outcomes), j])
+}
 
-print(apply(testOut, 2, sum))
+for (j in 1:testReps){
+  print(apply(testOut[(1:length(testCases)) + (length(testCases) * (j-1)),], 2, sum))
+  validationMetrics = getKPRFb(testOut[(1:length(testCases)) + (length(testCases) * (j-1)),])
+  cat(names(validationMetrics), '\n')
+  cat(unlist(validationMetrics), '\n')
+}
 
-validationMetrics = getKPRFb(testOut)
-print(validationMetrics)
+testedOutcomes = outcomes[! is.na(outcomes[,(1 + testReps)]), c(1, (1+ testReps))]
 
-pr = pr.curve(outcomes$Pred[outcomes$Obs == T], outcomes$Pred[outcomes$Obs == F], curve= T, rand.compute = T)
+pr = pr.curve(testedOutcomes[testedOutcomes$Obs == T, 2], testedOutcomes[testedOutcomes$Obs == F, 2], curve= T, rand.compute = T)
 
 R = validationMetrics[['recall']]
 P = validationMetrics[['precision']]
 
-pdf(file = paste(OG_Dir,colnames(ligTags)[dirInd], '_PRcurve.pdf', sep = ''),
+pdf(file = paste(OG_Dir,colnames(ligTags)[dirInd], '_examplePRcurve.pdf', sep = ''),
     width = 6, # The width of the plot in inches
     height = 6.25) # The height of the plot in inches
 plot(pr$curve[,1:2], type = 'l', lwd = 4, col = ligColors[dirInd],
