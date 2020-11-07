@@ -1765,6 +1765,19 @@ pheatmap(cor(stats[pocketFeatTag,grepl('_effectSize$', colnames(stats))], scaled
          treeheight_col = 0)
 dev.off()
 
+pdf(file = paste('./analysis/sfgPlots/', 
+                 'intFeat_MWM_corplot',
+                 '.pdf', sep = ''),
+    width = 11.5,
+    height = 8.25)
+pheatmap(cor(stats[1:11,grepl('_effectSize$', colnames(stats))], scaled_stats[1:11,grepl('_effectSize$', colnames(scaled_stats))], method = 'spearman'),
+         color = colorRampPalette(c("royalblue1", "grey90", "gold1"))(length(breakLst)),
+         labels_row = gsub('_effectSize$', '', colnames(stats[,grepl('_effectSize$', colnames(stats))])),
+         main = 'Spearman correlation between INTERACTION feature effect sizes across ligand classes',
+         breaks = breakLst,
+         show_colnames = F,
+         treeheight_col = 0)
+dev.off()
 
 # Shared significant features
 # Sialic acid features
