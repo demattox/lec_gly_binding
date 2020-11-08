@@ -388,8 +388,15 @@ OG_Dir = addSlash(OG_Dir)
 cat("Ligand: ", colnames(ligTags)[dirInd], '\n\n')
 
 trainOut = trainOut[as.character(testCases),]
-testOut = testOut[gsub('_\\d$', '', row.names(testOut)) %in% as.character(testCases),]
+testOut = testOut[gsub('_\\d*$', '', row.names(testOut)) %in% as.character(testCases),]
 
+# Save out files
+write.table(x = predictions, file = paste(OG_Dir,colnames(ligTags)[dirInd], '_outcomes.csv', sep = ''), quote = F, sep = ',')
+# read.delim(file = paste(OG_Dir,colnames(ligTags)[dirInd], '_outcomes.csv', sep = ''), sep = ',', stringsAsFactors = F)
+
+write.table(x = trainOut, file = paste(OG_Dir,colnames(ligTags)[dirInd], '_training.csv', sep = ''), quote = F, sep = ',')
+write.table(x = testOut, file = paste(OG_Dir,colnames(ligTags)[dirInd], '_testing.csv', sep = ''), quote = F, sep = ',')
+write.table(x = featImp, file = paste(OG_Dir,colnames(ligTags)[dirInd], '_features.csv', sep = ''), quote = F, sep = ',')
 
 
 # Training
@@ -457,11 +464,4 @@ lines(x = c(-1,R), y = c(P,P), lty = 2)
 points(R,P, pch = 19)
 dev.off()
 
-# Save out files
-write.table(x = outcomes, file = paste(OG_Dir,colnames(ligTags)[dirInd], '_outcomes.csv', sep = ''), quote = F, sep = ',')
-# read.delim(file = paste(OG_Dir,colnames(ligTags)[dirInd], '_outcomes.csv', sep = ''), sep = ',', stringsAsFactors = F)
-
-write.table(x = trainOut, file = paste(OG_Dir,colnames(ligTags)[dirInd], '_training.csv', sep = ''), quote = F, sep = ',')
-write.table(x = testOut, file = paste(OG_Dir,colnames(ligTags)[dirInd], '_testing.csv', sep = ''), quote = F, sep = ',')
-write.table(x = featImp, file = paste(OG_Dir,colnames(ligTags)[dirInd], '_features.csv', sep = ''), quote = F, sep = ',')
 
