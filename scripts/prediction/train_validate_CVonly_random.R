@@ -241,10 +241,6 @@ trainOut = as.data.frame(matrix(0, nrow = CVrepeats , ncol = 7))
 row.names(trainOut) = 1:CVrepeats
 colnames(trainOut) = c('mtry', 'kappa', 'recall', 'TP', 'TN', 'FP', 'FN')
 
-clusBinding = rep(F, length(clusLst)) # Whether a cluster has any positve examples of binding with the current ligand/ligand class
-for (j in (1:length(clusLst))){
-  clusBinding[j] = any(lig[bsResiDat$seqClust50 == clusLst[j]])
-}
 # sum(clusBinding)
 
 testCases = clusLst[clusBinding] # Clusters with any binding occurences
@@ -257,6 +253,13 @@ row.names(featImp) = colnames(predFeats)
 colnames(featImp) = 1:CVrepeats
 
 for (j in (1:CVrepeats)){
+  
+  lig = lig[sample(1:length(lig), size = length(lig), replace = F)] # Random permuation of labels
+  
+  clusBinding = rep(F, length(clusLst)) # Whether a cluster has any positve examples of binding with the current ligand/ligand class
+  for (i in (1:length(clusLst))){
+    clusBinding[i] = any(lig[bsResiDat$seqClust50 == clusLst[i]])
+  }
 
   foldClusIDs = createFolds(y = clusBinding, k = folds)
   
@@ -272,8 +275,6 @@ for (j in (1:CVrepeats)){
   }
   
   trainDat$clus <- NULL
-  
-  trainDat$bound = trainDat$bound[sample(1:nrow(trainDat), size = nrow(trainDat), replace = F)]
   
   train.control = trainControl(index = foldClusIDs,
                                method = 'cv', 
