@@ -1,11 +1,9 @@
 
-
 library(reshape)
 library(ggplot2)
 library(philentropy)
 library(pheatmap)
 library(PRROC)
-
 
 ###############
 # Functions
@@ -52,6 +50,9 @@ ligColors = colfunc(ncol(ligTags))
 # inDir = './analysis/training/train_and_validate/seqID50/'
 # inDir = './analysis/training/train_and_validate/seqID80/'
 # inDir = './analysis/training/train_and_validate/beta3id50/'
+
+inDir = './analysis/training/train_and_validate/nr_TrainVal/seqID50/'
+# inDir = './analysis/training/train_and_validate/nr_TrainVal/seqID80/'
 
 inFiles = dir(inDir)
 inTrain = inFiles[grepl('training.csv', inFiles)]
@@ -121,17 +122,27 @@ sampSizes = rep(0, ncol(ligTags))
 for(i in 1:length(inTrain)){
   lig = gsub('(.*)_training.csv', '\\1', inTrain)[i]
   tmp = read.delim(file = paste(inDir, inTrain[i], sep = ''), header = T, sep = ',', stringsAsFactors = F)
-  sampSizes[i] = mean(apply(tmp[3:6], 1, sum)) 
-  tmp = cbind(ligand = rep(lig, nrow(tmp)), tmp[,(-3:-6)])
+  sampSizes[i] = mean(apply(tmp[4:7], 1, sum)) 
+  tmp = cbind(ligand = rep(lig, nrow(tmp)), tmp[,c(-1)])
   if (i == 1){
     train = tmp
   } else {
-
     train = rbind(train, tmp)
   }
 }
 
-mTrain = melt(train, id.vars = 'ligand')
+train$f2 = 0
+train$prec = 0
+for(i in 1:nrow(train)){
+  r = train$recall[i]
+  p = train$TP[i] / (train$TP[i] + train$FP[i])
+  train$prec[i] = p
+  train$f2[i] = ((1+(2^2)) * p * r) / (2^2 * p + r)
+  # trainOut$f3[i] = ((1+(3^2)) * p * r) / (3^2 * p + r)
+  # trainOut$f4[i] = ((1+(4^2)) * p * r) / (4^2 * p + r)
+}
+
+mTrain = melt(train, id.vars = 'ligand', measure.vars = c('kappa', 'recall', 'prec'))
 colnames(mTrain) = c('ligand', 'metric', 'value')
 
 
@@ -168,6 +179,8 @@ ggplot(data = mTrain, aes(x = metric, y = value, col = ligand, fill = metric)) +
   theme_light(base_size = 22) +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
 
+
+
 ggplot(data = mTrain, aes(x = ligand, y = value, col = metric, fill = metric)) +
   geom_point(position = position_jitterdodge(jitter.width = 0.05), alpha = 0.4) +
   geom_boxplot(outlier.alpha = 0) +
@@ -182,41 +195,69 @@ ggplot(data = mTrain, aes(x = ligand, y = value, col = metric, fill = metric)) +
 ###############
 # Validation performance
 ###############
-test = as.data.frame(matrix(0,nrow= ncol(ligTags), ncol = 4))
-row.names(test) = colnames(ligTags)
-# colnames(test) = c('ligand', 'kappa', 'recall', 'f2', 'precision')
-colnames(test) = c('kappa', 'recall', 'f2', 'precision')
+test = as.data.frame(matrix(0,nrow= ncol(ligTags)*10, ncol = 5))
+colnames(test) = c('ligand', 'kappa', 'recall', 'f2', 'prec')
+# colnames(test) = c('kappa', 'recall', 'f2', 'precision')
 
 for(i in 1:length(inTest)){
   lig = gsub('(.*)_testing.csv', '\\1', inTest)[i]
 
   tmp = read.delim(file = paste(inDir, inTest[i], sep = ''), header = T, sep = ',', stringsAsFactors = F)
   
-  R =  tmp$TP/(tmp$TP + tmp$FN)
-  R = as.data.frame(cbind(rep(lig, nrow(tmp)), R))
-  colnames(R) = c('ligand', 'recall')
-  if (i ==1){
-    recall = R
-  } else {
-    recall = rbind(recall, R)
+  for(j in 1:10){
+    tag = grepl(paste('_', as.character(j), '$', sep = ''), row.names(tmp))
+    repDat = tmp[tag,]
+    test[(j+(10*(i-1))),] = c(lig, as.numeric(getKPRFb(repDat))) # Kapppa, recall, f2, precision
   }
+  # R =  repDat$TP/(repDat$TP + repDat$FN)
+  # R = as.data.frame(cbind(rep(lig, nrow(repDat)), R))
+  # colnames(R) = c('ligand', 'recall')
+  # if (i ==1){
+  #   recall = R
+  # } else {
+  #   recall = rbind(recall, R)
+  # }
   # test[lig,'ligand'] = lig
-  test[lig,] = as.numeric(getKPRFb(tmp)) # Kapppa, recall, f2, precision
-  
 }
-# mTest= melt(test, id.vars = 'ligand')
 
-recall$recall = as.numeric(as.character(recall$recall))
+test[,2:5] = apply(test[,2:5], 2, as.numeric)
+test$ligand = factor(test$ligand, levels = levels(mTrain$ligand))
 
-ggplot(data = recall, aes(x = ligand, y = recall, col = ligand, fill = ligand)) +
+mTest= melt(test, id.vars = 'ligand', measure.vars = c('kappa', 'recall', 'prec'))
+colnames(mTest) = c('ligand', 'metric', 'value')
+
+
+ggplot(data = mTest, aes(x = metric, y = value, col = ligand, fill = metric)) +
   geom_point(position = position_jitterdodge(jitter.width = 0.05), alpha = 0.4) +
   geom_boxplot(outlier.alpha = 0) +
   ylim(c(0, 1)) +
-  scale_fill_manual(values = alpha(rep('snow3',ncol(ligTags)), 0.6), guide =F) +
-  scale_color_manual(values = ligColors, guide = F) +
-  labs(title = 'Validation Recall for each excluded cluster', x = "Ligand for prediciton", y = "Cluster-specific Recall value") +
+  scale_fill_manual(values = alpha(rep('snow3',length(unique(mTest$metric))), 0.6), guide =F) +
+  scale_color_manual(values = ligColors) +
+  labs(title = '5x CV with LOCO validation - Validation Performance', x = "Metric type", y = "Metric value") +
   theme_light(base_size = 22) +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
+
+ggplot(data = mTest, aes(x = ligand, y = value, col = metric, fill = metric)) +
+  geom_point(position = position_jitterdodge(jitter.width = 0.05), alpha = 0.4) +
+  geom_boxplot(outlier.alpha = 0) +
+  ylim(c(0, 1)) +
+  scale_fill_manual(values = alpha(rep('snow3',length(unique(mTest$metric))), 0.6), guide =F) +
+  scale_color_manual(values = c('darkgreen', 'firebrick1', 'darkorchid1', 'dodgerblue')) +
+  labs(title = '5x CV with LOCO validation - Validation Performance', x = "Ligand for prediciton", y = "Metric value") +
+  theme_light(base_size = 22) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
+
+# recall$recall = as.numeric(as.character(recall$recall))
+
+# ggplot(data = recall, aes(x = ligand, y = recall, col = ligand, fill = ligand)) +
+#   geom_point(position = position_jitterdodge(jitter.width = 0.05), alpha = 0.4) +
+#   geom_boxplot(outlier.alpha = 0) +
+#   ylim(c(0, 1)) +
+#   scale_fill_manual(values = alpha(rep('snow3',ncol(ligTags)), 0.6), guide =F) +
+#   scale_color_manual(values = ligColors, guide = F) +
+#   labs(title = 'Validation Recall for each excluded cluster', x = "Ligand for prediciton", y = "Cluster-specific Recall value") +
+#   theme_light(base_size = 22) +
+#   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
 
 
 
@@ -224,21 +265,33 @@ ggplot(data = recall, aes(x = ligand, y = recall, col = ligand, fill = ligand)) 
 breakLst = seq(0,1,0.01)
 mycol = colorRampPalette(c("ivory", "cornflowerblue", "navy"))(n = length(breakLst))
 
+testMeds = as.data.frame(matrix(0,nrow  = length(unique(test$ligand)), ncol = 4))
+row.names(testMeds) = gsub('(.*)_training.csv', '\\1', inTrain)
+colnames(testMeds) = colnames(test)[-1]
 
-pheatmap(test, color =  mycol,
+for(i in 1:length(unique(test$ligand))){
+  tag = grepl(unique(test$ligand)[i], test$ligand)
+  testMeds[i,] = apply(test[tag,2:5], 2, median)
+}
+
+testMeds$f2 <- NULL
+
+pheatmap(testMeds, color =  mycol,
          cluster_cols = F, cluster_rows = F,
-         display_numbers = T, number_color = 'red', fontsize_number = 14,
-         breaks = breakLst, main = 'Aggregate validation metrics for each ligand class', 
+         display_numbers = T, number_color = 'darkgoldenrod', fontsize_number = 28,
+         breaks = breakLst, main = 'Median validation metrics for each ligand class', 
          gaps_row = c(3), gaps_col = c(1))
 
-plot(sampSizes, test$kappa, pch = 19, cex = 1.5,
-     ylim = c(-0.15, 0.4),
+
+
+plot(sampSizes, testMeds$kappa, pch = 19, cex = 1.5,
+     ylim = c(0, 0.5),
      xlim = c(0,500),
      xlab = 'Average number of samples sites for training',
-     ylab = 'Validation Kappa (aggregate)',
+     ylab = 'Median Validation Kappa',
      cex.lab=1.5, cex.axis=1.5)
 
-cor.test(sampSizes, test$kappa)
+cor.test(sampSizes, testMeds$kappa)
 
 
 # PR curves
@@ -277,5 +330,66 @@ for(i in 1:ncol(ligTags)){
   text(x= 0.7, y = 0.9, labels = paste(round(100 * sum(fpIDs %in% boundIDs)/length(fpIDs),2), '% of ', length(fpIDs), ' FPs', sep = ''), col = 'red', cex = 1.2)
 }
 
+# Feature importance
+for(i in 1:length(inFeats)){
+  lig = gsub('(.*)_features.csv', '\\1', inFeats)[i]
+  tmp = read.delim(file = paste(inDir, inFeats[i], sep = ''), header = T, sep = ',', stringsAsFactors = F)
+  tmp = apply(tmp, 1, mean)
+  if (i == 1){
+    feats = tmp
+  } else {
+    feats = cbind(feats, tmp)
+    colnames(feats)[i] = lig
+  }
+}
+colnames(feats)[1] = gsub('(.*)_features.csv', '\\1', inFeats)[1]
+feats = as.data.frame(feats)
+
+neuFeats = c('negCharge_bin1','ASP_bin1', 'majorMaxima_8Ang')
+
+neuInds = (1:nrow(feats))[row.names(feats)[order(feats$Sialic_Acid, decreasing = T)] %in% neuFeats]
+row.names(feats)[order(feats$Sialic_Acid, decreasing = T)][neuInds]
+100 - (neuInds/nrow(feats))*100
+
+neuInds = (1:nrow(feats))[row.names(feats)[order(feats$NeuAc, decreasing = T)] %in% neuFeats]
+row.names(feats)[order(feats$NeuAc, decreasing = T)][neuInds]
+100 - (neuInds/nrow(feats))*100
+
+neuInds = (1:nrow(feats))[row.names(feats)[order(feats$NeuAc.a2.3.Gal.b1.4.Glc, decreasing = T)] %in% neuFeats]
+row.names(feats)[order(feats$NeuAc.a2.3.Gal.b1.4.Glc, decreasing = T)][neuInds]
+100 - (neuInds/nrow(feats))*100
 
 
+fucFeats = c('aromatic_bin2','binnedD2_PC7', 'zern_PC4')
+
+fucInds = (1:nrow(feats))[row.names(feats)[order(feats$Fuc, decreasing = T)] %in% fucFeats]
+row.names(feats)[order(feats$Fuc, decreasing = T)][fucInds]
+100 - (fucInds/nrow(feats))*100
+
+fucInds = (1:nrow(feats))[row.names(feats)[order(feats$Terminal_Fucose, decreasing = T)] %in% fucFeats]
+row.names(feats)[order(feats$Terminal_Fucose, decreasing = T)][fucInds]
+100 - (fucInds/nrow(feats))*100
+
+
+manFeats = c('hydrophobics', 'nonpolar_bin2', 'aromatic_bin2', 'var_4Ang', 'med_4Ang', 'q3_4Ang', 'var_6Ang', 'med_6Ang', 'q3_6Ang', 'binnedD2_PC5')
+
+manInds = (1:nrow(feats))[row.names(feats)[order(feats$Man, decreasing = T)] %in% manFeats]
+row.names(feats)[order(feats$Man, decreasing = T)][manInds]
+100 - (manInds/nrow(feats))*100
+for(i in 1:length(manFeats)){
+  cat(row.names(feats)[order(feats$Man, decreasing = T)][manInds][i], ' ', (100 - (manInds/nrow(feats))*100)[i], '\n')
+}
+
+manInds = (1:nrow(feats))[row.names(feats)[order(feats$High_Mannose, decreasing = T)] %in% manFeats]
+row.names(feats)[order(feats$High_Mannose, decreasing = T)][manInds]
+100 - (manInds/nrow(feats))*100
+for(i in 1:length(manFeats)){
+  cat(row.names(feats)[order(feats$High_Mannose, decreasing = T)][manInds][i], ' ', (100 - (manInds/nrow(feats))*100)[i], '\n')
+}
+
+manInds = (1:nrow(feats))[row.names(feats)[order(feats$Man.a1.2.Man, decreasing = T)] %in% manFeats]
+row.names(feats)[order(feats$Man.a1.2.Man, decreasing = T)][manInds]
+100 - (manInds/nrow(feats))*100
+for(i in 1:length(manFeats)){
+  cat(row.names(feats)[order(feats$Man.a1.2.Man, decreasing = T)][manInds][i], ' ', (100 - (manInds/nrow(feats))*100)[i], '\n')
+}
