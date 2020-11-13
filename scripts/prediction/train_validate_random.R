@@ -305,6 +305,8 @@ for (j in (1:length(testCases))){
   
   trainDat$clus <- NULL
   
+  trainDat$bound = trainDat$bound[sample(x = 1:nrow(trainDat), size = nrow(trainDat), replace = F)] # Shuffle the labels of the training data
+  
   train.control = trainControl(index = foldClusIDs,
                                method = 'repeatedcv', 
                                number = folds,
