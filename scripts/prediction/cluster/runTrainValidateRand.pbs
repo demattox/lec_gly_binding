@@ -1,0 +1,10 @@
+#!/bin/bash
+#PBS -N train_val_rand 
+#PBS -q default
+#PBS -l nodes=1:ppn=12
+#PBS -l walltime=12:00:00
+cd $PBS_O_WORKDIR
+
+Rscript --vanilla /dartfs-hpc/rc/home/y/f002tsy/cbklab/Mattox/lec_gly_binding/scripts/prediction/train_validate_random.R
+
+exit 0
