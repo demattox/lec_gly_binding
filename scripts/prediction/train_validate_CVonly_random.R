@@ -243,10 +243,10 @@ colnames(trainOut) = c('mtry', 'kappa', 'recall', 'TP', 'TN', 'FP', 'FN')
 
 # sum(clusBinding)
 
-testCases = clusLst[clusBinding] # Clusters with any binding occurences
+# testCases = clusLst[clusBinding] # Clusters with any binding occurences
 
-predictions = as.data.frame(matrix(nrow = length(row.names(bsResiDat)[bsResiDat$seqClust50 %in% testCases]), ncol = CVrepeats))
-row.names(predictions) = row.names(bsResiDat)[bsResiDat$seqClust50 %in% testCases]
+# predictions = as.data.frame(matrix(nrow = length(row.names(bsResiDat)[bsResiDat$seqClust50 %in% testCases]), ncol = CVrepeats))
+# row.names(predictions) = row.names(bsResiDat)[bsResiDat$seqClust50 %in% testCases]
 
 featImp = as.data.frame(matrix(0, nrow = ncol(predFeats), ncol = CVrepeats))
 row.names(featImp) = colnames(predFeats)
