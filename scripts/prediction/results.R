@@ -4,6 +4,7 @@ library(ggplot2)
 library(philentropy)
 library(pheatmap)
 library(PRROC)
+library(vioplot)
 
 ###############
 # Functions
@@ -51,20 +52,30 @@ ligColors = colfunc(ncol(ligTags))
 # inDir = './analysis/training/train_and_validate/seqID80/'
 # inDir = './analysis/training/train_and_validate/beta3id50/'
 
-inDir = './analysis/training/train_and_validate/nr_TrainVal/seqID50/'
-# inDir = './analysis/training/train_and_validate/nr_TrainVal/seqID80/'
+predDirs = './analysis/training/train_and_validate/nr_CVLOCO_reps/pred/'
+randDirs = './analysis/training/train_and_validate/nr_CVLOCO_reps/rand/'
 
-inFiles = dir(inDir)
-inTrain = inFiles[grepl('training.csv', inFiles)]
-inTest = inFiles[grepl('testing.csv', inFiles)]
-inOutcomes = inFiles[grepl('outcomes.csv', inFiles)]
-inFeats = inFiles[grepl('features.csv', inFiles)]
 
-newOrd = match(colnames(ligTags), gsub('(.*)_outcomes.csv', '\\1', inOutcomes))
-inTrain = inTrain[newOrd]
-inTest = inTest[newOrd]
-inOutcomes = inOutcomes[newOrd]
-inFeats = inFeats[newOrd]
+
+
+
+
+
+
+
+
+
+# inFiles = dir(inDir)
+# inTrain = inFiles[grepl('training.csv', inFiles)]
+# inTest = inFiles[grepl('testing.csv', inFiles)]
+# inOutcomes = inFiles[grepl('outcomes.csv', inFiles)]
+# inFeats = inFiles[grepl('features.csv', inFiles)]
+# 
+# newOrd = match(colnames(ligTags), gsub('(.*)_outcomes.csv', '\\1', inOutcomes))
+# inTrain = inTrain[newOrd]
+# inTest = inTest[newOrd]
+# inOutcomes = inOutcomes[newOrd]
+# inFeats = inFeats[newOrd]
 
 ###############
 # Look at lectin specificity
@@ -117,19 +128,51 @@ for (i in 1:length(lecIDs)){
 # Training performance
 ###############
 
-sampSizes = rep(0, ncol(ligTags))
+# sampSizes = rep(0, ncol(ligTags))
 
-for(i in 1:length(inTrain)){
-  lig = gsub('(.*)_training.csv', '\\1', inTrain)[i]
-  tmp = read.delim(file = paste(inDir, inTrain[i], sep = ''), header = T, sep = ',', stringsAsFactors = F)
-  sampSizes[i] = mean(apply(tmp[4:7], 1, sum)) 
-  tmp = cbind(ligand = rep(lig, nrow(tmp)), tmp[,c(-1)])
-  if (i == 1){
-    train = tmp
-  } else {
-    train = rbind(train, tmp)
+for(i in 1:length(dir(predDirs))){
+  lig = colnames(ligTags)[as.numeric(dir(predDirs)[i])]
+  cat(lig,'\n')
+  curDir = paste(predDirs, dir(predDirs)[i], sep = '')
+  subDirs = dir(curDir)
+  for (j in 1:length(subDirs)){
+    cat(j,'\n')
+    inFiles = dir(paste(curDir, subDirs[j], sep = '/'))
+    
+    readFile = inFiles[grepl('training.csv', inFiles)] # change here to read other files
+    
+    tmp = read.delim(file = paste(curDir, subDirs[j], readFile, sep = '/'), header = T, sep = ',', stringsAsFactors = F)
+    tmp$mode = 'pred'
+    if (! exists('train')){
+      train = tmp
+    }else{
+      train = rbind(train, tmp)
+    }
   }
 }
+
+for(i in 1:length(dir(randDirs))){
+  lig = colnames(ligTags)[i]
+  cat(lig,'\n')
+  curDir = paste(randDirs, dir(randDirs)[i], sep = '')
+  subDirs = dir(curDir)
+  for (j in 1:length(subDirs)){
+    cat(j,'\n')
+    inFiles = dir(paste(curDir, subDirs[j], sep = '/'))
+    
+    readFile = inFiles[grepl('training.csv', inFiles)] # change here to read other files
+    
+    tmp = read.delim(file = paste(curDir, subDirs[j], trainFile, sep = '/'), header = T, sep = ',', stringsAsFactors = F)
+    tmp$mode = 'rand'
+    if (! exists('train')){
+      train = tmp
+    }else{
+      train = rbind(train, tmp)
+    }
+  }
+}
+  
+
 
 train$f2 = 0
 train$prec = 0
@@ -230,7 +273,7 @@ colnames(mTest) = c('ligand', 'metric', 'value')
 ggplot(data = mTest, aes(x = metric, y = value, col = ligand, fill = metric)) +
   geom_point(position = position_jitterdodge(jitter.width = 0.05), alpha = 0.4) +
   geom_boxplot(outlier.alpha = 0) +
-  ylim(c(0, 1)) +
+  ylim(c(-0.15, 1)) +
   scale_fill_manual(values = alpha(rep('snow3',length(unique(mTest$metric))), 0.6), guide =F) +
   scale_color_manual(values = ligColors) +
   labs(title = '5x CV with LOCO validation - Validation Performance', x = "Metric type", y = "Metric value") +
@@ -286,7 +329,7 @@ pheatmap(testMeds, color =  mycol,
 
 plot(sampSizes, testMeds$kappa, pch = 19, cex = 1.5,
      ylim = c(0, 0.5),
-     xlim = c(0,500),
+     xlim = c(0,550),
      xlab = 'Average number of samples sites for training',
      ylab = 'Median Validation Kappa',
      cex.lab=1.5, cex.axis=1.5)
