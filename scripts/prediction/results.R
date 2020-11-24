@@ -143,6 +143,7 @@ for(i in 1:length(dir(predDirs))){
     
     tmp = read.delim(file = paste(curDir, subDirs[j], readFile, sep = '/'), header = T, sep = ',', stringsAsFactors = F)
     tmp$mode = 'pred'
+    tmp$ligand = lig
     if (! exists('train')){
       train = tmp
     }else{
@@ -162,8 +163,9 @@ for(i in 1:length(dir(randDirs))){
     
     readFile = inFiles[grepl('training.csv', inFiles)] # change here to read other files
     
-    tmp = read.delim(file = paste(curDir, subDirs[j], trainFile, sep = '/'), header = T, sep = ',', stringsAsFactors = F)
+    tmp = read.delim(file = paste(curDir, subDirs[j], readFile, sep = '/'), header = T, sep = ',', stringsAsFactors = F)
     tmp$mode = 'rand'
+    tmp$ligand = lig
     if (! exists('train')){
       train = tmp
     }else{
@@ -185,88 +187,130 @@ for(i in 1:nrow(train)){
   # trainOut$f4[i] = ((1+(4^2)) * p * r) / (4^2 * p + r)
 }
 
-mTrain = melt(train, id.vars = 'ligand', measure.vars = c('kappa', 'recall', 'prec'))
-colnames(mTrain) = c('ligand', 'metric', 'value')
+mTrain = melt(train, id.vars = c('ligand', 'mode'), measure.vars = c('kappa', 'recall', 'prec'))
+colnames(mTrain) = c('ligand', 'classifier', 'metric', 'value')
 
-
-
-# ggplot(data = mTrain, aes(x = metric, y = value, col = ligand)) +
-#   geom_point(position = position_jitterdodge(jitter.width = 0.05), alpha = 0.4) +
-#   geom_boxplot(outlier.alpha = 0) +
-#   ylim(c(0.5, 1)) +
-#   scale_fill_manual(values = alpha(c('navajowhite','navajowhite'), 0.6), guide =F) +
-#   scale_color_manual(values = ligColors) +
-#   labs(title = '5x CV with LOCO validation - Training Performance', x = "Metric type", y = "Metric value") +
-#   theme_dark(base_size = 22) +
-#   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
-# 
-# ggplot(data = mTrain, aes(x = ligand, y = value, col = metric)) +
-#   geom_point(position = position_jitterdodge(jitter.width = 0.05), alpha = 0.4) +
-#   geom_boxplot(outlier.alpha = 0) +
-#   ylim(c(0.5, 1)) +
-#   scale_fill_manual(values = alpha(c('navajowhite','navajowhite'), 0.6), guide =F) +
-#   scale_color_manual(values = c('darkgreen', 'firebrick1', 'darkorchid1', 'dodgerblue')) +
-#   labs(title = '5x CV with LOCO validation - Training Performance', x = "Ligand for prediciton", y = "Metric value") +
-#   theme_dark(base_size = 22) +
-#   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
-
-
-# Light colors
-ggplot(data = mTrain, aes(x = metric, y = value, col = ligand, fill = metric)) +
-  geom_point(position = position_jitterdodge(jitter.width = 0.05), alpha = 0.4) +
+# Light colors all box plots
+ggplot(data = mTrain, aes(x = metric, y = value, col = ligand, fill = classifier)) +
+  geom_point(position = position_jitterdodge(jitter.width = 0.05), alpha = 0.1) +
   geom_boxplot(outlier.alpha = 0) +
-  ylim(c(0.5, 1)) +
-  scale_fill_manual(values = alpha(rep('snow3',length(unique(mTrain$metric))), 0.6), guide =F) +
+  ylim(c(-1, 1)) +
+  scale_fill_manual(values = c(alpha('snow3', 0.6), alpha('black',0.8))) +
   scale_color_manual(values = ligColors) +
   labs(title = '5x CV with LOCO validation - Training Performance', x = "Metric type", y = "Metric value") +
   theme_light(base_size = 22) +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
 
 
+## P & R same plot with violin & box plots
+xLim = c(0,30)
+yLim = c(0,1)
 
-ggplot(data = mTrain, aes(x = ligand, y = value, col = metric, fill = metric)) +
-  geom_point(position = position_jitterdodge(jitter.width = 0.05), alpha = 0.4) +
-  geom_boxplot(outlier.alpha = 0) +
-  ylim(c(0.5, 1)) +
-  scale_fill_manual(values = alpha(rep('snow3',length(unique(mTrain$metric))), 0.6), guide =F) +
-  scale_color_manual(values = c('darkgreen', 'firebrick1', 'darkorchid1', 'dodgerblue')) +
-  labs(title = '5x CV with LOCO validation - Training Performance', x = "Ligand for prediciton", y = "Metric value") +
-  theme_light(base_size = 22) +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
+par(cex.lab=1.5, mar = c(5, 4, 4, 4) + 0.3)
+plot(0,0,col = 'white', xlab = '',ylab = '',type="n",
+     axes=FALSE,ann=FALSE,
+     xlim = xLim,
+     ylim = c(0,1))
+for(j in 1:ncol(ligTags)){
+  i = ((j-1) * 2) + 1
+  vioplot(train$recall[(train$ligand == colnames(ligTags)[j]) & (train$mode == 'pred')], at = i, side = 'left',
+          col = ligColors[j],
+          xlim = xLim, ylim = yLim,
+          add = T,
+          plotCentre = "line")
+  par(new = T)
+  boxplot(train$recall[(train$ligand == colnames(ligTags)[j]) & (train$mode == 'rand')], at = i-0.33, notch = T, outline = F,
+          col = alpha(ligColors[j],0.2), border = 'grey50',
+          axes = F, xlab = '', ylab = '', xlim = xLim, ylim = yLim)
+  vioplot(train$prec[(train$ligand == colnames(ligTags)[j]) & (train$mode == 'pred')], at = i, side = 'right',
+          add = T,
+          col = alpha(ligColors[j],0.8),
+          xlim = xLim, ylim = yLim,
+          plotCentre = "line")
+  par(new = T)
+  boxplot(train$prec[(train$ligand == colnames(ligTags)[j]) & (train$mode == 'rand')], at = i+0.33, notch = T, outline = F,
+          col = alpha(ligColors[j],0.2), border = 'grey50',
+          axes = F, xlab = '', ylab = '', xlim = xLim, ylim = yLim)
+}
+axis(side=1,at=seq.int(1,29,2), labels = rep('', 15))
+axis(side=2,at=pretty(c(0,1)))
+axis(side = 4, at = pretty(c(0,1)))  # Add second axis
+abline(h = 0.5, lwd = 0.75, lty = 2)
+mtext("Precision", side = 4, line = 3, cex = 1.5, col = alpha('black',0.8))  # Add second axis label
+title(xlab = "Ligands", ylab = "Recall", main = "5x CV + LOCO - TRAINING\nPrecision & Recall vs random")
 
 
 ###############
 # Validation performance
 ###############
-test = as.data.frame(matrix(0,nrow= ncol(ligTags)*10, ncol = 5))
-colnames(test) = c('ligand', 'kappa', 'recall', 'f2', 'prec')
-# colnames(test) = c('kappa', 'recall', 'f2', 'precision')
-
-for(i in 1:length(inTest)){
-  lig = gsub('(.*)_testing.csv', '\\1', inTest)[i]
-
-  tmp = read.delim(file = paste(inDir, inTest[i], sep = ''), header = T, sep = ',', stringsAsFactors = F)
-  
-  for(j in 1:10){
-    tag = grepl(paste('_', as.character(j), '$', sep = ''), row.names(tmp))
-    repDat = tmp[tag,]
-    test[(j+(10*(i-1))),] = c(lig, as.numeric(getKPRFb(repDat))) # Kapppa, recall, f2, precision
+for(i in 1:length(dir(predDirs))){
+  lig = colnames(ligTags)[as.numeric(dir(predDirs)[i])]
+  cat(lig,'\n')
+  curDir = paste(predDirs, dir(predDirs)[i], sep = '')
+  subDirs = dir(curDir)
+  for (j in 1:length(subDirs)){
+    cat(j,'\n')
+    inFiles = dir(paste(curDir, subDirs[j], sep = '/'))
+    
+    readFile = inFiles[grepl('testing.csv', inFiles)] # change here to read other files
+    
+    tmp = read.delim(file = paste(curDir, subDirs[j], readFile, sep = '/'), header = T, sep = ',', stringsAsFactors = F)
+    
+    outTmp = as.data.frame(matrix(0,nrow= 10, ncol = 4))
+    colnames(outTmp) = c('kappa', 'recall', 'f2', 'prec')
+    
+    for(k in 1:10){
+      tag = grepl(paste('_', as.character(k), '$', sep = ''), row.names(tmp))
+      repDat = tmp[tag,]
+      outTmp[k,] = as.numeric(getKPRFb(repDat)) # Kapppa, recall, f2, precision
+    }
+    
+    outTmp$mode = 'pred'
+    outTmp$ligand = lig
+    outTmp$batch = as.numeric(subDirs[j])
+    if (! exists('test')){
+      test = outTmp
+    }else{
+      test = rbind(test, outTmp)
+    }
   }
-  # R =  repDat$TP/(repDat$TP + repDat$FN)
-  # R = as.data.frame(cbind(rep(lig, nrow(repDat)), R))
-  # colnames(R) = c('ligand', 'recall')
-  # if (i ==1){
-  #   recall = R
-  # } else {
-  #   recall = rbind(recall, R)
-  # }
-  # test[lig,'ligand'] = lig
 }
 
-test[,2:5] = apply(test[,2:5], 2, as.numeric)
-test$ligand = factor(test$ligand, levels = levels(mTrain$ligand))
+for(i in 1:length(dir(randDirs))){
+  lig = colnames(ligTags)[i]
+  cat(lig,'\n')
+  curDir = paste(randDirs, dir(randDirs)[i], sep = '')
+  subDirs = dir(curDir)
+  for (j in 1:length(subDirs)){
+    cat(j,'\n')
+    inFiles = dir(paste(curDir, subDirs[j], sep = '/'))
+    
+    readFile = inFiles[grepl('testing.csv', inFiles)] # change here to read other files
+    
+    tmp = read.delim(file = paste(curDir, subDirs[j], readFile, sep = '/'), header = T, sep = ',', stringsAsFactors = F)
+    
+    outTmp = as.data.frame(matrix(0,nrow= 10, ncol = 4))
+    colnames(outTmp) = c('kappa', 'recall', 'f2', 'prec')
+    
+    for(k in 1:10){
+      tag = grepl(paste('_', as.character(k), '$', sep = ''), row.names(tmp))
+      repDat = tmp[tag,]
+      outTmp[k,] = as.numeric(getKPRFb(repDat)) # Kapppa, recall, f2, precision
+    }
+    
+    outTmp$mode = 'rand'
+    outTmp$ligand = lig
+    outTmp$batch = as.numeric(subDirs[j])
+    if (! exists('test')){
+      test = outTmp
+    }else{
+      test = rbind(test, outTmp)
+    }
+  }
+}
 
-mTest= melt(test, id.vars = 'ligand', measure.vars = c('kappa', 'recall', 'prec'))
+
+mTest= melt(test[test$mode == 'pred',], id.vars = 'ligand', measure.vars = c('kappa', 'recall', 'prec'))
 colnames(mTest) = c('ligand', 'metric', 'value')
 
 
@@ -280,27 +324,80 @@ ggplot(data = mTest, aes(x = metric, y = value, col = ligand, fill = metric)) +
   theme_light(base_size = 22) +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
 
-ggplot(data = mTest, aes(x = ligand, y = value, col = metric, fill = metric)) +
-  geom_point(position = position_jitterdodge(jitter.width = 0.05), alpha = 0.4) +
-  geom_boxplot(outlier.alpha = 0) +
-  ylim(c(0, 1)) +
-  scale_fill_manual(values = alpha(rep('snow3',length(unique(mTest$metric))), 0.6), guide =F) +
-  scale_color_manual(values = c('darkgreen', 'firebrick1', 'darkorchid1', 'dodgerblue')) +
-  labs(title = '5x CV with LOCO validation - Validation Performance', x = "Ligand for prediciton", y = "Metric value") +
-  theme_light(base_size = 22) +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
+# Kappa vs random
+par(cex.lab=1.5)
+plot(0,0,col = 'white', xlab = '',ylab = '',type="n",
+     axes=FALSE,ann=FALSE,
+     xlim = c(0,16),
+     ylim = c(-1,1))
+i<-1 
+vioplot(test$kappa[(test$ligand == colnames(ligTags)[i]) & (test$mode == 'pred')], at = i, side = 'left',
+        add=T,
+        col = ligColors[i],
+        xlim = c(0,16), ylim = c(-1,1),
+        plotCentre = "line")
+vioplot(test$kappa[(test$ligand == colnames(ligTags)[i]) & (test$mode == 'rand')], at = i, side = 'right',
+        add = T,
+        col = alpha(ligColors[i],0.33),
+        xlim = c(0,16), ylim = c(-1,1),
+        plotCentre = "line")
+for(i in 2:ncol(ligTags)){
+  vioplot(test$kappa[(test$ligand == colnames(ligTags)[i]) & (test$mode == 'pred')], at = i, side = 'left',
+          col = ligColors[i],
+          xlim = c(0,16), ylim = c(-1,1),
+          add = T,
+          plotCentre = "line")
+  vioplot(test$kappa[(test$ligand == colnames(ligTags)[i]) & (test$mode == 'rand')], at = i, side = 'right',
+          add = T,
+          col = alpha(ligColors[i],0.3),
+          xlim = c(0,16), ylim = c(-1,1),
+          plotCentre = "line")
+}
+abline(h=0, lty = 2)
+axis(side=1,at=1:15, labels = rep('', 15))
+axis(side=2,at=seq.int(-1,1,0.5))
+title(xlab = "Ligands", ylab = "Kappa", main = "5x CV + LOCO\nKappa compared to random classifiers")
 
-# recall$recall = as.numeric(as.character(recall$recall))
 
-# ggplot(data = recall, aes(x = ligand, y = recall, col = ligand, fill = ligand)) +
-#   geom_point(position = position_jitterdodge(jitter.width = 0.05), alpha = 0.4) +
-#   geom_boxplot(outlier.alpha = 0) +
-#   ylim(c(0, 1)) +
-#   scale_fill_manual(values = alpha(rep('snow3',ncol(ligTags)), 0.6), guide =F) +
-#   scale_color_manual(values = ligColors, guide = F) +
-#   labs(title = 'Validation Recall for each excluded cluster', x = "Ligand for prediciton", y = "Cluster-specific Recall value") +
-#   theme_light(base_size = 22) +
-#   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
+## P & R same plot with violin & box plots
+xLim = c(0,30)
+yLim = c(0,1)
+
+par(cex.lab=1.5, mar = c(5, 4, 4, 4) + 0.3)
+plot(0,0,col = 'white', xlab = '',ylab = '',type="n",
+     axes=FALSE,ann=FALSE,
+     xlim = xLim,
+     ylim = c(0,1))
+for(j in 1:ncol(ligTags)){
+  i = ((j-1) * 2) + 1
+  vioplot(test$recall[(test$ligand == colnames(ligTags)[j]) & (test$mode == 'pred')], at = i, side = 'left',
+          col = ligColors[j],
+          xlim = xLim, ylim = yLim,
+          add = T,
+          plotCentre = "line")
+  par(new = T)
+  boxplot(test$recall[(test$ligand == colnames(ligTags)[j]) & (test$mode == 'rand')], at = i-0.33, notch = T, outline = F,
+          col = alpha(ligColors[j],0.2), border = 'grey50',
+          axes = F, xlab = '', ylab = '', xlim = xLim, ylim = yLim)
+  vioplot(test$prec[(test$ligand == colnames(ligTags)[j]) & (test$mode == 'pred')], at = i, side = 'right',
+          add = T,
+          col = alpha(ligColors[j],0.8),
+          xlim = xLim, ylim = yLim,
+          plotCentre = "line")
+  par(new = T)
+  boxplot(test$prec[(test$ligand == colnames(ligTags)[j]) & (test$mode == 'rand')], at = i+0.33, notch = T, outline = F,
+          col = alpha(ligColors[j],0.2), border = 'grey50',
+          axes = F, xlab = '', ylab = '', xlim = xLim, ylim = yLim)
+}
+axis(side=1,at=seq.int(1,29,2), labels = rep('', 15))
+axis(side=2,at=pretty(c(0,1)))
+axis(side = 4, at = pretty(c(0,1)))  # Add second axis
+mtext("Precision", side = 4, line = 3, cex = 1.5, col = alpha('black',0.8))  # Add second axis label
+title(xlab = "Ligands", ylab = "Recall", main = "5x CV + LOCO - VALIDATION\nPrecision & Recall vs random")
+
+
+
+
 
 
 
@@ -336,9 +433,94 @@ plot(sampSizes, testMeds$kappa, pch = 19, cex = 1.5,
 
 cor.test(sampSizes, testMeds$kappa)
 
-
+#######################
 # PR curves
+#######################
+
 par(mfrow = c(3,5))
+
+ligDirs = dir(predDirs)  
+ligDirs  = ligDirs[order(as.numeric(ligDirs))]
+
+for(i in 1:length(ligDirs)){
+  lig = colnames(ligTags)[as.numeric(ligDirs[i])]
+  cat(lig,'\n')
+  
+  curDir = paste(predDirs, ligDirs[i], sep = '')
+  ranDir = gsub(pattern = 'pred', replacement = 'rand', x = curDir)
+  
+  subDirs = dir(curDir)
+  
+  predAUC = randAUC = rep(0,100)
+  
+  for (j in 1:length(subDirs)){
+    #read in pred
+    inFiles = dir(paste(curDir, subDirs[j], sep = '/'))
+    
+    readFile = inFiles[grepl('outcomes.csv', inFiles)] # change here to read other files
+    
+    tmp = read.delim(file = paste(curDir, subDirs[j], readFile, sep = '/'), header = T, sep = ',', stringsAsFactors = F)
+    
+    if (! exists('outcomes')){
+      outcomes = tmp
+    }else{
+      outcomes = cbind(outcomes, tmp)
+    }
+    
+    #read in rand
+    inFiles = dir(paste(ranDir, subDirs[j], sep = '/'))
+    
+    readFile = inFiles[grepl('outcomes.csv', inFiles)] # change here to read other files
+    
+    tmp = read.delim(file = paste(ranDir, subDirs[j], readFile, sep = '/'), header = T, sep = ',', stringsAsFactors = F)
+    
+    if (! exists('Rand_outcomes')){
+      Rand_outcomes = tmp
+    }else{
+      Rand_outcomes = cbind(Rand_outcomes, tmp)
+    }
+  }
+  
+  
+  obs = ligTags[row.names(outcomes), lig]
+  
+  al = 0.1
+  wid = 2
+  
+  n=1
+  pr = pr.curve(outcomes[(obs == T) & (!is.na(outcomes[,n])), n], outcomes[(obs == F) & (!is.na(outcomes[,n])), n], curve= T, rand.compute = T)
+  predAUC[n] = pr$auc.integral
+  plot(pr$curve[,1:2], type = 'l', lwd = wid, col = alpha(ligColors[i],al),
+       xlim = c(0,1), ylim = c(0,1),
+       xlab = 'Recall', ylab = 'Precision')
+  
+  rand_pr = pr.curve(Rand_outcomes[(obs == T) & (!is.na(Rand_outcomes[,n])), n], Rand_outcomes[(obs == F) & (!is.na(Rand_outcomes[,n])), n], curve= T, rand.compute = T)
+  lines(rand_pr$curve[,1:2], lwd = wid, col = alpha('black',al))
+  randAUC[n] = rand_pr$auc.integral
+  for(n in (2:ncol(outcomes))){
+    pr = pr.curve(outcomes[(obs == T) & (!is.na(outcomes[,n])), n], outcomes[(obs == F) & (!is.na(outcomes[,n])), n], curve= T, rand.compute = T)
+    predAUC[n] = pr$auc.integral
+    lines(pr$curve[,1:2], lwd = wid, col = alpha(ligColors[i],al))
+    
+    rand_pr = pr.curve(Rand_outcomes[(obs == T) & (!is.na(Rand_outcomes[,n])), n], Rand_outcomes[(obs == F) & (!is.na(Rand_outcomes[,n])), n], curve= T, rand.compute = T)
+    lines(rand_pr$curve[,1:2], lwd = wid, col = alpha('black',al))
+    randAUC[n] = rand_pr$auc.integral
+  }
+  
+  title(main = paste('PR Curves - ', lig, '\nMean AUC: ', round(mean(predAUC),2), ' (random: ', round(mean(randAUC),2), ')', sep = ''))
+  
+  rm(outcomes, Rand_outcomes)
+  
+}
+
+
+
+
+
+
+
+
+
 for(i in 1:ncol(ligTags)){
   lig = gsub('(.*)_outcomes.csv', '\\1', inOutcomes)[i]
   outcomes = read.delim(file = paste(inDir, inOutcomes[i], sep = ''), header = T, sep = ',', stringsAsFactors = F)

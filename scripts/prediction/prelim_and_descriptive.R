@@ -16,6 +16,8 @@ library(stringr)
 library(pheatmap)
 library(VennDiagram)
 
+library(sjstats)
+
 source_url("https://raw.githubusercontent.com/obigriffith/biostar-tutorials/master/Heatmaps/heatmap.3.R")
 
 ##########################
