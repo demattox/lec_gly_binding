@@ -4,6 +4,7 @@ __pycache__/
 data/
 data2/
 analysis/
+manuscript/
 data.tar.gz
 data2.tar.gz
 .pdb
