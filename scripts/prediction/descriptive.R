@@ -1,7 +1,15 @@
 
+library(pheatmap)
+library(VennDiagram)
+library(ggplot2)
+library(corrplot)
+library(reshape2)
+library(RColorBrewer)
+library(philentropy)
+library(seqinr)
+library(stringr)
 
-
-
+library(survey)
 
 colfunc = colorRampPalette(c("red","goldenrod","forestgreen","royalblue","darkviolet"))
 threshColors = c('firebrick3', 'darkorange2', 'darkgoldenrod2', 'gold2')
@@ -9,10 +17,16 @@ threshColors = c('firebrick3', 'darkorange2', 'darkgoldenrod2', 'gold2')
 ###########################
 # Read in data
 ###########################
+homeDir = '/Users/dmattox/cbk/lec_gly_binding/'
+setwd(homeDir)
+
 # Load McCaldon aa frequencies
 mccaldon = read.delim('~/episweep/data/mccaldon.csv', header = F, sep = ",", stringsAsFactors = F)
 colnames(mccaldon) = c("aa", 'mcFreq')
 
+ligTags <- read.delim(file = './analysis/training/data_in/ligTags.tsv', sep = '\t', stringsAsFactors = F)
+predFeats <- read.delim(file = './analysis/training/data_in/predFeats.csv', sep = ',', stringsAsFactors = F)
+bsResiDat <- read.delim(file = './analysis/training/data_in/bsResiDat.tsv', sep = '\t', stringsAsFactors = F)
 
 ###########################
 # McCaldon analysis
@@ -24,6 +38,8 @@ mccaldon$freq_bin1 = 0
 mccaldon$freq_bin2 = 0
 mccaldon$freq_bin3 = 0
 mccaldon$freq_bin4 = 0
+
+clusLst50 = unique(bsResiDat$seqClust50)
 
 for (i in 1:nrow(mccaldon)){
   b1 = b2 = b3 = b4 = 0
@@ -108,51 +124,57 @@ ggplot(meltMc, aes(fill = Bin_Number, x = Amino_acid, y = PercentDiff_McCaldon))
 ###########################
 # Descriptive analysis
 ###########################
+uniLigs = unique(bsResiDat$iupac)
 
-# Ligand tags
-parenCnt = bracCnt = manCnt = neuCnt = bracCnt = rep(0,length(uniLigs))
-for (i in 1:length(uniLigs)){
-  lig = uniLigs[i]
-  parenCnt[i] = lengths(regmatches(lig, gregexpr("\\(", lig)))
-  bracCnt[i] = lengths(regmatches(lig, gregexpr("\\[", lig)))
-  manCnt[i] = lengths(regmatches(lig, gregexpr("Man", lig)))
-  neuCnt[i] = lengths(regmatches(lig, gregexpr("NeuAc", lig)))
+scaledFeats = predFeats
+for(i in 1:ncol(scaledFeats)){
+  scaledFeats[,i] = (scaledFeats[,i] - min(scaledFeats[,i])) / (max(scaledFeats[,i]) - min(scaledFeats[,i]))
 }
 
-mTag = parenCnt == 0 & bracCnt == 0 # Monosaccharides
-dTag = parenCnt == 1 & bracCnt == 0 # Disaccharides
-tTag = (parenCnt == 2 & bracCnt == 0) | (parenCnt == 2 & bracCnt == 1) # Trisaccharides
-qTag = (parenCnt == 3 & bracCnt == 0) | (parenCnt == 3 & bracCnt == 1) | (parenCnt == 1 & bracCnt == 2) # Tetrasaccharides
-pTag = !(mTag | dTag | tTag | qTag) # 5+ sugars
-bTag = bracCnt >= 1 # Branched glycans
-
-manTag = manCnt > 3 # High mannose
-neuTag = neuCnt >= 1 # Has sialic acid
-fucTag = grepl('^Fuc',uniLigs) # Has a terminal fucose
-
-
-# get tags to indicate binding sites containing one of the 15 ligands of interest
-ligTags = as.data.frame(matrix(F, nrow = nrow(bsResiDat), ncol = 3+length(top50)))
-row.names(ligTags) =  row.names(bsResiDat)
-colnames(ligTags) = colnames(topLigOccurences)[2:ncol(topLigOccurences)] 
-
-ligTags$High_Mannose = bsResiDat$iupac %in% uniLigs[manTag]
-ligTags$Sialic_Acid = bsResiDat$iupac %in% uniLigs[neuTag]
-ligTags$Terminal_Fucose = bsResiDat$iupac %in% uniLigs[fucTag]
-
-
-for (i in 1:length(top50)){
-  lig = top50[i]
-  lig = gsub('\\(', '\\\\(', lig)
-  lig = gsub('\\)', '\\\\)', lig)
-  lig = gsub('\\[', '\\\\]', lig)
-  lig = gsub('\\[', '\\\\]', lig)
-  lig = gsub('^', '\\^', lig)
-  lig = gsub('$', '\\$', lig)
-  
-  colInd = grep(lig, colnames(ligTags))
-  ligTags[,colInd] = grepl(lig, bsResiDat$iupac)
-}
+# # Ligand tags
+# parenCnt = bracCnt = manCnt = neuCnt = bracCnt = rep(0,length(uniLigs))
+# for (i in 1:length(uniLigs)){
+#   lig = uniLigs[i]
+#   parenCnt[i] = lengths(regmatches(lig, gregexpr("\\(", lig)))
+#   bracCnt[i] = lengths(regmatches(lig, gregexpr("\\[", lig)))
+#   manCnt[i] = lengths(regmatches(lig, gregexpr("Man", lig)))
+#   neuCnt[i] = lengths(regmatches(lig, gregexpr("NeuAc", lig)))
+# }
+# 
+# mTag = parenCnt == 0 & bracCnt == 0 # Monosaccharides
+# dTag = parenCnt == 1 & bracCnt == 0 # Disaccharides
+# tTag = (parenCnt == 2 & bracCnt == 0) | (parenCnt == 2 & bracCnt == 1) # Trisaccharides
+# qTag = (parenCnt == 3 & bracCnt == 0) | (parenCnt == 3 & bracCnt == 1) | (parenCnt == 1 & bracCnt == 2) # Tetrasaccharides
+# pTag = !(mTag | dTag | tTag | qTag) # 5+ sugars
+# bTag = bracCnt >= 1 # Branched glycans
+# 
+# manTag = manCnt > 3 # High mannose
+# neuTag = neuCnt >= 1 # Has sialic acid
+# fucTag = grepl('^Fuc',uniLigs) # Has a terminal fucose
+# 
+# 
+# # get tags to indicate binding sites containing one of the 15 ligands of interest
+# ligTags = as.data.frame(matrix(F, nrow = nrow(bsResiDat), ncol = 3+length(top50)))
+# row.names(ligTags) =  row.names(bsResiDat)
+# colnames(ligTags) = colnames(topLigOccurences)[2:ncol(topLigOccurences)] 
+# 
+# ligTags$High_Mannose = bsResiDat$iupac %in% uniLigs[manTag]
+# ligTags$Sialic_Acid = bsResiDat$iupac %in% uniLigs[neuTag]
+# ligTags$Terminal_Fucose = bsResiDat$iupac %in% uniLigs[fucTag]
+# 
+# 
+# for (i in 1:length(top50)){
+#   lig = top50[i]
+#   lig = gsub('\\(', '\\\\(', lig)
+#   lig = gsub('\\)', '\\\\)', lig)
+#   lig = gsub('\\[', '\\\\]', lig)
+#   lig = gsub('\\[', '\\\\]', lig)
+#   lig = gsub('^', '\\^', lig)
+#   lig = gsub('$', '\\$', lig)
+#   
+#   colInd = grep(lig, colnames(ligTags))
+#   ligTags[,colInd] = grepl(lig, bsResiDat$iupac)
+# }
 
 # Add tags to bsResiDat
 # bsResiDat = cbind(bsResiDat, ligTags)
@@ -164,7 +186,7 @@ stats = as.data.frame(matrix(0, nrow = ncol(predFeats), ncol = (ncol(ligTags)*4)
 row.names(stats) = colnames(predFeats)
 colnames(stats) = c(paste(colnames(ligTags), 'p', sep = '_'), paste(colnames(ligTags), '_FC', sep = '_'), paste(colnames(ligTags), 'effectSize', sep = '_'), paste(colnames(ligTags), 'adj', sep = '_'))
 
-scaled_stats = stats # In parallel, try this with scaled features for more robust change metric, shouldn't impact WMW test much
+scaled_stats = stats # In parallel, try this with scaled features for more robust change metric, shouldn't impact WMW test
 
 for (i in 1:ncol(ligTags)){ # for ligand i
   # meanClust50_data = as.data.frame(matrix(NA, nrow = length(clusLst50), ncol = (ncol(predFeats)*2))) # Rows for unique clusters, columns for predictive features from bsites WITH or WITHOUT current ligand
@@ -321,24 +343,121 @@ for (i in 1:ncol(ligTags)){
   text(x=0.6, y=0.05, labels = paste( 'Pear. corr = ', cor(stats[,grepl('_adj$', colnames(stats))][,i], scaled_stats[,grepl('_adj$', colnames(scaled_stats))][,i]), sep = ''), cex = 2)
 }
 
+################################
+# Calculate weighted MWM statistics instead of using means from each cluster
+################################
+clusWeight = nrow(bsResiDat)/length(unique(bsResiDat$seqClust50)) # The proportion of the total weight allotted to each cluster
+cWeights = rep(0, nrow(bsResiDat)) # weights based on cluster membership only (all binding sites with each cluster receives the same weight)
+cuWeights = rep(0,nrow(bsResiDat)) # weights based on cluster membership and UniProt ID (all clusters get the same weight, and all unique lectins within each cluster also receive the same weight)
+
+for (i in 1:length(unique(bsResiDat$seqClust50))){
+  clus = unique(bsResiDat$seqClust50)[i]
+  tag = bsResiDat$seqClust50 == clus
+  cWeights[tag] = clusWeight/sum(tag) # Equally divide allotted weight between all binding sites within a given cluster
+  
+  lectinWeight = clusWeight / length(unique(bsResiDat$uniparc[tag])) # Weight allotted to each lectin
+  for(j in 1:length(unique(bsResiDat$uniparc[tag]))){ # Further distribute weights within clusters based on uniprot ids
+    uniTag = bsResiDat$uniparc[tag] == unique(bsResiDat$uniparc[tag])[j]
+    cuWeights[tag][uniTag] = lectinWeight / sum(uniTag)
+  }
+}
+round(sum(cWeights),5) == nrow(bsResiDat) # Sum of weights is equal to number of binding sites
+round(sum(cuWeights),5) == nrow(bsResiDat) # Sum of weights is equal to number of binding sites
+
+wmwFeats = cbind(predFeats,ligTags)
+
+des <- svydesign(ids = ~1, data = wmwFeats, weights = 1/cuWeights)
+des_alt <- svydesign(ids = ~1, data = wmwFeats, weights = 1/cWeights)
+des_unweighted <- svydesign(ids = ~1, data = wmwFeats, weights = NULL)
 
 
-# Plot volcano plots from scaled features
+# tst = svyranktest(formula = negCharge_bin1 ~ as.factor(ligTags$Sialic_Acid), design = des, test = 'wilcoxon')
+# tst_alt = svyranktest(formula = negCharge_bin1 ~ as.factor(ligTags$Sialic_Acid), design = des_alt, test = 'wilcoxon')
+# tst_unweighted = svyranktest(formula = negCharge_bin1 ~ ligTags$Sialic_Acid, design = des_unweighted, test = 'wilcoxon')
 
+# wilcox.test(predFeats$negCharge_bin1[ligTags$Sialic_Acid], predFeats$negCharge_bin1[!ligTags$Sialic_Acid])
+# wilcox.test(predFeats$negCharge_bin1[ligTags$Sialic_Acid], predFeats$negCharge_bin1[!ligTags$Sialic_Acid])$statistic / (sum(ligTags$Sialic_Acid) * sum(!ligTags$Sialic_Acid))
+
+### Check formula construction for iterative tests across all features
+# svyranktest(formula = negCharge_bin1 ~ Sialic_Acid, design = des_unweighted, test = 'wilcoxon')
+# svyranktest(formula = as.formula(paste(colnames(predFeats)[26], ' ~ ', colnames(ligTags)[2], sep = '')),
+#             design = des_unweighted, test = 'wilcoxon')
+# 
+# wilcox.test(predFeats$negCharge_bin1[ligTags$Sialic_Acid], predFeats$negCharge_bin1[!ligTags$Sialic_Acid])
+# wilcox.test(predFeats$negCharge_bin1[ligTags$Sialic_Acid], predFeats$negCharge_bin1[!ligTags$Sialic_Acid])$statistic / (sum(ligTags$Sialic_Acid) * sum(!ligTags$Sialic_Acid))
+
+
+# tmp = svyranktest(formula = as.formula(paste(colnames(predFeats)[1], ' ~ ', colnames(ligTags)[1], sep = '')),
+#             design = des_unweighted, test = 'wilcoxon')
+# 
+# tmp2 = wilcox.test(predFeats$hydrophobics[ligTags$High_Mannose], predFeats$hydrophobics[!ligTags$High_Mannose])
+
+### Check survey means without weights to validate syntax for weighted means
+# i=2
+# k=26
+# des_w = subset(des_unweighted, subset = ligTags[,i]) # temporary design object holding all interactions with the ligand of interest
+# des_wo = subset(des_unweighted, subset = !ligTags[,i]) # same as above but WITHOUT the ligand of interest
+# 
+# svymean(predFeats[ligTags[,i],k], des_w)
+# mean(predFeats[ligTags[,i],k])
+# 
+# svymean(predFeats[!ligTags[,i],k], des_wo)
+# mean(predFeats[!ligTags[,i],k])
+# 
+# des_w = subset(des, subset = ligTags[,i])
+# des_wo = subset(des, subset = !ligTags[,i])
+# svymean(predFeats[ligTags[,i],k], des_w)
+# svymean(predFeats[!ligTags[,i],k], des_wo)
+
+
+
+
+stats_weighted = as.data.frame(matrix(0, nrow = ncol(predFeats), ncol = (ncol(ligTags)*4)))
+row.names(stats_weighted) = colnames(predFeats)
+colnames(stats_weighted) = c(paste(colnames(ligTags), 'p', sep = '_'), paste(colnames(ligTags), '_FC', sep = '_'), paste(colnames(ligTags), 'effectSize', sep = '_'), paste(colnames(ligTags), 'adj', sep = '_'))
+
+for (i in 1:ncol(ligTags)){ # for ligand i
+  des_w = subset(des, subset = ligTags[,i]) # temporary design object holding all interactions with the ligand of interest
+  des_wo = subset(des, subset = !ligTags[,i]) # same as above but WITHOUT the ligand of interest
+  for(k in 1:ncol(predFeats)){ # for each feature k
+    ligTest = svyranktest(formula = as.formula(paste(colnames(predFeats)[k], ' ~ ', colnames(ligTags)[i], sep = '')), # Wilcoxon–Mann–Whitney test, sample sizes can be small (~5% of 230 clusters ~= 10), no reason to assume distribution is normal as it likely isn't
+                           design = des_unweighted, 
+                           test = 'wilcoxon') 
+
+    if (ligTest$p.value != 0){
+      stats_weighted[k, grepl('_p$', colnames(stats_weighted))][i] = ligTest$p.value # Raw p-value
+    } else{
+      stats_weighted[k, grepl('_p$', colnames(stats_weighted))][i] = 5e-324 # If p-value is too small and R rounds to 0, reset as the smallest positive double as referenced by "?.Machine"
+    }
+
+    stats_weighted[k, grepl('_effectSize$', colnames(stats_weighted))][i] = ligTest$estimate # common language effect size (0.5 transformed to 0)
+    
+    stats_weighted[k, grepl('_FC$', colnames(stats_weighted))][i] = svymean(predFeats[ligTags[,i],k], des_w)[1] / svymean(predFeats[!ligTags[,i],k], des_wo)[1] # Fold change in weighted means
+    
+    
+  }
+
+  stats_weighted[,grepl('_adj$', colnames(stats_weighted))][,i] = p.adjust(stats_weighted[grepl('_p$', colnames(stats_weighted))][,i], method = "BH") # Benjamini-Hochberg MHT correction (FDR)
+}
+
+stats_weighted[,grepl('_adj$', colnames(stats_weighted))][stats_weighted[,grepl('_adj$', colnames(stats_weighted))] < 1e-16] <- 1e-16
+
+
+# Plot volcanoes from weighted WMW test
 dev.off()
-pdf(file = paste('./analysis/sfgPlots/', 
-                 'medFC_volcanoes',
+pdf(file = paste('./manuscript/figures/', 
+                 'weighted_commonEffect_volcanoes',
                  '.pdf', sep = ''),
     width = 21,
     height = 13)
 par(mfrow=c(3,5))
-xLim = c(-10,10)
+xLim = c(-0.5,0.5)
 # yLim = c(0,10)
 for(i in 1:ncol(ligTags)){
   
-  yLim = c(0,max(-log10(0.1), -log10(min(scaled_stats[,grepl('_adj$', colnames(scaled_stats))][,i]))) + 1)
+  yLim = c(0,max(-log10(0.1), -log10(min(stats_weighted[,grepl('_adj$', colnames(stats_weighted))][,i]))) + 1)
   
-  tag = scaled_stats[,grepl('_adj$', colnames(scaled_stats))][,i] < 0.1
+  tag = stats_weighted[,grepl('_adj$', colnames(stats_weighted))][,i] < 0.01
   
   # dev.off()
   plot(0,0,axes = F, main = '', xlab = '', ylab = '', pch = NA)
@@ -351,25 +470,164 @@ for(i in 1:ncol(ligTags)){
   # abline(h = c(0.5,1.5,2.5,3.5,4.5,5.5,6.5), lwd = 3, col = fg)
   par(new=T)
   
-  plot(log2(scaled_stats[,grepl('_FC$', colnames(scaled_stats))][,i]), -log10(scaled_stats[,grepl('_adj$', colnames(scaled_stats))][,i]), # Plot all points w/ color @ alpha 0.5
-       xlab = "log2(median FC)", ylab = "-log10(FDR)", main = colnames(ligTags)[i],
+  plot(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))][,i], -log10(stats_weighted[,grepl('_adj$', colnames(stats_weighted))][,i]), # Plot all points w/ color @ alpha 0.5
+       xlab = "Effect size", ylab = "-log10(FDR)", main = colnames(ligTags)[i],
        pch = 19, cex = 2, col = alpha(featColors, 0.5),
        cex.axis = 1.5, cex.main = 2, cex.lab = 1.5,
        xlim = xLim, ylim = yLim)
   par(new=T)
-  plot(log2(scaled_stats[,grepl('_FC$', colnames(scaled_stats))][tag,i]), -log10(scaled_stats[,grepl('_adj$', colnames(scaled_stats))][tag,i]), # Plot stat sig points again with alpha 1
+  plot(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))][tag,i], -log10(stats_weighted[,grepl('_adj$', colnames(stats_weighted))][tag,i]), # Plot stat sig points again with alpha 1
        pch = 19, col = featColors[tag], cex = 2,
        axes = F, xlab = "", ylab = "", main = "",
        xlim = xLim, ylim = yLim)
   par(new=T)
-  plot(log2(scaled_stats[,grepl('_FC$', colnames(scaled_stats))][tag,i]), -log10(scaled_stats[,grepl('_adj$', colnames(scaled_stats))][tag,i]), # Outline stat sig points in black to highlight them
+  plot(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))][tag,i], -log10(stats_weighted[,grepl('_adj$', colnames(stats_weighted))][tag,i]), # Outline stat sig points in black to highlight them
        col = 'black', cex = 2.05,
        xlab = "", ylab = "", axes = F, main = "",
        xlim = xLim, ylim = yLim)
-  abline(h= -log10(0.1), lwd = 2)
+  abline(h= -log10(0.01), lwd = 2)
   abline(v = 0, lty=2, lwd = 2)
 }
+
 dev.off()
+plot(0,0,axes = F, main = '', xlab = '', ylab = '', pch = NA)
+legend(x = 'center',
+       col = c('forestgreen', resiFeats, pocketFeats),
+       legend = c('PLIP interactions',
+                  'bs resi cnt', 'sec struct', 'aa type', 'aa ident',
+                  'D2 feats', 'D2 PCs', 'Zern PCs'),
+       pch = 19)
+
+dev.off()
+
+
+
+# Volcano plots with weighted mean fold change
+dev.off()
+pdf(file = paste('./manuscript/figures/', 
+                 'weighted_FC_volcanoes',
+                 '.pdf', sep = ''),
+    width = 21,
+    height = 13)
+par(mfrow=c(3,5))
+xLim = c(-10,10)
+# yLim = c(0,10)
+for(i in 1:ncol(ligTags)){
+  
+  yLim = c(0,max(-log10(0.1), -log10(min(stats_weighted[,grepl('_adj$', colnames(stats_weighted))][,i]))) + 1)
+  
+  tag = stats_weighted[,grepl('_adj$', colnames(stats_weighted))][,i] < 0.01
+  
+  # dev.off()
+  plot(0,0,axes = F, main = '', xlab = '', ylab = '', pch = NA)
+  bg = "seashell2"
+  fg = "ivory"
+  rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = bg)
+  # abline(v = c(-1,-.5,0,.5,1), lwd = 6, col = fg)
+  # abline(v = c(-1.25,-.75,-.25,.25,.75,1.25), lwd = 3, col = fg)
+  # abline(h = c(0,1,2,3,4,5,6), lwd = 6, col = fg)
+  # abline(h = c(0.5,1.5,2.5,3.5,4.5,5.5,6.5), lwd = 3, col = fg)
+  par(new=T)
+  
+  plot(stats_weighted[,grepl('_FC$', colnames(stats_weighted))][,i], -log10(stats_weighted[,grepl('_adj$', colnames(stats_weighted))][,i]), # Plot all points w/ color @ alpha 0.5
+       xlab = "log2(FC in weighted means)", ylab = "-log10(FDR)", main = colnames(ligTags)[i],
+       pch = 19, cex = 2, col = alpha(featColors, 0.5),
+       cex.axis = 1.5, cex.main = 2, cex.lab = 1.5,
+       xlim = xLim, ylim = yLim)
+  par(new=T)
+  plot(stats_weighted[,grepl('_FC$', colnames(stats_weighted))][tag,i], -log10(stats_weighted[,grepl('_adj$', colnames(stats_weighted))][tag,i]), # Plot stat sig points again with alpha 1
+       pch = 19, col = featColors[tag], cex = 2,
+       axes = F, xlab = "", ylab = "", main = "",
+       xlim = xLim, ylim = yLim)
+  par(new=T)
+  plot(stats_weighted[,grepl('_FC$', colnames(stats_weighted))][tag,i], -log10(stats_weighted[,grepl('_adj$', colnames(stats_weighted))][tag,i]), # Outline stat sig points in black to highlight them
+       col = 'black', cex = 2.05,
+       xlab = "", ylab = "", axes = F, main = "",
+       xlim = xLim, ylim = yLim)
+  abline(h= -log10(0.01), lwd = 2)
+  abline(v = 0, lty=2, lwd = 2)
+}
+
+dev.off()
+
+
+
+
+
+# Compare weighted test to mean-based approach
+par(mfrow=c(3,5))
+xLim = c(0,1)
+yLim = c(0,1)
+for (i in 1:ncol(ligTags)){
+  plot(stats_weighted[,grepl('_adj$', colnames(stats_weighted))][,i], stats[,grepl('_adj$', colnames(stats))][,i],
+       xlab = 'Weighted WMW test adjusted p-values', ylab = 'Cluster-means WMW test adjusted p-values',
+       main = colnames(ligTags)[i],
+       xlim = xLim, ylim = yLim)
+  abline(a = 0, b = 1)
+  text(x=0.6, y=0.05, labels = paste( 'Spearman corr = ', round(cor(stats_weighted[,grepl('_adj$', colnames(stats_weighted))][,i], stats[,grepl('_adj$', colnames(stats))][,i], method = 'spearman'), 4), sep = ''), cex = 2)
+}
+
+par(mfrow=c(3,5))
+xLim = c(0,1)
+yLim = c(0,1)
+for (i in 1:ncol(ligTags)){
+  plot(0.5 + stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))][,i], stats[,grepl('_effectSize$', colnames(stats))][,i],
+       xlab = 'Weighted WMW test effect size', ylab = 'Cluster-means WMW test effect size',
+       main = colnames(ligTags)[i],
+       xlim = xLim, ylim = yLim)
+  abline(a = 0, b = 1)
+  abline(h=0.5, lty =2)
+  abline(v=0.5, lty =2)
+  text(x=0.6, y=0.05, labels = paste( 'Pearson corr = ', round(cor(0.5 + stats_weighted[,grepl('_adj$', colnames(stats_weighted))][,i], stats[,grepl('_adj$', colnames(stats))][,i], method = 'spearman'), 4), sep = ''), cex = 2)
+}
+
+
+# # Plot volcano plots from scaled features
+# dev.off()
+# pdf(file = paste('./analysis/sfgPlots/', 
+#                  'medFC_volcanoes',
+#                  '.pdf', sep = ''),
+#     width = 21,
+#     height = 13)
+# par(mfrow=c(3,5))
+# xLim = c(-10,10)
+# # yLim = c(0,10)
+# for(i in 1:ncol(ligTags)){
+#   
+#   yLim = c(0,max(-log10(0.1), -log10(min(scaled_stats[,grepl('_adj$', colnames(scaled_stats))][,i]))) + 1)
+#   
+#   tag = scaled_stats[,grepl('_adj$', colnames(scaled_stats))][,i] < 0.1
+#   
+#   # dev.off()
+#   plot(0,0,axes = F, main = '', xlab = '', ylab = '', pch = NA)
+#   bg = "seashell2"
+#   fg = "ivory"
+#   rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = bg)
+#   # abline(v = c(-1,-.5,0,.5,1), lwd = 6, col = fg)
+#   # abline(v = c(-1.25,-.75,-.25,.25,.75,1.25), lwd = 3, col = fg)
+#   # abline(h = c(0,1,2,3,4,5,6), lwd = 6, col = fg)
+#   # abline(h = c(0.5,1.5,2.5,3.5,4.5,5.5,6.5), lwd = 3, col = fg)
+#   par(new=T)
+#   
+#   plot(log2(scaled_stats[,grepl('_FC$', colnames(scaled_stats))][,i]), -log10(scaled_stats[,grepl('_adj$', colnames(scaled_stats))][,i]), # Plot all points w/ color @ alpha 0.5
+#        xlab = "log2(median FC)", ylab = "-log10(FDR)", main = colnames(ligTags)[i],
+#        pch = 19, cex = 2, col = alpha(featColors, 0.5),
+#        cex.axis = 1.5, cex.main = 2, cex.lab = 1.5,
+#        xlim = xLim, ylim = yLim)
+#   par(new=T)
+#   plot(log2(scaled_stats[,grepl('_FC$', colnames(scaled_stats))][tag,i]), -log10(scaled_stats[,grepl('_adj$', colnames(scaled_stats))][tag,i]), # Plot stat sig points again with alpha 1
+#        pch = 19, col = featColors[tag], cex = 2,
+#        axes = F, xlab = "", ylab = "", main = "",
+#        xlim = xLim, ylim = yLim)
+#   par(new=T)
+#   plot(log2(scaled_stats[,grepl('_FC$', colnames(scaled_stats))][tag,i]), -log10(scaled_stats[,grepl('_adj$', colnames(scaled_stats))][tag,i]), # Outline stat sig points in black to highlight them
+#        col = 'black', cex = 2.05,
+#        xlab = "", ylab = "", axes = F, main = "",
+#        xlim = xLim, ylim = yLim)
+#   abline(h= -log10(0.1), lwd = 2)
+#   abline(v = 0, lty=2, lwd = 2)
+# }
+# dev.off()
 
 # Correlation between features for each ligand
 pdf(file = paste('./analysis/sfgPlots/', 
@@ -378,7 +636,7 @@ pdf(file = paste('./analysis/sfgPlots/',
     width = 11.5,
     height = 8.25)
 breakLst = seq(-1,1,0.05)
-pheatmap(cor(stats[,grepl('_effectSize$', colnames(stats))], scaled_stats[,grepl('_effectSize$', colnames(scaled_stats))], method = 'spearman'),
+pheatmap(cor(stats[,grepl('_effectSize$', colnames(stats))], stats[,grepl('_effectSize$', colnames(stats))], method = 'spearman'),
          color = colorRampPalette(c("royalblue1", "grey90", "gold1"))(length(breakLst)),
          labels_row = gsub('_effectSize$', '', colnames(stats[,grepl('_effectSize$', colnames(stats))])),
          main = 'Spearman correlation between feature-specific effect sizes across ligand classes',
