@@ -122,7 +122,7 @@ ggplot(meltMc, aes(fill = Bin_Number, x = Amino_acid, y = PercentDiff_McCaldon))
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
 
 ###########################
-# Descriptive analysis
+# Mean-based WMW test
 ###########################
 uniLigs = unique(bsResiDat$iupac)
 
@@ -553,8 +553,9 @@ dev.off()
 
 
 
-
+#######################
 # Compare weighted test to mean-based approach
+#######################
 par(mfrow=c(3,5))
 xLim = c(0,1)
 yLim = c(0,1)
@@ -581,121 +582,87 @@ for (i in 1:ncol(ligTags)){
   text(x=0.6, y=0.05, labels = paste( 'Pearson corr = ', round(cor(0.5 + stats_weighted[,grepl('_adj$', colnames(stats_weighted))][,i], stats[,grepl('_adj$', colnames(stats))][,i], method = 'spearman'), 4), sep = ''), cex = 2)
 }
 
-
-# # Plot volcano plots from scaled features
-# dev.off()
-# pdf(file = paste('./analysis/sfgPlots/', 
-#                  'medFC_volcanoes',
-#                  '.pdf', sep = ''),
-#     width = 21,
-#     height = 13)
-# par(mfrow=c(3,5))
-# xLim = c(-10,10)
-# # yLim = c(0,10)
-# for(i in 1:ncol(ligTags)){
-#   
-#   yLim = c(0,max(-log10(0.1), -log10(min(scaled_stats[,grepl('_adj$', colnames(scaled_stats))][,i]))) + 1)
-#   
-#   tag = scaled_stats[,grepl('_adj$', colnames(scaled_stats))][,i] < 0.1
-#   
-#   # dev.off()
-#   plot(0,0,axes = F, main = '', xlab = '', ylab = '', pch = NA)
-#   bg = "seashell2"
-#   fg = "ivory"
-#   rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = bg)
-#   # abline(v = c(-1,-.5,0,.5,1), lwd = 6, col = fg)
-#   # abline(v = c(-1.25,-.75,-.25,.25,.75,1.25), lwd = 3, col = fg)
-#   # abline(h = c(0,1,2,3,4,5,6), lwd = 6, col = fg)
-#   # abline(h = c(0.5,1.5,2.5,3.5,4.5,5.5,6.5), lwd = 3, col = fg)
-#   par(new=T)
-#   
-#   plot(log2(scaled_stats[,grepl('_FC$', colnames(scaled_stats))][,i]), -log10(scaled_stats[,grepl('_adj$', colnames(scaled_stats))][,i]), # Plot all points w/ color @ alpha 0.5
-#        xlab = "log2(median FC)", ylab = "-log10(FDR)", main = colnames(ligTags)[i],
-#        pch = 19, cex = 2, col = alpha(featColors, 0.5),
-#        cex.axis = 1.5, cex.main = 2, cex.lab = 1.5,
-#        xlim = xLim, ylim = yLim)
-#   par(new=T)
-#   plot(log2(scaled_stats[,grepl('_FC$', colnames(scaled_stats))][tag,i]), -log10(scaled_stats[,grepl('_adj$', colnames(scaled_stats))][tag,i]), # Plot stat sig points again with alpha 1
-#        pch = 19, col = featColors[tag], cex = 2,
-#        axes = F, xlab = "", ylab = "", main = "",
-#        xlim = xLim, ylim = yLim)
-#   par(new=T)
-#   plot(log2(scaled_stats[,grepl('_FC$', colnames(scaled_stats))][tag,i]), -log10(scaled_stats[,grepl('_adj$', colnames(scaled_stats))][tag,i]), # Outline stat sig points in black to highlight them
-#        col = 'black', cex = 2.05,
-#        xlab = "", ylab = "", axes = F, main = "",
-#        xlim = xLim, ylim = yLim)
-#   abline(h= -log10(0.1), lwd = 2)
-#   abline(v = 0, lty=2, lwd = 2)
-# }
-# dev.off()
-
+#######################
 # Correlation between features for each ligand
-pdf(file = paste('./analysis/sfgPlots/', 
-                 'allFeat_MWM_corplot',
+#######################
+# Correlations by all features
+pdf(file = paste('./manuscript/figures/subplots/', 
+                 'allFeats_MWM_corplots',
                  '.pdf', sep = ''),
     width = 11.5,
     height = 8.25)
 breakLst = seq(-1,1,0.05)
-pheatmap(cor(stats[,grepl('_effectSize$', colnames(stats))], stats[,grepl('_effectSize$', colnames(stats))], method = 'spearman'),
+pheatmap(cor(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))], stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))], method = 'pearson'),
          color = colorRampPalette(c("royalblue1", "grey90", "gold1"))(length(breakLst)),
-         labels_row = gsub('_effectSize$', '', colnames(stats[,grepl('_effectSize$', colnames(stats))])),
-         main = 'Spearman correlation between feature-specific effect sizes across ligand classes',
+         labels_row = gsub('_effectSize$', '', colnames(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))])),
+         main = ' ',
          breaks = breakLst,
          show_colnames = F,
          cutree_rows = 1,
          treeheight_col = 0)
+grid.text(label = 'Pearson correlation between feature-specific effect sizes across ligand classes',x = 0.5, y=0.985, gp=gpar(col="black", cex = 1.5))
 dev.off()
 
-# Correlations by feature type
-pdf(file = paste('./analysis/sfgPlots/', 
+# Correlations by Residue features
+pdf(file = paste('./manuscript/figures/subplots/', 
                  'resiFeat_MWM_corplot',
                  '.pdf', sep = ''),
     width = 11.5,
     height = 8.25)
 breakLst = seq(-1,1,0.05)
-pheatmap(cor(stats[resiFeatTag,grepl('_effectSize$', colnames(stats))], scaled_stats[resiFeatTag,grepl('_effectSize$', colnames(scaled_stats))], method = 'spearman'),
+pheatmap(cor(stats_weighted[resiFeatTag,grepl('_effectSize$', colnames(stats_weighted))], stats_weighted[resiFeatTag,grepl('_effectSize$', colnames(stats_weighted))], method = 'pearson'),
          color = colorRampPalette(c("royalblue1", "grey90", "gold1"))(length(breakLst)),
-         labels_row = gsub('_effectSize$', '', colnames(stats[,grepl('_effectSize$', colnames(stats))])),
-         main = 'Spearman correlation between RESIDUE feature effect sizes across ligand classes',
+         labels_row = gsub('_effectSize$', '', colnames(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))])),
+         main = '',
          breaks = breakLst,
          show_colnames = F,
-         treeheight_col = 0, cutree_rows = 4)
+         treeheight_col = 0, 
+         cutree_rows = 1)
+grid.text(label = 'Pearson correlation between RESIDUE feature effect sizes across ligand classes',x = 0.5, y=0.985, gp=gpar(col="firebrick4", cex = 1.5))
 dev.off()
-pdf(file = paste('./analysis/sfgPlots/', 
+
+# Correlations by Pocket features
+pdf(file = paste('./manuscript/figures/subplots/', 
                  'pocketFeat_MWM_corplot',
                  '.pdf', sep = ''),
     width = 11.5,
     height = 8.25)
-pheatmap(cor(stats[pocketFeatTag,grepl('_effectSize$', colnames(stats))], scaled_stats[pocketFeatTag,grepl('_effectSize$', colnames(scaled_stats))], method = 'spearman'),
+pheatmap(cor(stats_weighted[pocketFeatTag,grepl('_effectSize$', colnames(stats_weighted))], stats_weighted[pocketFeatTag,grepl('_effectSize$', colnames(stats_weighted))], method = 'pearson'),
          color = colorRampPalette(c("royalblue1", "grey90", "gold1"))(length(breakLst)),
-         labels_row = gsub('_effectSize$', '', colnames(stats[,grepl('_effectSize$', colnames(stats))])),
-         main = 'Spearman correlation between POCKET feature effect sizes across ligand classes',
+         labels_row = gsub('_effectSize$', '', colnames(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))])),
+         main = '',
          breaks = breakLst,
          show_colnames = F,
          treeheight_col = 0)
+grid.text(label = 'Pearson correlation between POCKET feature effect sizes across ligand classes',x = 0.5, y=0.985, gp=gpar(col="blue2", cex = 1.5))
 dev.off()
 
-pdf(file = paste('./analysis/sfgPlots/', 
+# Correlations by Interaction features
+pdf(file = paste('./manuscript/figures/subplots/', 
                  'intFeat_MWM_corplot',
                  '.pdf', sep = ''),
     width = 11.5,
     height = 8.25)
-pheatmap(cor(stats[1:11,grepl('_effectSize$', colnames(stats))], scaled_stats[1:11,grepl('_effectSize$', colnames(scaled_stats))], method = 'spearman'),
+pheatmap(cor(stats_weighted[1:11,grepl('_effectSize$', colnames(stats_weighted))], stats_weighted[1:11,grepl('_effectSize$', colnames(stats_weighted))], method = 'pearson'),
          color = colorRampPalette(c("royalblue1", "grey90", "gold1"))(length(breakLst)),
-         labels_row = gsub('_effectSize$', '', colnames(stats[,grepl('_effectSize$', colnames(stats))])),
-         main = 'Spearman correlation between INTERACTION feature effect sizes across ligand classes',
+         labels_row = gsub('_effectSize$', '', colnames(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))])),
+         main = '',
          breaks = breakLst,
          show_colnames = F,
          treeheight_col = 0)
+grid.text(label = 'Pearson correlation between INTERACTION feature effect sizes across ligand classes',x = 0.5, y=0.985, gp=gpar(col="forestgreen", cex = 1.5))
+
 dev.off()
 
-# Shared significant features
+#######################
+# Shared significant features for similar ligands
+#######################
 # Sialic acid features
-siaBindingFeats = list(row.names(stats)[stats$Sialic_Acid_adj < 0.1], row.names(stats)[stats$NeuAc_adj < 0.1], row.names(stats)[stats$`NeuAc(a2-3)Gal(b1-4)Glc_adj` < 0.1])
+siaBindingFeats = list(row.names(stats_weighted)[stats_weighted$Sialic_Acid_adj < 0.01], row.names(stats_weighted)[stats_weighted$NeuAc_adj < 0.01], row.names(stats_weighted)[stats_weighted$NeuAc.a2.3.Gal.b1.4.Glc_adj < 0.01])
 venn.diagram(
   x = siaBindingFeats,
   category.names = c("Sialic acid" , "NeuAc" , "NeuAc(a2-3)Gal(b1-4)Glc"),
-  filename = './analysis/sfgPlots/neuac_feats.png',
+  filename = './manuscript/figures/subplots/neuac_feats.png',
   output=F,
   imagetype="png" ,
   height = 480 , 
@@ -718,7 +685,7 @@ venn.diagram(
 intersect(intersect(siaBindingFeats[[1]], siaBindingFeats[[2]]), siaBindingFeats[[3]])
 
 # Fucose binding
-fucBindingFeats = list(row.names(stats)[stats$Fuc_adj < 0.1], row.names(stats)[stats$Terminal_Fucose_adj < 0.1])
+fucBindingFeats = list(row.names(stats_weighted)[stats_weighted$Fuc_adj < 0.01], row.names(stats_weighted)[stats_weighted$Terminal_Fucose_adj < 0.01])
 intersect(fucBindingFeats[[1]], fucBindingFeats[[2]])
 dev.off()
 draw.pairwise.venn(area1 = length(fucBindingFeats[[1]]),
@@ -726,7 +693,7 @@ draw.pairwise.venn(area1 = length(fucBindingFeats[[1]]),
                    cross.area = length(intersect(fucBindingFeats[[1]], fucBindingFeats[[2]])),
                    euler.d = T, scaled = T, ext.text = F, cex = 2,
                    category = c('Fucose (monosacc.)', 'Terminal fucose'), cat.cex = 2,
-                   cat.pos = c(0,0),
+                   cat.pos = c(340,20),
                    fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3)),
                    col = c("#440154ff", '#21908dff'),
                    cat.col = c("#440154ff", '#21908dff'),
@@ -735,13 +702,13 @@ draw.pairwise.venn(area1 = length(fucBindingFeats[[1]]),
 )
 
 # Mannose binding
-manBindingFeats = list(row.names(stats)[stats$Man_adj < 0.1], row.names(stats)[stats$High_Mannose_adj < 0.1], row.names(stats)[stats$`Man(a1-2)Man_adj` < 0.1])
+manBindingFeats = list(row.names(stats_weighted)[stats_weighted$Man_adj < 0.1], row.names(stats_weighted)[stats_weighted$High_Mannose_adj < 0.1], row.names(stats_weighted)[stats_weighted$Man.a1.2.Man_adj < 0.1])
 intersect(intersect(manBindingFeats[[1]], manBindingFeats[[2]]), manBindingFeats[[3]])
 dev.off()
 venn.diagram(
   x = manBindingFeats,
   category.names = c("Man" , "High_mannose" , "Man(a1-2)Man"),
-  filename = './analysis/sfgPlots/man_feats.png',
+  filename = './manuscript/figures/subplots/man_feats.png',
   output=F,
   imagetype="png" ,
   height = 480 , 
