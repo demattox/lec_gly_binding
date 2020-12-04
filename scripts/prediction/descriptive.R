@@ -28,6 +28,13 @@ ligTags <- read.delim(file = './analysis/training/data_in/ligTags.tsv', sep = '\
 predFeats <- read.delim(file = './analysis/training/data_in/predFeats.csv', sep = ',', stringsAsFactors = F)
 bsResiDat <- read.delim(file = './analysis/training/data_in/bsResiDat.tsv', sep = '\t', stringsAsFactors = F)
 
+uniLigs = unique(bsResiDat$iupac)
+
+scaledFeats = predFeats
+for(i in 1:ncol(scaledFeats)){
+  scaledFeats[,i] = (scaledFeats[,i] - min(scaledFeats[,i])) / (max(scaledFeats[,i]) - min(scaledFeats[,i]))
+}
+
 ###########################
 # McCaldon analysis
 ###########################
@@ -124,12 +131,6 @@ ggplot(meltMc, aes(fill = Bin_Number, x = Amino_acid, y = PercentDiff_McCaldon))
 ###########################
 # Mean-based WMW test
 ###########################
-uniLigs = unique(bsResiDat$iupac)
-
-scaledFeats = predFeats
-for(i in 1:ncol(scaledFeats)){
-  scaledFeats[,i] = (scaledFeats[,i] - min(scaledFeats[,i])) / (max(scaledFeats[,i]) - min(scaledFeats[,i]))
-}
 
 # # Ligand tags
 # parenCnt = bracCnt = manCnt = neuCnt = bracCnt = rep(0,length(uniLigs))
@@ -180,168 +181,151 @@ for(i in 1:ncol(scaledFeats)){
 # bsResiDat = cbind(bsResiDat, ligTags)
 
 
-
+# 
 # Statistical test for cluster independent feature enrichment by ligand
-stats = as.data.frame(matrix(0, nrow = ncol(predFeats), ncol = (ncol(ligTags)*4)))
-row.names(stats) = colnames(predFeats)
-colnames(stats) = c(paste(colnames(ligTags), 'p', sep = '_'), paste(colnames(ligTags), '_FC', sep = '_'), paste(colnames(ligTags), 'effectSize', sep = '_'), paste(colnames(ligTags), 'adj', sep = '_'))
+# stats = as.data.frame(matrix(0, nrow = ncol(predFeats), ncol = (ncol(ligTags)*4)))
+# row.names(stats) = colnames(predFeats)
+# colnames(stats) = c(paste(colnames(ligTags), 'p', sep = '_'), paste(colnames(ligTags), '_FC', sep = '_'), paste(colnames(ligTags), 'effectSize', sep = '_'), paste(colnames(ligTags), 'adj', sep = '_'))
+# 
+# scaled_stats = stats # In parallel, try this with scaled features for more robust change metric, shouldn't impact WMW test
+# 
+# for (i in 1:ncol(ligTags)){ # for ligand i
+#   # meanClust50_data = as.data.frame(matrix(NA, nrow = length(clusLst50), ncol = (ncol(predFeats)*2))) # Rows for unique clusters, columns for predictive features from bsites WITH or WITHOUT current ligand
+#   # colnames(meanClust50_data) = c(paste(colnames(predFeats), 'with', sep = '_'),  paste(colnames(predFeats), 'without', sep = '_'))
+#   for(k in 1: ncol(predFeats)){ # for each feature k
+#     meanClust50_data = as.data.frame(matrix(NA, nrow = length(clusLst50), ncol = 2)) # Rows for unique clusters, columns for predictive feature from bsites WITH or WITHOUT current ligand
+#     colnames(meanClust50_data) = c('with', 'without')
+#     scaledClus50_data = meanClust50_data
+#     for (j in 1:length(clusLst50)){ # for each cluster j
+#       clustTag = bsResiDat$seqClust50 == clusLst50[j]
+#       withTag = clustTag & ligTags[,i]
+#       withoutTag = clustTag & !ligTags[,i]
+#       if ( sum(withTag) >= 1){
+#         meanClust50_data[j, 1] = mean( predFeats[withTag,k] )
+#         scaledClus50_data[j, 1] = mean( scaledFeats[withTag,k] )
+#       }
+#       if ( sum(withoutTag) >= 1){
+#         meanClust50_data[j, 2] = mean( predFeats[withoutTag,k] )
+#         scaledClus50_data[j, 2] = mean( scaledFeats[withoutTag,k] )
+#       }
+#     }
+#     # Raw Feats
+#     wDat = meanClust50_data[,1]
+#     wDat = wDat[!is.na(wDat)]
+#     woDat = meanClust50_data[,2]
+#     woDat = woDat[!is.na(woDat)]
+#     # Scaled feats
+#     sW = scaledClus50_data[!is.na(scaledClus50_data[,1]),1] # Non-NA feats from bSites w/ ligand
+#     sWO = scaledClus50_data[!is.na(scaledClus50_data[,2]),2] # Non-NA feats from bSites w/ ligand
+# 
+#     # ligTest = t.test(wDat[!is.na(wDat)], woDat[!is.na(woDat)])
+#     ligTest = wilcox.test(x= wDat, y = woDat) # Wilcoxon–Mann–Whitney test, sample sizes can be small (~5% of 230 clusters ~= 10), no reason to assume distribution is normal as it likely isn't, as well as sample sizes often being too small to test for normality
+#     sTest = wilcox.test(x = sW, y = sWO)
+# 
+#     stats[k, grepl('_p$', colnames(stats))][i] = ligTest$p.value # Raw p-value
+#     stats[k, grepl('_effectSize$', colnames(stats))][i] = ligTest$statistic / (length(wDat) * length(woDat)) # common language effect size
+#     scaled_stats[k, grepl('_p$', colnames(scaled_stats))][i] = sTest$p.value # Raw p-value
+#     scaled_stats[k, grepl('_effectSize$', colnames(scaled_stats))][i] = sTest$statistic / (length(sW) * length(sWO)) # common language effect size
+# 
+#     if (median(woDat) != 0){
+#       stats[k, grepl('_FC$', colnames(stats))][i] = median(wDat) / median(woDat) # Fold change in mean values
+#     } else{
+#       stats[k, grepl('_FC$', colnames(stats))][i] = median(wDat)
+#     }
+#     if (median(sWO) != 0){
+#       scaled_stats[k, grepl('_FC$', colnames(scaled_stats))][i] = median(sW) / median(sWO) # Fold change in mean values
+#     } else{
+#       scaled_stats[k, grepl('_FC$', colnames(scaled_stats))][i] = median(sW)
+#     }
+#   }
+#   stats[,grepl('_adj$', colnames(stats))][,i] = p.adjust(stats[grepl('_p$', colnames(stats))][,i], method = "BH") # Benjamini-Hochberg MHT correction (FDR)
+#   scaled_stats[,grepl('_adj$', colnames(scaled_stats))][,i] = p.adjust(scaled_stats[grepl('_p$', colnames(scaled_stats))][,i], method = "BH") # Benjamini-Hochberg MHT correction (FDR)
+# }
+# 
+# 
+# for (i in 1:ncol(ligTags)){
+#   lig = colnames(ligTags)[i]
+#   cat(lig)
+#   cat('\n----\n')
+#   cat('DOWN w/ ligand\n')
+#   cat(row.names(stats)[stats[,grepl('_adj$', colnames(stats))][,i] <= 0.1  &  stats[,grepl('_effectSize$', colnames(stats))][,i] < 0.5])
+#   cat('\nUP w/ ligand\n')
+#   cat(row.names(stats)[stats[,grepl('_adj$', colnames(stats))][,i] <= 0.1  &  stats[,grepl('_effectSize$', colnames(stats))][,i] > 0.5])
+#   cat('\n----------------\n')
+# }
 
-scaled_stats = stats # In parallel, try this with scaled features for more robust change metric, shouldn't impact WMW test
-
-for (i in 1:ncol(ligTags)){ # for ligand i
-  # meanClust50_data = as.data.frame(matrix(NA, nrow = length(clusLst50), ncol = (ncol(predFeats)*2))) # Rows for unique clusters, columns for predictive features from bsites WITH or WITHOUT current ligand
-  # colnames(meanClust50_data) = c(paste(colnames(predFeats), 'with', sep = '_'),  paste(colnames(predFeats), 'without', sep = '_'))
-  for(k in 1: ncol(predFeats)){ # for each feature k
-    meanClust50_data = as.data.frame(matrix(NA, nrow = length(clusLst50), ncol = 2)) # Rows for unique clusters, columns for predictive feature from bsites WITH or WITHOUT current ligand
-    colnames(meanClust50_data) = c('with', 'without')
-    scaledClus50_data = meanClust50_data
-    for (j in 1:length(clusLst50)){ # for each cluster j
-      clustTag = bsResiDat$seqClust50 == clusLst50[j]
-      withTag = clustTag & ligTags[,i]
-      withoutTag = clustTag & !ligTags[,i]
-      if ( sum(withTag) >= 1){
-        meanClust50_data[j, 1] = mean( predFeats[withTag,k] )
-        scaledClus50_data[j, 1] = mean( scaledFeats[withTag,k] )
-      }
-      if ( sum(withoutTag) >= 1){
-        meanClust50_data[j, 2] = mean( predFeats[withoutTag,k] )
-        scaledClus50_data[j, 2] = mean( scaledFeats[withoutTag,k] )
-      }
-    }
-    # Raw Feats
-    wDat = meanClust50_data[,1]
-    wDat = wDat[!is.na(wDat)]
-    woDat = meanClust50_data[,2]
-    woDat = woDat[!is.na(woDat)]
-    # Scaled feats
-    sW = scaledClus50_data[!is.na(scaledClus50_data[,1]),1] # Non-NA feats from bSites w/ ligand
-    sWO = scaledClus50_data[!is.na(scaledClus50_data[,2]),2] # Non-NA feats from bSites w/ ligand
-    
-    # ligTest = t.test(wDat[!is.na(wDat)], woDat[!is.na(woDat)])
-    ligTest = wilcox.test(x= wDat, y = woDat) # Wilcoxon–Mann–Whitney test, sample sizes can be small (~5% of 230 clusters ~= 10), no reason to assume distribution is normal as it likely isn't, as well as sample sizes often being too small to test for normality
-    sTest = wilcox.test(x = sW, y = sWO)
-    
-    stats[k, grepl('_p$', colnames(stats))][i] = ligTest$p.value # Raw p-value
-    stats[k, grepl('_effectSize$', colnames(stats))][i] = ligTest$statistic / (length(wDat) * length(woDat)) # common language effect size
-    scaled_stats[k, grepl('_p$', colnames(scaled_stats))][i] = sTest$p.value # Raw p-value
-    scaled_stats[k, grepl('_effectSize$', colnames(scaled_stats))][i] = sTest$statistic / (length(sW) * length(sWO)) # common language effect size
-    
-    if (median(woDat) != 0){
-      stats[k, grepl('_FC$', colnames(stats))][i] = median(wDat) / median(woDat) # Fold change in mean values  
-    } else{
-      stats[k, grepl('_FC$', colnames(stats))][i] = median(wDat)
-    }
-    if (median(sWO) != 0){
-      scaled_stats[k, grepl('_FC$', colnames(scaled_stats))][i] = median(sW) / median(sWO) # Fold change in mean values  
-    } else{
-      scaled_stats[k, grepl('_FC$', colnames(scaled_stats))][i] = median(sW)
-    }
-  }
-  stats[,grepl('_adj$', colnames(stats))][,i] = p.adjust(stats[grepl('_p$', colnames(stats))][,i], method = "BH") # Benjamini-Hochberg MHT correction (FDR)
-  scaled_stats[,grepl('_adj$', colnames(scaled_stats))][,i] = p.adjust(scaled_stats[grepl('_p$', colnames(scaled_stats))][,i], method = "BH") # Benjamini-Hochberg MHT correction (FDR)
-}
 
 
-for (i in 1:ncol(ligTags)){
-  lig = colnames(ligTags)[i]
-  cat(lig)
-  cat('\n----\n')
-  cat('DOWN w/ ligand\n')
-  cat(row.names(stats)[stats[,grepl('_adj$', colnames(stats))][,i] <= 0.1  &  stats[,grepl('_effectSize$', colnames(stats))][,i] < 0.5])
-  cat('\nUP w/ ligand\n')
-  cat(row.names(stats)[stats[,grepl('_adj$', colnames(stats))][,i] <= 0.1  &  stats[,grepl('_effectSize$', colnames(stats))][,i] > 0.5])
-  cat('\n----------------\n')
-}
-
-
-# Colors to features for plotting
-featColors = rep('', nrow(stats))
-resiFeats = colorRampPalette(c("plum1","tomato", "firebrick4"))(4)
-pocketFeats = colorRampPalette(c('turquoise', 'dodgerblue1', 'blue2'))(3)
-
-featColors[1:11] = 'forestgreen'
-
-featColors[grep('^vol_4Ang$', row.names(stats)) : grep('^leftskew_10Ang$', row.names(stats))] = pocketFeats[1] # features within the d2Feats range
-featColors[grepl('^binnedD2', row.names(stats))] = pocketFeats[2] # PCs from the binned D2 measures
-featColors[grepl('^zern', row.names(stats))] = pocketFeats[3] # PCs from the 3DZDs
-
-featColors[grepl('^numBSresis', row.names(stats))] = resiFeats[1] # number of residues in binding site features
-featColors[gsub('_bin\\d{1}', '', row.names(stats)) %in% c('H', 'B', 'E', 'G', 'T', 'S', 'X.')] = resiFeats[2] # secondary structure features
-featColors[gsub('_bin\\d{1}', '', row.names(stats)) %in% c('nonpolar', 'polar', 'posCharge', 'negCharge', 'aromatic')] = resiFeats[3] # amino acid properties
-featColors[grepl('^[[:upper:]]{3}_', row.names(stats)) | grepl('^CA$', row.names(stats))] = resiFeats[4] # amino acid identities
-
-resiFeatTag = featColors %in% resiFeats
-pocketFeatTag = featColors %in% pocketFeats
 
 # Plot volcano plots from raw features
-
-dev.off()
-pdf(file = paste('./analysis/sfgPlots/', 
-                 'commonEffect_volcanoes',
-                 '.pdf', sep = ''),
-    width = 21,
-    height = 13)
-par(mfrow=c(3,5))
-xLim = c(0,1)
-# yLim = c(0,10)
-for(i in 1:ncol(ligTags)){
-  
-  yLim = c(0,max(-log10(0.1), -log10(min(stats[,grepl('_adj$', colnames(stats))][,i]))) + 1)
-  
-  tag = stats[,grepl('_adj$', colnames(stats))][,i] < 0.1
-  
-  # dev.off()
-  plot(0,0,axes = F, main = '', xlab = '', ylab = '', pch = NA)
-  bg = "seashell2"
-  fg = "ivory"
-  rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = bg)
-  # abline(v = c(-1,-.5,0,.5,1), lwd = 6, col = fg)
-  # abline(v = c(-1.25,-.75,-.25,.25,.75,1.25), lwd = 3, col = fg)
-  # abline(h = c(0,1,2,3,4,5,6), lwd = 6, col = fg)
-  # abline(h = c(0.5,1.5,2.5,3.5,4.5,5.5,6.5), lwd = 3, col = fg)
-  par(new=T)
-  
-  plot(stats[,grepl('_effectSize$', colnames(stats))][,i], -log10(stats[,grepl('_adj$', colnames(stats))][,i]), # Plot all points w/ color @ alpha 0.5
-       xlab = "Effect size", ylab = "-log10(FDR)", main = colnames(ligTags)[i],
-       pch = 19, cex = 2, col = alpha(featColors, 0.5),
-       cex.axis = 1.5, cex.main = 2, cex.lab = 1.5,
-       xlim = xLim, ylim = yLim)
-  par(new=T)
-  plot(stats[,grepl('_effectSize$', colnames(stats))][tag,i], -log10(stats[,grepl('_adj$', colnames(stats))][tag,i]), # Plot stat sig points again with alpha 1
-       pch = 19, col = featColors[tag], cex = 2,
-       axes = F, xlab = "", ylab = "", main = "",
-       xlim = xLim, ylim = yLim)
-  par(new=T)
-  plot(stats[,grepl('_effectSize$', colnames(stats))][tag,i], -log10(stats[,grepl('_adj$', colnames(stats))][tag,i]), # Outline stat sig points in black to highlight them
-       col = 'black', cex = 2.05,
-       xlab = "", ylab = "", axes = F, main = "",
-       xlim = xLim, ylim = yLim)
-  abline(h= -log10(0.1), lwd = 2)
-  abline(v = 0.5, lty=2, lwd = 2)
-}
-
-dev.off()
-plot(0,0,axes = F, main = '', xlab = '', ylab = '', pch = NA)
-legend(x = 'center',
-       col = c('forestgreen', resiFeats, pocketFeats),
-       legend = c('PLIP interactions',
-                  'bs resi cnt', 'sec struct', 'aa type', 'aa ident',
-                  'D2 feats', 'D2 PCs', 'Zern PCs'),
-       pch = 19)
-
-dev.off()
-par(mfrow=c(3,5))
-xLim = c(0,1)
-yLim = c(0,1)
-# Compare raw feats to scaled feats
-for (i in 1:ncol(ligTags)){
-  plot(stats[,grepl('_adj$', colnames(stats))][,i], scaled_stats[,grepl('_adj$', colnames(scaled_stats))][,i],
-       xlab = 'Raw feat adjusted p-values', ylab = 'Scaled feat adjusted p-values',
-       main = colnames(ligTags)[i],
-       xlim = xLim, ylim = yLim)
-  abline(a = 0, b = 1)
-  text(x=0.6, y=0.05, labels = paste( 'Pear. corr = ', cor(stats[,grepl('_adj$', colnames(stats))][,i], scaled_stats[,grepl('_adj$', colnames(scaled_stats))][,i]), sep = ''), cex = 2)
-}
+# 
+# dev.off()
+# pdf(file = paste('./analysis/sfgPlots/', 
+#                  'commonEffect_volcanoes',
+#                  '.pdf', sep = ''),
+#     width = 21,
+#     height = 13)
+# par(mfrow=c(3,5))
+# xLim = c(0,1)
+# # yLim = c(0,10)
+# for(i in 1:ncol(ligTags)){
+#   
+#   yLim = c(0,max(-log10(0.1), -log10(min(stats[,grepl('_adj$', colnames(stats))][,i]))) + 1)
+#   
+#   tag = stats[,grepl('_adj$', colnames(stats))][,i] < 0.1
+#   
+#   # dev.off()
+#   plot(0,0,axes = F, main = '', xlab = '', ylab = '', pch = NA)
+#   bg = "seashell2"
+#   fg = "ivory"
+#   rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = bg)
+#   # abline(v = c(-1,-.5,0,.5,1), lwd = 6, col = fg)
+#   # abline(v = c(-1.25,-.75,-.25,.25,.75,1.25), lwd = 3, col = fg)
+#   # abline(h = c(0,1,2,3,4,5,6), lwd = 6, col = fg)
+#   # abline(h = c(0.5,1.5,2.5,3.5,4.5,5.5,6.5), lwd = 3, col = fg)
+#   par(new=T)
+#   
+#   plot(stats[,grepl('_effectSize$', colnames(stats))][,i], -log10(stats[,grepl('_adj$', colnames(stats))][,i]), # Plot all points w/ color @ alpha 0.5
+#        xlab = "Effect size", ylab = "-log10(FDR)", main = colnames(ligTags)[i],
+#        pch = 19, cex = 2, col = alpha(featColors, 0.5),
+#        cex.axis = 1.5, cex.main = 2, cex.lab = 1.5,
+#        xlim = xLim, ylim = yLim)
+#   par(new=T)
+#   plot(stats[,grepl('_effectSize$', colnames(stats))][tag,i], -log10(stats[,grepl('_adj$', colnames(stats))][tag,i]), # Plot stat sig points again with alpha 1
+#        pch = 19, col = featColors[tag], cex = 2,
+#        axes = F, xlab = "", ylab = "", main = "",
+#        xlim = xLim, ylim = yLim)
+#   par(new=T)
+#   plot(stats[,grepl('_effectSize$', colnames(stats))][tag,i], -log10(stats[,grepl('_adj$', colnames(stats))][tag,i]), # Outline stat sig points in black to highlight them
+#        col = 'black', cex = 2.05,
+#        xlab = "", ylab = "", axes = F, main = "",
+#        xlim = xLim, ylim = yLim)
+#   abline(h= -log10(0.1), lwd = 2)
+#   abline(v = 0.5, lty=2, lwd = 2)
+# }
+# 
+# dev.off()
+# plot(0,0,axes = F, main = '', xlab = '', ylab = '', pch = NA)
+# legend(x = 'center',
+#        col = c('forestgreen', resiFeats, pocketFeats),
+#        legend = c('PLIP interactions',
+#                   'bs resi cnt', 'sec struct', 'aa type', 'aa ident',
+#                   'D2 feats', 'D2 PCs', 'Zern PCs'),
+#        pch = 19)
+# 
+# dev.off()
+# par(mfrow=c(3,5))
+# xLim = c(0,1)
+# yLim = c(0,1)
+# # Compare raw feats to scaled feats
+# for (i in 1:ncol(ligTags)){
+#   plot(stats[,grepl('_adj$', colnames(stats))][,i], scaled_stats[,grepl('_adj$', colnames(scaled_stats))][,i],
+#        xlab = 'Raw feat adjusted p-values', ylab = 'Scaled feat adjusted p-values',
+#        main = colnames(ligTags)[i],
+#        xlim = xLim, ylim = yLim)
+#   abline(a = 0, b = 1)
+#   text(x=0.6, y=0.05, labels = paste( 'Pear. corr = ', cor(stats[,grepl('_adj$', colnames(stats))][,i], scaled_stats[,grepl('_adj$', colnames(scaled_stats))][,i]), sep = ''), cex = 2)
+# }
 
 ################################
 # Calculate weighted MWM statistics instead of using means from each cluster
@@ -367,8 +351,8 @@ round(sum(cuWeights),5) == nrow(bsResiDat) # Sum of weights is equal to number o
 wmwFeats = cbind(predFeats,ligTags)
 
 des <- svydesign(ids = ~1, data = wmwFeats, weights = 1/cuWeights)
-des_alt <- svydesign(ids = ~1, data = wmwFeats, weights = 1/cWeights)
-des_unweighted <- svydesign(ids = ~1, data = wmwFeats, weights = NULL)
+# des_alt <- svydesign(ids = ~1, data = wmwFeats, weights = 1/cWeights)
+# des_unweighted <- svydesign(ids = ~1, data = wmwFeats, weights = NULL)
 
 
 # tst = svyranktest(formula = negCharge_bin1 ~ as.factor(ligTags$Sialic_Acid), design = des, test = 'wilcoxon')
@@ -421,7 +405,7 @@ for (i in 1:ncol(ligTags)){ # for ligand i
   des_wo = subset(des, subset = !ligTags[,i]) # same as above but WITHOUT the ligand of interest
   for(k in 1:ncol(predFeats)){ # for each feature k
     ligTest = svyranktest(formula = as.formula(paste(colnames(predFeats)[k], ' ~ ', colnames(ligTags)[i], sep = '')), # Wilcoxon–Mann–Whitney test, sample sizes can be small (~5% of 230 clusters ~= 10), no reason to assume distribution is normal as it likely isn't
-                           design = des_unweighted, 
+                           design = des, 
                            test = 'wilcoxon') 
 
     if (ligTest$p.value != 0){
@@ -443,9 +427,29 @@ for (i in 1:ncol(ligTags)){ # for ligand i
 stats_weighted[,grepl('_adj$', colnames(stats_weighted))][stats_weighted[,grepl('_adj$', colnames(stats_weighted))] < 1e-16] <- 1e-16
 
 
+# Colors to features for plotting
+featColors = rep('', nrow(stats_weighted))
+resiFeats = colorRampPalette(c("plum1","tomato", "firebrick4"))(4)
+pocketFeats = colorRampPalette(c('turquoise', 'dodgerblue1', 'blue2'))(3)
+
+featColors[1:11] = 'forestgreen'
+
+featColors[grep('^vol_4Ang$', row.names(stats_weighted)) : grep('^leftskew_10Ang$', row.names(stats_weighted))] = pocketFeats[1] # features within the d2Feats range
+featColors[grepl('^binnedD2', row.names(stats_weighted))] = pocketFeats[2] # PCs from the binned D2 measures
+featColors[grepl('^zern', row.names(stats_weighted))] = pocketFeats[3] # PCs from the 3DZDs
+
+featColors[grepl('^numBSresis', row.names(stats_weighted))] = resiFeats[1] # number of residues in binding site features
+featColors[gsub('_bin\\d{1}', '', row.names(stats_weighted)) %in% c('H', 'B', 'E', 'G', 'T', 'S', 'X.')] = resiFeats[2] # secondary structure features
+featColors[gsub('_bin\\d{1}', '', row.names(stats_weighted)) %in% c('nonpolar', 'polar', 'posCharge', 'negCharge', 'aromatic')] = resiFeats[3] # amino acid properties
+featColors[grepl('^[[:upper:]]{3}_', row.names(stats_weighted)) | grepl('^CA$', row.names(stats_weighted))] = resiFeats[4] # amino acid identities
+
+resiFeatTag = featColors %in% resiFeats
+pocketFeatTag = featColors %in% pocketFeats
+
+
 # Plot volcanoes from weighted WMW test
 dev.off()
-pdf(file = paste('./manuscript/figures/', 
+pdf(file = paste('./manuscript/figures/subplots/', 
                  'weighted_commonEffect_volcanoes',
                  '.pdf', sep = ''),
     width = 21,
@@ -504,7 +508,7 @@ dev.off()
 
 # Volcano plots with weighted mean fold change
 dev.off()
-pdf(file = paste('./manuscript/figures/', 
+pdf(file = paste('./manuscript/figures/subplots/', 
                  'weighted_FC_volcanoes',
                  '.pdf', sep = ''),
     width = 21,
@@ -579,7 +583,7 @@ for (i in 1:ncol(ligTags)){
   abline(a = 0, b = 1)
   abline(h=0.5, lty =2)
   abline(v=0.5, lty =2)
-  text(x=0.6, y=0.05, labels = paste( 'Pearson corr = ', round(cor(0.5 + stats_weighted[,grepl('_adj$', colnames(stats_weighted))][,i], stats[,grepl('_adj$', colnames(stats))][,i], method = 'spearman'), 4), sep = ''), cex = 2)
+  text(x=0.6, y=0.05, labels = paste( 'Pearson corr = ', round(cor(0.5 + stats_weighted[,grepl('_adj$', colnames(stats_weighted))][,i], stats[,grepl('_adj$', colnames(stats))][,i], method = 'pearson'), 4), sep = ''), cex = 2)
 }
 
 #######################
@@ -658,11 +662,12 @@ dev.off()
 # Shared significant features for similar ligands
 #######################
 # Sialic acid features
-siaBindingFeats = list(row.names(stats_weighted)[stats_weighted$Sialic_Acid_adj < 0.01], row.names(stats_weighted)[stats_weighted$NeuAc_adj < 0.01], row.names(stats_weighted)[stats_weighted$NeuAc.a2.3.Gal.b1.4.Glc_adj < 0.01])
+siaBindingFeats_pos = list(row.names(stats_weighted)[stats_weighted$Sialic_Acid_adj < 0.01 & stats_weighted$Sialic_Acid_effectSize > 0], row.names(stats_weighted)[stats_weighted$NeuAc_adj < 0.01 & stats_weighted$NeuAc_effectSize > 0], row.names(stats_weighted)[stats_weighted$NeuAc.a2.3.Gal.b1.4.Glc_adj < 0.01 & stats_weighted$NeuAc.a2.3.Gal.b1.4.Glc_effectSize > 0])
+siaBindingFeats_neg = list(row.names(stats_weighted)[stats_weighted$Sialic_Acid_adj < 0.01 & stats_weighted$Sialic_Acid_effectSize < 0], row.names(stats_weighted)[stats_weighted$NeuAc_adj < 0.01 & stats_weighted$NeuAc_effectSize < 0], row.names(stats_weighted)[stats_weighted$NeuAc.a2.3.Gal.b1.4.Glc_adj < 0.01 & stats_weighted$NeuAc.a2.3.Gal.b1.4.Glc_effectSize < 0])
 venn.diagram(
-  x = siaBindingFeats,
+  x = siaBindingFeats_pos,
   category.names = c("Sialic acid" , "NeuAc" , "NeuAc(a2-3)Gal(b1-4)Glc"),
-  filename = './manuscript/figures/subplots/neuac_feats.png',
+  filename = './manuscript/figures/subplots/neuac_feats_up.png',
   output=F,
   imagetype="png" ,
   height = 480 , 
@@ -682,18 +687,61 @@ venn.diagram(
   cat.col = c("#440154ff", '#21908dff', '#DAA520FF'),
   rotation = 1
 )
-intersect(intersect(siaBindingFeats[[1]], siaBindingFeats[[2]]), siaBindingFeats[[3]])
+venn.diagram(
+  x = siaBindingFeats_neg,
+  category.names = c("Sialic acid" , "NeuAc" , "NeuAc(a2-3)Gal(b1-4)Glc"),
+  filename = './manuscript/figures/subplots/neuac_feats_down.png',
+  output=F,
+  imagetype="png" ,
+  height = 480 , 
+  width = 480 , 
+  resolution = 300,
+  compression = "lzw",
+  lwd = 1,
+  col=c("#440154ff", '#21908dff', '#DAA520FF'),
+  fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3), alpha('#DAA520FF',0.3)),
+  cex = 0.5,
+  fontfamily = "sans",
+  cat.cex = 0.3,
+  cat.default.pos = "outer",
+  cat.pos = c(-27, 27, 135),
+  cat.dist = c(0.055, 0.055, 0.085),
+  cat.fontfamily = "sans",
+  cat.col = c("#440154ff", '#21908dff', '#DAA520FF'),
+  rotation = 1
+)
+intersect(intersect(siaBindingFeats_pos[[1]], siaBindingFeats_pos[[2]]), siaBindingFeats_pos[[3]])
+intersect(intersect(siaBindingFeats_neg[[1]], siaBindingFeats_neg[[2]]), siaBindingFeats_neg[[3]])
+
 
 # Fucose binding
-fucBindingFeats = list(row.names(stats_weighted)[stats_weighted$Fuc_adj < 0.01], row.names(stats_weighted)[stats_weighted$Terminal_Fucose_adj < 0.01])
-intersect(fucBindingFeats[[1]], fucBindingFeats[[2]])
+fucBindingFeats_pos = list(row.names(stats_weighted)[stats_weighted$Fuc_adj < 0.01 & stats_weighted$Fuc_effectSize > 0], row.names(stats_weighted)[stats_weighted$Terminal_Fucose_adj < 0.01 & stats_weighted$Terminal_Fucose_effectSize > 0])
+fucBindingFeats_neg = list(row.names(stats_weighted)[stats_weighted$Fuc_adj < 0.01 & stats_weighted$Fuc_effectSize < 0], row.names(stats_weighted)[stats_weighted$Terminal_Fucose_adj < 0.01 & stats_weighted$Terminal_Fucose_effectSize < 0])
+
+intersect(fucBindingFeats_pos[[1]], fucBindingFeats_pos[[2]])
+intersect(fucBindingFeats_neg[[1]], fucBindingFeats_neg[[2]])
+
 dev.off()
-draw.pairwise.venn(area1 = length(fucBindingFeats[[1]]),
-                   area2 = length(fucBindingFeats[[2]]),
-                   cross.area = length(intersect(fucBindingFeats[[1]], fucBindingFeats[[2]])),
+draw.pairwise.venn(area1 = length(fucBindingFeats_pos[[1]]),
+                   area2 = length(fucBindingFeats_pos[[2]]),
+                   cross.area = length(intersect(fucBindingFeats_pos[[1]], fucBindingFeats_pos[[2]])),
                    euler.d = T, scaled = T, ext.text = F, cex = 2,
                    category = c('Fucose (monosacc.)', 'Terminal fucose'), cat.cex = 2,
                    cat.pos = c(340,20),
+                   cat.dist = c(0.04, 0.05),
+                   fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3)),
+                   col = c("#440154ff", '#21908dff'),
+                   cat.col = c("#440154ff", '#21908dff'),
+                   cat.fontfamily = "sans",
+                   fontfamily = "sans"
+)
+dev.off()
+draw.pairwise.venn(area1 = length(fucBindingFeats_neg[[1]]),
+                   area2 = length(fucBindingFeats_neg[[2]]),
+                   cross.area = length(intersect(fucBindingFeats_neg[[1]], fucBindingFeats_neg[[2]])),
+                   euler.d = T, scaled = T, ext.text = F, cex = 2,
+                   category = c('Fucose (monosacc.)', 'Terminal fucose'), cat.cex = 2,
+                   cat.pos = c(340,30),
                    fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3)),
                    col = c("#440154ff", '#21908dff'),
                    cat.col = c("#440154ff", '#21908dff'),
@@ -702,13 +750,41 @@ draw.pairwise.venn(area1 = length(fucBindingFeats[[1]]),
 )
 
 # Mannose binding
-manBindingFeats = list(row.names(stats_weighted)[stats_weighted$Man_adj < 0.1], row.names(stats_weighted)[stats_weighted$High_Mannose_adj < 0.1], row.names(stats_weighted)[stats_weighted$Man.a1.2.Man_adj < 0.1])
-intersect(intersect(manBindingFeats[[1]], manBindingFeats[[2]]), manBindingFeats[[3]])
+manBindingFeats_pos = list(row.names(stats_weighted)[stats_weighted$Man_adj < 0.1 & stats_weighted$Man_effectSize > 0], row.names(stats_weighted)[stats_weighted$High_Mannose_adj < 0.1 & stats_weighted$High_Mannose_effectSize > 0], row.names(stats_weighted)[stats_weighted$Man.a1.2.Man_adj < 0.1 & stats_weighted$Man.a1.2.Man_effectSize > 0])
+manBindingFeats_neg = list(row.names(stats_weighted)[stats_weighted$Man_adj < 0.1 & stats_weighted$Man_effectSize < 0], row.names(stats_weighted)[stats_weighted$High_Mannose_adj < 0.1 & stats_weighted$High_Mannose_effectSize < 0], row.names(stats_weighted)[stats_weighted$Man.a1.2.Man_adj < 0.1 & stats_weighted$Man.a1.2.Man_effectSize < 0])
+
+intersect(intersect(manBindingFeats_pos[[1]], manBindingFeats_pos[[2]]), manBindingFeats_pos[[3]])
+intersect(intersect(manBindingFeats_neg[[1]], manBindingFeats_neg[[2]]), manBindingFeats_neg[[3]])
+
 dev.off()
 venn.diagram(
-  x = manBindingFeats,
+  x = manBindingFeats_pos,
   category.names = c("Man" , "High_mannose" , "Man(a1-2)Man"),
-  filename = './manuscript/figures/subplots/man_feats.png',
+  filename = './manuscript/figures/subplots/man_feats_up.png',
+  output=F,
+  imagetype="png" ,
+  height = 480 , 
+  width = 480 , 
+  resolution = 300,
+  compression = "lzw",
+  lwd = 1,
+  col=c("#440154ff", '#21908dff', '#DAA520FF'),
+  fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3), alpha('#DAA520FF',0.3)),
+  cex = 0.5,
+  fontfamily = "sans",
+  cat.cex = 0.3,
+  cat.default.pos = "outer",
+  cat.pos = c(-27, 27, 135),
+  cat.dist = c(0.055, 0.055, 0.085),
+  cat.fontfamily = "sans",
+  cat.col = c("#440154ff", '#21908dff', '#DAA520FF'),
+  rotation = 1
+)
+
+venn.diagram(
+  x = manBindingFeats_neg,
+  category.names = c("Man" , "High_mannose" , "Man(a1-2)Man"),
+  filename = './manuscript/figures/subplots/man_feats_down.png',
   output=F,
   imagetype="png" ,
   height = 480 , 
@@ -732,16 +808,20 @@ venn.diagram(
 
 
 
-d2FeatCor = cor(d2Feats)
-corrplot(d2FeatCor)
-plot(density(d2FeatCor[upper.tri(d2FeatCor,diag = F)]),
-     main = 'Density distribution of pairwise correlations b/w d2Feats',
-     xlab = 'Pearson correlation')
-abline(v = c(0.7, -0.7))
 
-sum(abs(d2FeatCor[upper.tri(d2FeatCor,diag = F)]) > 0.7) / length(d2FeatCor[upper.tri(d2FeatCor,diag = F)])
 
-subD2Feats = d2Feats[,grepl('_6Ang', colnames(d2Feats))]
 
-corrplot(cor(subD2Feats))
-sum(abs(cor(subD2Feats)[upper.tri(cor(subD2Feats),diag = F)]) > 0.7) / length(cor(subD2Feats)[upper.tri(cor(subD2Feats),diag = F)])
+
+# d2FeatCor = cor(d2Feats)
+# corrplot(d2FeatCor)
+# plot(density(d2FeatCor[upper.tri(d2FeatCor,diag = F)]),
+#      main = 'Density distribution of pairwise correlations b/w d2Feats',
+#      xlab = 'Pearson correlation')
+# abline(v = c(0.7, -0.7))
+# 
+# sum(abs(d2FeatCor[upper.tri(d2FeatCor,diag = F)]) > 0.7) / length(d2FeatCor[upper.tri(d2FeatCor,diag = F)])
+# 
+# subD2Feats = d2Feats[,grepl('_6Ang', colnames(d2Feats))]
+# 
+# corrplot(cor(subD2Feats))
+# sum(abs(cor(subD2Feats)[upper.tri(cor(subD2Feats),diag = F)]) > 0.7) / length(cor(subD2Feats)[upper.tri(cor(subD2Feats),diag = F)])
