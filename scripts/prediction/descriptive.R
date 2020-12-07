@@ -808,6 +808,171 @@ venn.diagram(
 
 
 
+# Re-do and filter by median feature importance percentile (>= nth percentile)
+
+percentThresh = 0.50 # >= 50th percentile in feature importance
+
+all(row.names(medFeatPercentiles) == row.names(stats_weighted)) # Ported over from results.R
+
+# Sialic acid features
+siaBindingFeats_pos = list(row.names(stats_weighted)[stats_weighted$Sialic_Acid_adj < 0.01 & stats_weighted$Sialic_Acid_effectSize > 0 & medFeatPercentiles$Sialic_Acid >= percentThresh],
+                           row.names(stats_weighted)[stats_weighted$NeuAc_adj < 0.01 & stats_weighted$NeuAc_effectSize > 0 & medFeatPercentiles$NeuAc >= percentThresh],
+                           row.names(stats_weighted)[stats_weighted$NeuAc.a2.3.Gal.b1.4.Glc_adj < 0.01 & stats_weighted$NeuAc.a2.3.Gal.b1.4.Glc_effectSize > 0 & medFeatPercentiles$NeuAc.a2.3.Gal.b1.4.Glc >= percentThresh])
+
+siaBindingFeats_neg = list(row.names(stats_weighted)[stats_weighted$Sialic_Acid_adj < 0.01 & stats_weighted$Sialic_Acid_effectSize < 0 & medFeatPercentiles$Sialic_Acid >= percentThresh],
+                           row.names(stats_weighted)[stats_weighted$NeuAc_adj < 0.01 & stats_weighted$NeuAc_effectSize < 0 & medFeatPercentiles$NeuAc >= percentThresh],
+                           row.names(stats_weighted)[stats_weighted$NeuAc.a2.3.Gal.b1.4.Glc_adj < 0.01 & stats_weighted$NeuAc.a2.3.Gal.b1.4.Glc_effectSize < 0 & medFeatPercentiles$NeuAc.a2.3.Gal.b1.4.Glc >= percentThresh])
+venn.diagram(
+  x = siaBindingFeats_pos,
+  category.names = c("Sialic acid" , "NeuAc" , "NeuAc(a2-3)Gal(b1-4)Glc"),
+  filename = './manuscript/figures/subplots/neuac_feats_up.png',
+  output=F,
+  imagetype="png" ,
+  height = 480 , 
+  width = 480 , 
+  resolution = 300,
+  compression = "lzw",
+  lwd = 1,
+  col=c("#440154ff", '#21908dff', '#DAA520FF'),
+  fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3), alpha('#DAA520FF',0.3)),
+  cex = 0.5,
+  fontfamily = "sans",
+  cat.cex = 0.3,
+  cat.default.pos = "outer",
+  cat.pos = c(-27, 27, 135),
+  cat.dist = c(0.055, 0.055, 0.085),
+  cat.fontfamily = "sans",
+  cat.col = c("#440154ff", '#21908dff', '#DAA520FF'),
+  rotation = 1
+)
+venn.diagram(
+  x = siaBindingFeats_neg,
+  category.names = c("Sialic acid" , "NeuAc" , "NeuAc(a2-3)Gal(b1-4)Glc"),
+  filename = './manuscript/figures/subplots/neuac_feats_down.png',
+  output=F,
+  imagetype="png" ,
+  height = 480 , 
+  width = 480 , 
+  resolution = 300,
+  compression = "lzw",
+  lwd = 1,
+  col=c("#440154ff", '#21908dff', '#DAA520FF'),
+  fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3), alpha('#DAA520FF',0.3)),
+  cex = 0.5,
+  fontfamily = "sans",
+  cat.cex = 0.3,
+  cat.default.pos = "outer",
+  cat.pos = c(-27, 27, 135),
+  cat.dist = c(0.055, 0.055, 0.085),
+  cat.fontfamily = "sans",
+  cat.col = c("#440154ff", '#21908dff', '#DAA520FF'),
+  rotation = 1
+)
+intersect(intersect(siaBindingFeats_pos[[1]], siaBindingFeats_pos[[2]]), siaBindingFeats_pos[[3]])
+intersect(intersect(siaBindingFeats_neg[[1]], siaBindingFeats_neg[[2]]), siaBindingFeats_neg[[3]])
+
+
+# Fucose binding
+fucBindingFeats_pos = list(row.names(stats_weighted)[stats_weighted$Fuc_adj < 0.01 & stats_weighted$Fuc_effectSize > 0 & medFeatPercentiles$Fuc >= percentThresh],
+                           row.names(stats_weighted)[stats_weighted$Terminal_Fucose_adj < 0.01 & stats_weighted$Terminal_Fucose_effectSize > 0 & medFeatPercentiles$Terminal_Fucose >= percentThresh])
+
+fucBindingFeats_neg = list(row.names(stats_weighted)[stats_weighted$Fuc_adj < 0.01 & stats_weighted$Fuc_effectSize < 0 & medFeatPercentiles$Fuc >= percentThresh],
+                           row.names(stats_weighted)[stats_weighted$Terminal_Fucose_adj < 0.01 & stats_weighted$Terminal_Fucose_effectSize < 0 & medFeatPercentiles$Terminal_Fucose >= percentThresh])
+
+intersect(fucBindingFeats_pos[[1]], fucBindingFeats_pos[[2]])
+intersect(fucBindingFeats_neg[[1]], fucBindingFeats_neg[[2]])
+
+dev.off()
+draw.pairwise.venn(area1 = length(fucBindingFeats_pos[[1]]),
+                   area2 = length(fucBindingFeats_pos[[2]]),
+                   cross.area = length(intersect(fucBindingFeats_pos[[1]], fucBindingFeats_pos[[2]])),
+                   euler.d = T, scaled = T, ext.text = F, cex = 2,
+                   category = c('Fucose (monosacc.)', 'Terminal fucose'), cat.cex = 2,
+                   cat.pos = c(340,20),
+                   cat.dist = c(0.04, 0.05),
+                   fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3)),
+                   col = c("#440154ff", '#21908dff'),
+                   cat.col = c("#440154ff", '#21908dff'),
+                   cat.fontfamily = "sans",
+                   fontfamily = "sans"
+)
+dev.off()
+draw.pairwise.venn(area1 = length(fucBindingFeats_neg[[1]]),
+                   area2 = length(fucBindingFeats_neg[[2]]),
+                   cross.area = length(intersect(fucBindingFeats_neg[[1]], fucBindingFeats_neg[[2]])),
+                   euler.d = T, scaled = T, ext.text = F, cex = 2,
+                   category = c('Fucose (monosacc.)', 'Terminal fucose'), cat.cex = 2,
+                   cat.pos = c(340,30),
+                   fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3)),
+                   col = c("#440154ff", '#21908dff'),
+                   cat.col = c("#440154ff", '#21908dff'),
+                   cat.fontfamily = "sans",
+                   fontfamily = "sans"
+)
+
+# Mannose binding
+manBindingFeats_pos = list(row.names(stats_weighted)[stats_weighted$Man_adj < 0.1 & stats_weighted$Man_effectSize > 0 & medFeatPercentiles$Man >= percentThresh],
+                           row.names(stats_weighted)[stats_weighted$High_Mannose_adj < 0.1 & stats_weighted$High_Mannose_effectSize > 0 & medFeatPercentiles$High_Mannose >= percentThresh],
+                           row.names(stats_weighted)[stats_weighted$Man.a1.2.Man_adj < 0.1 & stats_weighted$Man.a1.2.Man_effectSize > 0 & medFeatPercentiles$Man.a1.2.Man >= percentThresh])
+
+manBindingFeats_neg = list(row.names(stats_weighted)[stats_weighted$Man_adj < 0.1 & stats_weighted$Man_effectSize < 0 & medFeatPercentiles$Man >= percentThresh], 
+                           row.names(stats_weighted)[stats_weighted$High_Mannose_adj < 0.1 & stats_weighted$High_Mannose_effectSize < 0 & medFeatPercentiles$High_Mannose >= percentThresh], 
+                           row.names(stats_weighted)[stats_weighted$Man.a1.2.Man_adj < 0.1 & stats_weighted$Man.a1.2.Man_effectSize < 0 & medFeatPercentiles$Man.a1.2.Man >= percentThresh])
+
+intersect(intersect(manBindingFeats_pos[[1]], manBindingFeats_pos[[2]]), manBindingFeats_pos[[3]])
+intersect(intersect(manBindingFeats_neg[[1]], manBindingFeats_neg[[2]]), manBindingFeats_neg[[3]])
+
+dev.off()
+venn.diagram(
+  x = manBindingFeats_pos,
+  category.names = c("Man" , "High_mannose" , "Man(a1-2)Man"),
+  filename = './manuscript/figures/subplots/man_feats_up.png',
+  output=F,
+  imagetype="png" ,
+  height = 480 , 
+  width = 480 , 
+  resolution = 300,
+  compression = "lzw",
+  lwd = 1,
+  col=c("#440154ff", '#21908dff', '#DAA520FF'),
+  fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3), alpha('#DAA520FF',0.3)),
+  cex = 0.5,
+  fontfamily = "sans",
+  cat.cex = 0.3,
+  cat.default.pos = "outer",
+  cat.pos = c(-27, 27, 135),
+  cat.dist = c(0.055, 0.055, 0.085),
+  cat.fontfamily = "sans",
+  cat.col = c("#440154ff", '#21908dff', '#DAA520FF'),
+  rotation = 1
+)
+
+venn.diagram(
+  x = manBindingFeats_neg,
+  category.names = c("Man" , "High_mannose" , "Man(a1-2)Man"),
+  filename = './manuscript/figures/subplots/man_feats_down.png',
+  output=F,
+  imagetype="png" ,
+  height = 480 , 
+  width = 480 , 
+  resolution = 300,
+  compression = "lzw",
+  lwd = 1,
+  col=c("#440154ff", '#21908dff', '#DAA520FF'),
+  fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3), alpha('#DAA520FF',0.3)),
+  cex = 0.5,
+  fontfamily = "sans",
+  cat.cex = 0.3,
+  cat.default.pos = "outer",
+  cat.pos = c(-27, 27, 135),
+  cat.dist = c(0.055, 0.055, 0.085),
+  cat.fontfamily = "sans",
+  cat.col = c("#440154ff", '#21908dff', '#DAA520FF'),
+  rotation = 1
+)
+
+
+
 
 
 

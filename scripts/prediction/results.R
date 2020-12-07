@@ -405,33 +405,33 @@ title(xlab = "Ligands", ylab = "Recall", main = "5x CV + LOCO - VALIDATION\nPrec
 breakLst = seq(0,1,0.01)
 mycol = colorRampPalette(c("ivory", "cornflowerblue", "navy"))(n = length(breakLst))
 
-testMeds = as.data.frame(matrix(0,nrow  = length(unique(test$ligand)), ncol = 4))
-row.names(testMeds) = gsub('(.*)_training.csv', '\\1', inTrain)
-colnames(testMeds) = colnames(test)[-1]
-
-for(i in 1:length(unique(test$ligand))){
-  tag = grepl(unique(test$ligand)[i], test$ligand)
-  testMeds[i,] = apply(test[tag,2:5], 2, median)
-}
-
-testMeds$f2 <- NULL
-
-pheatmap(testMeds, color =  mycol,
-         cluster_cols = F, cluster_rows = F,
-         display_numbers = T, number_color = 'darkgoldenrod', fontsize_number = 28,
-         breaks = breakLst, main = 'Median validation metrics for each ligand class', 
-         gaps_row = c(3), gaps_col = c(1))
-
-
-
-plot(sampSizes, testMeds$kappa, pch = 19, cex = 1.5,
-     ylim = c(0, 0.5),
-     xlim = c(0,550),
-     xlab = 'Average number of samples sites for training',
-     ylab = 'Median Validation Kappa',
-     cex.lab=1.5, cex.axis=1.5)
-
-cor.test(sampSizes, testMeds$kappa)
+# testMeds = as.data.frame(matrix(0,nrow  = length(unique(test$ligand)), ncol = 4))
+# row.names(testMeds) = gsub('(.*)_training.csv', '\\1', inTrain)
+# colnames(testMeds) = colnames(test)[-1]
+# 
+# for(i in 1:length(unique(test$ligand))){
+#   tag = grepl(unique(test$ligand)[i], test$ligand)
+#   testMeds[i,] = apply(test[tag,2:5], 2, median)
+# }
+# 
+# testMeds$f2 <- NULL
+# 
+# pheatmap(testMeds, color =  mycol,
+#          cluster_cols = F, cluster_rows = F,
+#          display_numbers = T, number_color = 'darkgoldenrod', fontsize_number = 28,
+#          breaks = breakLst, main = 'Median validation metrics for each ligand class', 
+#          gaps_row = c(3), gaps_col = c(1))
+# 
+# 
+# 
+# plot(sampSizes, testMeds$kappa, pch = 19, cex = 1.5,
+#      ylim = c(0, 0.5),
+#      xlim = c(0,550),
+#      xlab = 'Average number of samples sites for training',
+#      ylab = 'Median Validation Kappa',
+#      cex.lab=1.5, cex.axis=1.5)
+# 
+# cor.test(sampSizes, testMeds$kappa)
 
 #######################
 # PR curves
@@ -555,66 +555,93 @@ for(i in 1:ncol(ligTags)){
   text(x= 0.7, y = 0.9, labels = paste(round(100 * sum(fpIDs %in% boundIDs)/length(fpIDs),2), '% of ', length(fpIDs), ' FPs', sep = ''), col = 'red', cex = 1.2)
 }
 
+
+
+#######################
 # Feature importance
-for(i in 1:length(inFeats)){
-  lig = gsub('(.*)_features.csv', '\\1', inFeats)[i]
-  tmp = read.delim(file = paste(inDir, inFeats[i], sep = ''), header = T, sep = ',', stringsAsFactors = F)
-  tmp = apply(tmp, 1, mean)
-  if (i == 1){
-    feats = tmp
-  } else {
-    feats = cbind(feats, tmp)
-    colnames(feats)[i] = lig
+#######################
+# rm(feats)
+for(i in 1:length(dir(predDirs))){
+  lig = colnames(ligTags)[as.numeric(dir(predDirs)[i])]
+  cat(lig,'\n')
+  curDir = paste(predDirs, dir(predDirs)[i], sep = '')
+  subDirs = dir(curDir)
+  for (j in 1:length(subDirs)){
+    cat(j,'\n')
+    inFiles = dir(paste(curDir, subDirs[j], sep = '/'))
+    
+    readFile = inFiles[grepl('features.csv', inFiles)] # change here to read other files
+    
+    tmp = read.delim(file = paste(curDir, subDirs[j], readFile, sep = '/'), header = T, sep = ',', stringsAsFactors = F)
+    colnames(tmp) = rep(lig,ncol(tmp))
+    if (! exists('feats')){
+      feats = tmp
+    }else{
+      feats = cbind(feats, tmp)
+    }
   }
 }
-colnames(feats)[1] = gsub('(.*)_features.csv', '\\1', inFeats)[1]
-feats = as.data.frame(feats)
 
-neuFeats = c('negCharge_bin1','ASP_bin1', 'majorMaxima_8Ang')
+perc.rank <- function(x) trunc(rank(x))/length(x)
 
-neuInds = (1:nrow(feats))[row.names(feats)[order(feats$Sialic_Acid, decreasing = T)] %in% neuFeats]
-row.names(feats)[order(feats$Sialic_Acid, decreasing = T)][neuInds]
-100 - (neuInds/nrow(feats))*100
+feats = apply(feats, 2, perc.rank)
 
-neuInds = (1:nrow(feats))[row.names(feats)[order(feats$NeuAc, decreasing = T)] %in% neuFeats]
-row.names(feats)[order(feats$NeuAc, decreasing = T)][neuInds]
-100 - (neuInds/nrow(feats))*100
+medFeatPercentiles = as.data.frame(matrix(0, nrow = nrow(feats), ncol = length(unique(colnames(feats)))))
+row.names(medFeatPercentiles) = row.names(feats)
+colnames(medFeatPercentiles) = unique(colnames(feats))
 
-neuInds = (1:nrow(feats))[row.names(feats)[order(feats$NeuAc.a2.3.Gal.b1.4.Glc, decreasing = T)] %in% neuFeats]
-row.names(feats)[order(feats$NeuAc.a2.3.Gal.b1.4.Glc, decreasing = T)][neuInds]
-100 - (neuInds/nrow(feats))*100
-
-
-fucFeats = c('aromatic_bin2','binnedD2_PC7', 'zern_PC4')
-
-fucInds = (1:nrow(feats))[row.names(feats)[order(feats$Fuc, decreasing = T)] %in% fucFeats]
-row.names(feats)[order(feats$Fuc, decreasing = T)][fucInds]
-100 - (fucInds/nrow(feats))*100
-
-fucInds = (1:nrow(feats))[row.names(feats)[order(feats$Terminal_Fucose, decreasing = T)] %in% fucFeats]
-row.names(feats)[order(feats$Terminal_Fucose, decreasing = T)][fucInds]
-100 - (fucInds/nrow(feats))*100
-
-
-manFeats = c('hydrophobics', 'nonpolar_bin2', 'aromatic_bin2', 'var_4Ang', 'med_4Ang', 'q3_4Ang', 'var_6Ang', 'med_6Ang', 'q3_6Ang', 'binnedD2_PC5')
-
-manInds = (1:nrow(feats))[row.names(feats)[order(feats$Man, decreasing = T)] %in% manFeats]
-row.names(feats)[order(feats$Man, decreasing = T)][manInds]
-100 - (manInds/nrow(feats))*100
-for(i in 1:length(manFeats)){
-  cat(row.names(feats)[order(feats$Man, decreasing = T)][manInds][i], ' ', (100 - (manInds/nrow(feats))*100)[i], '\n')
+for (i in 1:length(unique(colnames(feats)))){
+  lig = unique(colnames(feats))[i]
+  medFeatPercentiles[,i] = apply(feats[,grepl(lig, colnames(feats))], 1, median)
 }
 
-manInds = (1:nrow(feats))[row.names(feats)[order(feats$High_Mannose, decreasing = T)] %in% manFeats]
-row.names(feats)[order(feats$High_Mannose, decreasing = T)][manInds]
-100 - (manInds/nrow(feats))*100
-for(i in 1:length(manFeats)){
-  cat(row.names(feats)[order(feats$High_Mannose, decreasing = T)][manInds][i], ' ', (100 - (manInds/nrow(feats))*100)[i], '\n')
-}
 
-manInds = (1:nrow(feats))[row.names(feats)[order(feats$Man.a1.2.Man, decreasing = T)] %in% manFeats]
-row.names(feats)[order(feats$Man.a1.2.Man, decreasing = T)][manInds]
-100 - (manInds/nrow(feats))*100
-for(i in 1:length(manFeats)){
-  cat(row.names(feats)[order(feats$Man.a1.2.Man, decreasing = T)][manInds][i], ' ', (100 - (manInds/nrow(feats))*100)[i], '\n')
-}
+
+# neuFeats = c('negCharge_bin1','ASP_bin1', 'majorMaxima_8Ang')
+# 
+# neuInds = (1:nrow(feats))[row.names(feats)[order(feats$Sialic_Acid, decreasing = T)] %in% neuFeats]
+# row.names(feats)[order(feats$Sialic_Acid, decreasing = T)][neuInds]
+# 100 - (neuInds/nrow(feats))*100
+# 
+# neuInds = (1:nrow(feats))[row.names(feats)[order(feats$NeuAc, decreasing = T)] %in% neuFeats]
+# row.names(feats)[order(feats$NeuAc, decreasing = T)][neuInds]
+# 100 - (neuInds/nrow(feats))*100
+# 
+# neuInds = (1:nrow(feats))[row.names(feats)[order(feats$NeuAc.a2.3.Gal.b1.4.Glc, decreasing = T)] %in% neuFeats]
+# row.names(feats)[order(feats$NeuAc.a2.3.Gal.b1.4.Glc, decreasing = T)][neuInds]
+# 100 - (neuInds/nrow(feats))*100
+# 
+# 
+# fucFeats = c('aromatic_bin2','binnedD2_PC7', 'zern_PC4')
+# 
+# fucInds = (1:nrow(feats))[row.names(feats)[order(feats$Fuc, decreasing = T)] %in% fucFeats]
+# row.names(feats)[order(feats$Fuc, decreasing = T)][fucInds]
+# 100 - (fucInds/nrow(feats))*100
+# 
+# fucInds = (1:nrow(feats))[row.names(feats)[order(feats$Terminal_Fucose, decreasing = T)] %in% fucFeats]
+# row.names(feats)[order(feats$Terminal_Fucose, decreasing = T)][fucInds]
+# 100 - (fucInds/nrow(feats))*100
+# 
+# 
+# manFeats = c('hydrophobics', 'nonpolar_bin2', 'aromatic_bin2', 'var_4Ang', 'med_4Ang', 'q3_4Ang', 'var_6Ang', 'med_6Ang', 'q3_6Ang', 'binnedD2_PC5')
+# 
+# manInds = (1:nrow(feats))[row.names(feats)[order(feats$Man, decreasing = T)] %in% manFeats]
+# row.names(feats)[order(feats$Man, decreasing = T)][manInds]
+# 100 - (manInds/nrow(feats))*100
+# for(i in 1:length(manFeats)){
+#   cat(row.names(feats)[order(feats$Man, decreasing = T)][manInds][i], ' ', (100 - (manInds/nrow(feats))*100)[i], '\n')
+# }
+# 
+# manInds = (1:nrow(feats))[row.names(feats)[order(feats$High_Mannose, decreasing = T)] %in% manFeats]
+# row.names(feats)[order(feats$High_Mannose, decreasing = T)][manInds]
+# 100 - (manInds/nrow(feats))*100
+# for(i in 1:length(manFeats)){
+#   cat(row.names(feats)[order(feats$High_Mannose, decreasing = T)][manInds][i], ' ', (100 - (manInds/nrow(feats))*100)[i], '\n')
+# }
+# 
+# manInds = (1:nrow(feats))[row.names(feats)[order(feats$Man.a1.2.Man, decreasing = T)] %in% manFeats]
+# row.names(feats)[order(feats$Man.a1.2.Man, decreasing = T)][manInds]
+# 100 - (manInds/nrow(feats))*100
+# for(i in 1:length(manFeats)){
+#   cat(row.names(feats)[order(feats$Man.a1.2.Man, decreasing = T)][manInds][i], ' ', (100 - (manInds/nrow(feats))*100)[i], '\n')
+# }
