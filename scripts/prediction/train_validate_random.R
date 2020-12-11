@@ -216,7 +216,7 @@ clusLst = unique(bsResiDat$seqClust50)
 # all(row.names(bsResiDat) == row.names(predFeats))
 
 folds = 5
-reps = 3
+reps = 1
 
 testReps = 10
 

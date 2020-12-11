@@ -216,7 +216,7 @@ clusLst = unique(bsResiDat$seqClust50)
 # all(row.names(bsResiDat) == row.names(predFeats))
 
 folds = 5
-reps = 3
+reps = 1
 
 testReps = 10
 
@@ -250,13 +250,13 @@ for (j in 1:testReps){
 }
 colnames(testOut) = c('TP', 'TN', 'FP', 'FN')
 
-clusBinding = rep(F, length(clusLst)) # Whether a cluster has any positve examples of binding with the current ligand/ligand class
+clusBinding = rep(F, length(clusLst)) # Whether a cluster has any positive examples of binding with the current ligand/ligand class
 for (j in (1:length(clusLst))){
   clusBinding[j] = any(lig[bsResiDat$seqClust50 == clusLst[j]])
 }
 # sum(clusBinding)
 
-testCases = clusLst[clusBinding] # Clusters with any binding occurences to iterativelty withold for validation in LO(C)O validation
+testCases = clusLst[clusBinding] # Clusters with any binding occurrences to iteratively withhold for validation in LO(C)O validation
 
 predictions = as.data.frame(matrix(nrow = length(row.names(bsResiDat)[bsResiDat$seqClust50 %in% testCases]), ncol = testReps))
 row.names(predictions) = row.names(bsResiDat)[bsResiDat$seqClust50 %in% testCases]
