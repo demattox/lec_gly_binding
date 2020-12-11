@@ -250,13 +250,13 @@ for (j in 1:testReps){
 }
 colnames(testOut) = c('TP', 'TN', 'FP', 'FN')
 
-clusBinding = rep(F, length(clusLst)) # Whether a cluster has any positve examples of binding with the current ligand/ligand class
+clusBinding = rep(F, length(clusLst)) # Whether a cluster has any positive examples of binding with the current ligand/ligand class
 for (j in (1:length(clusLst))){
   clusBinding[j] = any(lig[bsResiDat$seqClust50 == clusLst[j]])
 }
 # sum(clusBinding)
 
-testCases = clusLst[clusBinding] # Clusters with any binding occurences to iterativelty withold for validation in LO(C)O validation
+testCases = clusLst[clusBinding] # Clusters with any binding occurrences to iteratively withhold for validation in LO(C)O validation
 
 predictions = as.data.frame(matrix(nrow = length(row.names(bsResiDat)[bsResiDat$seqClust50 %in% testCases]), ncol = testReps))
 row.names(predictions) = row.names(bsResiDat)[bsResiDat$seqClust50 %in% testCases]
@@ -273,34 +273,17 @@ for (j in (1:length(testCases))){
   trainingClusts = clusLst[! clusLst == outClust]
   trainingClustBinding = clusBinding[! clusLst == outClust]
   
-  foldClusIDs = createMultiFolds(y = trainingClustBinding, k = folds, times = reps)
+  foldClusIDs = createFolds(y = trainingClustBinding, k = folds)
   
-  repDatSampCnt = rep(0, reps)
-  for (m in 1:reps){
-    sampDat = sampleDiverseSitesByLig(clusterIDs = bsResiDat$seqClust50, 
-                                      testClust = outClust,
-                                      featureSet = predFeats, 
-                                      ligandTag = lig, 
-                                      distThresh = medPairwiseDist, 
-                                      scaledFeatureSet = scaledFeats)
-    
-    repDatSampCnt[m] = nrow(sampDat)
-    if (m == 1) {
-      trainDat = sampDat
-    } else{
-      trainDat = rbind(trainDat, sampDat)
-    }
-    
-    
-    for(n in 1:folds){
-      foldInd = ((m - 1) * folds) + n
-      if (m == 1){
-        foldClusIDs[[foldInd]] = (1:nrow(sampDat))[sampDat$clus %in% trainingClusts[foldClusIDs[[foldInd]]]]
-      } else {
-        foldClusIDs[[foldInd]] = as.integer(repDatSampCnt[m-1] + (1:nrow(sampDat))[sampDat$clus %in% trainingClusts[foldClusIDs[[foldInd]]]])
-      }
-      
-    }
+  trainDat = sampleDiverseSitesByLig(clusterIDs = bsResiDat$seqClust50, 
+                                     testClust = outClust,
+                                     featureSet = predFeats, 
+                                     ligandTag = lig, 
+                                     distThresh = medPairwiseDist, 
+                                     scaledFeatureSet = scaledFeats)
+  
+  for(n in 1:folds){
+    foldClusIDs[[n]] = (1:nrow(trainDat))[trainDat$clus %in% trainingClusts[foldClusIDs[[n]]]]
   }
   
   trainDat$clus <- NULL
@@ -308,9 +291,8 @@ for (j in (1:length(testCases))){
   trainDat$bound = trainDat$bound[sample(x = 1:nrow(trainDat), size = nrow(trainDat), replace = F)] # Shuffle the labels of the training data
   
   train.control = trainControl(index = foldClusIDs,
-                               method = 'repeatedcv', 
+                               method = 'cv', 
                                number = folds,
-                               repeats = reps,
                                sampling = 'down',
                                summaryFunction = f2)
   

@@ -247,7 +247,7 @@ for (j in (1:length(clusLst))){
 }
 # sum(clusBinding)
 
-testCases = clusLst[clusBinding] # Clusters with any binding occurences
+testCases = clusLst[clusBinding] # Clusters with any binding occurrences
 
 predictions = as.data.frame(matrix(nrow = length(row.names(bsResiDat)[bsResiDat$seqClust50 %in% testCases]), ncol = CVrepeats))
 row.names(predictions) = row.names(bsResiDat)[bsResiDat$seqClust50 %in% testCases]
