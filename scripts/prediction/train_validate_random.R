@@ -238,6 +238,7 @@ tune.grid <- expand.grid(.mtry= c(-half_mtry:half_mtry) + default_mtry)
 dirInd = as.integer(dirInd) # Subdirectory from which script was called to indicate which ligTag column (& which ligand) to train classifier for
 
 lig = ligTags[,dirInd]
+lig = lig[sample(x = 1:nrow(ligTags), size = nrow(ligTags), replace = F)] # Shuffle the labels of the training data
 
 # Define dataframes to hold model results
 trainOut = as.data.frame(matrix(0, nrow = length(clusLst), ncol = 7))
@@ -288,7 +289,7 @@ for (j in (1:length(testCases))){
   
   trainDat$clus <- NULL
   
-  trainDat$bound = trainDat$bound[sample(x = 1:nrow(trainDat), size = nrow(trainDat), replace = F)] # Shuffle the labels of the training data
+  # trainDat$bound = trainDat$bound[sample(x = 1:nrow(trainDat), size = nrow(trainDat), replace = F)] # Shuffle the labels of the training data
   
   train.control = trainControl(index = foldClusIDs,
                                method = 'cv', 
