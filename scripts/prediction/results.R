@@ -58,13 +58,6 @@ randDirs = './analysis/training/train_and_validate/nr_CVLOCO_reps/rand/'
 
 
 
-
-
-
-
-
-
-
 # inFiles = dir(inDir)
 # inTrain = inFiles[grepl('training.csv', inFiles)]
 # inTest = inFiles[grepl('testing.csv', inFiles)]
@@ -128,8 +121,6 @@ for (i in 1:length(lecIDs)){
 # Training performance
 ###############
 
-# sampSizes = rep(0, ncol(ligTags))
-
 for(i in 1:length(dir(predDirs))){
   lig = colnames(ligTags)[as.numeric(dir(predDirs)[i])]
   cat(lig,'\n')
@@ -144,13 +135,14 @@ for(i in 1:length(dir(predDirs))){
     tmp = read.delim(file = paste(curDir, subDirs[j], readFile, sep = '/'), header = T, sep = ',', stringsAsFactors = F)
     tmp$mode = 'pred'
     tmp$ligand = lig
-    if (! exists('train')){
-      train = tmp
-    }else{
-      train = rbind(train, tmp)
+    if (!exists('trainDat')){
+      trainDat = tmp
+    } else{
+      trainDat = rbind(trainDat, tmp)
     }
   }
 }
+
 
 for(i in 1:length(dir(randDirs))){
   lig = colnames(ligTags)[i]
@@ -166,28 +158,28 @@ for(i in 1:length(dir(randDirs))){
     tmp = read.delim(file = paste(curDir, subDirs[j], readFile, sep = '/'), header = T, sep = ',', stringsAsFactors = F)
     tmp$mode = 'rand'
     tmp$ligand = lig
-    if (! exists('train')){
-      train = tmp
+    if (! exists('trainDat')){
+      trainDat = tmp
     }else{
-      train = rbind(train, tmp)
+      trainDat = rbind(trainDat, tmp)
     }
   }
 }
   
 
 
-train$f2 = 0
-train$prec = 0
-for(i in 1:nrow(train)){
-  r = train$recall[i]
-  p = train$TP[i] / (train$TP[i] + train$FP[i])
-  train$prec[i] = p
-  train$f2[i] = ((1+(2^2)) * p * r) / (2^2 * p + r)
-  # trainOut$f3[i] = ((1+(3^2)) * p * r) / (3^2 * p + r)
-  # trainOut$f4[i] = ((1+(4^2)) * p * r) / (4^2 * p + r)
+trainDat$f2 = 0
+trainDat$prec = 0
+for(i in 1:nrow(trainDat)){
+  r = trainDat$recall[i]
+  p = trainDat$TP[i] / (trainDat$TP[i] + trainDat$FP[i])
+  trainDat$prec[i] = p
+  trainDat$f2[i] = ((1+(2^2)) * p * r) / (2^2 * p + r)
+  # trainDatOut$f3[i] = ((1+(3^2)) * p * r) / (3^2 * p + r)
+  # trainDatOut$f4[i] = ((1+(4^2)) * p * r) / (4^2 * p + r)
 }
 
-mTrain = melt(train, id.vars = c('ligand', 'mode'), measure.vars = c('kappa', 'recall', 'prec'))
+mTrain = melt(trainDat, id.vars = c('ligand', 'mode'), measure.vars = c('kappa', 'recall', 'prec'))
 colnames(mTrain) = c('ligand', 'classifier', 'metric', 'value')
 
 # Light colors all box plots
@@ -213,31 +205,33 @@ plot(0,0,col = 'white', xlab = '',ylab = '',type="n",
      ylim = c(0,1))
 for(j in 1:ncol(ligTags)){
   i = ((j-1) * 2) + 1
-  vioplot(train$recall[(train$ligand == colnames(ligTags)[j]) & (train$mode == 'pred')], at = i, side = 'left',
+  vioplot(trainDat$recall[(trainDat$ligand == colnames(ligTags)[j]) & (trainDat$mode == 'pred')], at = i, side = 'left',
           col = ligColors[j],
           xlim = xLim, ylim = yLim,
           add = T,
           plotCentre = "line")
   par(new = T)
-  boxplot(train$recall[(train$ligand == colnames(ligTags)[j]) & (train$mode == 'rand')], at = i-0.33, notch = T, outline = F,
+  boxplot(trainDat$recall[(trainDat$ligand == colnames(ligTags)[j]) & (trainDat$mode == 'rand')], at = i-0.33, notch = T, outline = F,
           col = alpha(ligColors[j],0.2), border = 'grey50',
           axes = F, xlab = '', ylab = '', xlim = xLim, ylim = yLim)
-  vioplot(train$prec[(train$ligand == colnames(ligTags)[j]) & (train$mode == 'pred')], at = i, side = 'right',
+  vioplot(trainDat$prec[(trainDat$ligand == colnames(ligTags)[j]) & (trainDat$mode == 'pred')], at = i, side = 'right',
           add = T,
           col = alpha(ligColors[j],0.8),
           xlim = xLim, ylim = yLim,
           plotCentre = "line")
   par(new = T)
-  boxplot(train$prec[(train$ligand == colnames(ligTags)[j]) & (train$mode == 'rand')], at = i+0.33, notch = T, outline = F,
+  boxplot(trainDat$prec[(trainDat$ligand == colnames(ligTags)[j]) & (trainDat$mode == 'rand')], at = i+0.33, notch = T, outline = F,
           col = alpha(ligColors[j],0.2), border = 'grey50',
           axes = F, xlab = '', ylab = '', xlim = xLim, ylim = yLim)
 }
-axis(side=1,at=seq.int(1,29,2), labels = rep('', 15))
+axis(side=1,at=seq.int(1,29,2), labels = colnames(ligTags))
 axis(side=2,at=pretty(c(0,1)))
 axis(side = 4, at = pretty(c(0,1)))  # Add second axis
 abline(h = 0.5, lwd = 0.75, lty = 2)
-mtext("Precision", side = 4, line = 3, cex = 1.5, col = alpha('black',0.8))  # Add second axis label
-title(xlab = "Ligands", ylab = "Recall", main = "5x CV + LOCO - TRAINING\nPrecision & Recall vs random")
+mtext("Precision", side = 4, line = 3, cex = 2, col = alpha('black',0.85))  # Add second axis label
+title(main = "5x CV + LOCO - TRAINING\nPrecision & Recall vs random", xlab = "Ligands", ylab = "Recall", cex = 2)
+# labs(title = , x = "Ligands", y = "Recall") +
+#   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
 
 
 ###############
@@ -358,12 +352,18 @@ axis(side=1,at=1:15, labels = rep('', 15))
 axis(side=2,at=seq.int(-1,1,0.5))
 title(xlab = "Ligands", ylab = "Kappa", main = "5x CV + LOCO\nKappa compared to random classifiers")
 
-
+#########################
+## Figure 3
+#########################
 ## P & R same plot with violin & box plots
-xLim = c(0,30)
+xLim = c(-2,30)
 yLim = c(0,1)
 
-par(cex.lab=1.5, mar = c(5, 4, 4, 4) + 0.3)
+par(mar = c(8.1, 5.1, 5.1, 4.1), # change the margins
+    lwd = 2, # increase the line thickness
+    cex.axis = 1.2 # increase default axis label size
+)
+# par(cex.lab=1.5, mar = c(5, 4, 4, 4) + 0.3)
 plot(0,0,col = 'white', xlab = '',ylab = '',type="n",
      axes=FALSE,ann=FALSE,
      xlim = xLim,
@@ -389,12 +389,74 @@ for(j in 1:ncol(ligTags)){
           col = alpha(ligColors[j],0.2), border = 'grey50',
           axes = F, xlab = '', ylab = '', xlim = xLim, ylim = yLim)
 }
-axis(side=1,at=seq.int(1,29,2), labels = rep('', 15))
-axis(side=2,at=pretty(c(0,1)))
-axis(side = 4, at = pretty(c(0,1)))  # Add second axis
-mtext("Precision", side = 4, line = 3, cex = 1.5, col = alpha('black',0.8))  # Add second axis label
-title(xlab = "Ligands", ylab = "Recall", main = "5x CV + LOCO - VALIDATION\nPrecision & Recall vs random")
 
+par(new = T) 
+plot(0,0, col = 'white', type = 'n',
+     xlim = xLim,
+     ylim = c(0, 9),
+     axes = F, xlab = '', ylab ='')
+lines(x = c(1,30), y = c(0,0), lwd = 2)
+for(j in 1:ncol(ligTags)){
+  i = ((j-1) * 2) + 1
+  par(new = T)
+  boxplot(log10(trainDat$sampSizes[trainDat$ligand == colnames(ligTags)[j] & trainDat$mode == 'pred']),
+          at = i,
+          col = ligColors[j], border = ligColors[j],
+          boxwex = 2.5,
+          xlim = xLim,
+          ylim = c(0, 9),
+          axes = F, xlab = '', ylab ='')
+}
+axis(side=2,at=log10(c(1,10,50,100,200)), labels = c(1,10,50,100,200), las = 2, pos = 0.3)
+
+
+par(new = T)
+plot(0,0,col = 'white', xlab = '',ylab = '',type="n",
+     axes=FALSE,ann=FALSE,
+     xlim = xLim,
+     ylim = c(0,1))
+axis(side=1,at=seq.int(1,29,2), labels = F)
+axis(side=2,at=pretty(c(0,1)), las = 2)
+axis(side = 4, at = pretty(c(0,1)), las = 2)  # Add second axis
+mtext("Precision", side = 4, line = 3, cex = 2, col = alpha('black',0.85))  # Add second axis label
+title(xlab = "", ylab = "Recall", main = "5x CV + LOCO - VALIDATION\nPrecision & Recall vs random", cex.main = 1.5, cex.lab = 2)
+text(x = seq.int(1,29,2),
+     y = par("usr")[3] - 0.05,
+     labels = colnames(ligTags),
+     col = ligColors,
+     ## Change the clipping region.
+     xpd = NA,
+     ## Rotate the labels by 35 degrees.
+     srt = 35,
+     ## Adjust the labels to almost 100% right-justified.
+     adj = 0.965,
+     ## Increase label size.
+     cex = 1.2)
+
+
+
+
+
+
+#########################
+
+# Check training sample sizes
+trainDat$sampSizes = apply(trainDat[,4:7], MARGIN = 1, FUN = sum)
+
+cor.test(trainDat$sampSizes[trainDat$mode == 'pred'], trainDat$kappa[trainDat$mode == 'pred'])
+
+plot(0,0, type = 'n',
+     xlim = c(0,175), ylim = c(-1, 1),
+     xlab = '', ylab = '')
+for (i in 1:ncol(ligTags)){
+  par(new = T)
+  plot(trainDat$sampSizes[trainDat$ligand == colnames(ligTags)[i] & trainDat$mode == 'pred'], trainDat$kappa[trainDat$ligand == colnames(ligTags)[i] & trainDat$mode == 'pred'],
+      col = alpha(ligColors[i], 0.3), pch = 19,
+      xlim = c(0,175), ylim = c(-1, 1),
+      axes = F, xlab = '', ylab ='')
+}
+title(xlab = 'Number of samples used for training', ylab = 'Kappa', cex.lab = 1.5 )
+text(x = 110, y = -0.8, labels = 'Pearson corr: 0.41 (p<0.001)', cex = 1.3)
 
 
 

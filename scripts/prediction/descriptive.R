@@ -486,7 +486,7 @@ for(i in 1:ncol(ligTags)){
        xlim = xLim, ylim = yLim)
   par(new=T)
   plot(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))][tag,i], -log10(stats_weighted[,grepl('_adj$', colnames(stats_weighted))][tag,i]), # Outline stat sig points in black to highlight them
-       col = 'black', cex = 2.05,
+       col = alpha('black',0.5), cex = 2.05,
        xlab = "", ylab = "", axes = F, main = "",
        xlim = xLim, ylim = yLim)
   abline(h= -log10(0.01), lwd = 2)
@@ -506,53 +506,55 @@ dev.off()
 
 
 
-# Volcano plots with weighted mean fold change
-dev.off()
-pdf(file = paste('./manuscript/figures/subplots/', 
-                 'weighted_FC_volcanoes',
-                 '.pdf', sep = ''),
-    width = 21,
-    height = 13)
-par(mfrow=c(3,5))
-xLim = c(-10,10)
-# yLim = c(0,10)
-for(i in 1:ncol(ligTags)){
-  
-  yLim = c(0,max(-log10(0.1), -log10(min(stats_weighted[,grepl('_adj$', colnames(stats_weighted))][,i]))) + 1)
-  
-  tag = stats_weighted[,grepl('_adj$', colnames(stats_weighted))][,i] < 0.01
-  
-  # dev.off()
-  plot(0,0,axes = F, main = '', xlab = '', ylab = '', pch = NA)
-  bg = "seashell2"
-  fg = "ivory"
-  rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = bg)
-  # abline(v = c(-1,-.5,0,.5,1), lwd = 6, col = fg)
-  # abline(v = c(-1.25,-.75,-.25,.25,.75,1.25), lwd = 3, col = fg)
-  # abline(h = c(0,1,2,3,4,5,6), lwd = 6, col = fg)
-  # abline(h = c(0.5,1.5,2.5,3.5,4.5,5.5,6.5), lwd = 3, col = fg)
-  par(new=T)
-  
-  plot(stats_weighted[,grepl('_FC$', colnames(stats_weighted))][,i], -log10(stats_weighted[,grepl('_adj$', colnames(stats_weighted))][,i]), # Plot all points w/ color @ alpha 0.5
-       xlab = "log2(FC in weighted means)", ylab = "-log10(FDR)", main = colnames(ligTags)[i],
-       pch = 19, cex = 2, col = alpha(featColors, 0.5),
-       cex.axis = 1.5, cex.main = 2, cex.lab = 1.5,
-       xlim = xLim, ylim = yLim)
-  par(new=T)
-  plot(stats_weighted[,grepl('_FC$', colnames(stats_weighted))][tag,i], -log10(stats_weighted[,grepl('_adj$', colnames(stats_weighted))][tag,i]), # Plot stat sig points again with alpha 1
-       pch = 19, col = featColors[tag], cex = 2,
-       axes = F, xlab = "", ylab = "", main = "",
-       xlim = xLim, ylim = yLim)
-  par(new=T)
-  plot(stats_weighted[,grepl('_FC$', colnames(stats_weighted))][tag,i], -log10(stats_weighted[,grepl('_adj$', colnames(stats_weighted))][tag,i]), # Outline stat sig points in black to highlight them
-       col = 'black', cex = 2.05,
-       xlab = "", ylab = "", axes = F, main = "",
-       xlim = xLim, ylim = yLim)
-  abline(h= -log10(0.01), lwd = 2)
-  abline(v = 0, lty=2, lwd = 2)
-}
 
-dev.off()
+# Volcano plots with weighted mean fold change
+
+# dev.off()
+# pdf(file = paste('./manuscript/figures/subplots/', 
+#                  'weighted_FC_volcanoes',
+#                  '.pdf', sep = ''),
+#     width = 21,
+#     height = 13)
+# par(mfrow=c(3,5))
+# xLim = c(-10,10)
+# # yLim = c(0,10)
+# for(i in 1:ncol(ligTags)){
+#   
+#   yLim = c(0,max(-log10(0.1), -log10(min(stats_weighted[,grepl('_adj$', colnames(stats_weighted))][,i]))) + 1)
+#   
+#   tag = stats_weighted[,grepl('_adj$', colnames(stats_weighted))][,i] < 0.01
+#   
+#   # dev.off()
+#   plot(0,0,axes = F, main = '', xlab = '', ylab = '', pch = NA)
+#   bg = "seashell2"
+#   fg = "ivory"
+#   rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = bg)
+#   # abline(v = c(-1,-.5,0,.5,1), lwd = 6, col = fg)
+#   # abline(v = c(-1.25,-.75,-.25,.25,.75,1.25), lwd = 3, col = fg)
+#   # abline(h = c(0,1,2,3,4,5,6), lwd = 6, col = fg)
+#   # abline(h = c(0.5,1.5,2.5,3.5,4.5,5.5,6.5), lwd = 3, col = fg)
+#   par(new=T)
+#   
+#   plot(stats_weighted[,grepl('_FC$', colnames(stats_weighted))][,i], -log10(stats_weighted[,grepl('_adj$', colnames(stats_weighted))][,i]), # Plot all points w/ color @ alpha 0.5
+#        xlab = "log2(FC in weighted means)", ylab = "-log10(FDR)", main = colnames(ligTags)[i],
+#        pch = 19, cex = 2, col = alpha(featColors, 0.5),
+#        cex.axis = 1.5, cex.main = 2, cex.lab = 1.5,
+#        xlim = xLim, ylim = yLim)
+#   par(new=T)
+#   plot(stats_weighted[,grepl('_FC$', colnames(stats_weighted))][tag,i], -log10(stats_weighted[,grepl('_adj$', colnames(stats_weighted))][tag,i]), # Plot stat sig points again with alpha 1
+#        pch = 19, col = featColors[tag], cex = 2,
+#        axes = F, xlab = "", ylab = "", main = "",
+#        xlim = xLim, ylim = yLim)
+#   par(new=T)
+#   plot(stats_weighted[,grepl('_FC$', colnames(stats_weighted))][tag,i], -log10(stats_weighted[,grepl('_adj$', colnames(stats_weighted))][tag,i]), # Outline stat sig points in black to highlight them
+#        col = 'black', cex = 2.05,
+#        xlab = "", ylab = "", axes = F, main = "",
+#        xlim = xLim, ylim = yLim)
+#   abline(h= -log10(0.01), lwd = 2)
+#   abline(v = 0, lty=2, lwd = 2)
+# }
+# 
+# dev.off()
 
 
 
@@ -657,6 +659,44 @@ pheatmap(cor(stats_weighted[1:11,grepl('_effectSize$', colnames(stats_weighted))
 grid.text(label = 'Pearson correlation between INTERACTION feature effect sizes across ligand classes',x = 0.5, y=0.985, gp=gpar(col="forestgreen", cex = 1.5))
 
 dev.off()
+
+#######################
+# Heatmaps with features in columns
+#######################
+
+breakLst = seq(-0.5,0.5,0.05)
+
+
+featColors = rep('', nrow(stats_weighted))
+resiFeats = colorRampPalette(c("plum1","tomato", "firebrick4"))(4)
+pocketFeats = colorRampPalette(c('turquoise', 'dodgerblue1', 'blue2'))(3)
+
+featColors[1:11] = 'forestgreen'
+
+featColors[grep('^vol_4Ang$', row.names(stats_weighted)) : grep('^leftskew_10Ang$', row.names(stats_weighted))] = pocketFeats[1] # features within the d2Feats range
+featColors[grepl('^binnedD2', row.names(stats_weighted))] = pocketFeats[2] # PCs from the binned D2 measures
+featColors[grepl('^zern', row.names(stats_weighted))] = pocketFeats[3] # PCs from the 3DZDs
+
+featColors[grepl('^numBSresis', row.names(stats_weighted))] = resiFeats[1] # number of residues in binding site features
+featColors[gsub('_bin\\d{1}', '', row.names(stats_weighted)) %in% c('H', 'B', 'E', 'G', 'T', 'S', 'X.')] = resiFeats[2] # secondary structure features
+featColors[gsub('_bin\\d{1}', '', row.names(stats_weighted)) %in% c('nonpolar', 'polar', 'posCharge', 'negCharge', 'aromatic')] = resiFeats[3] # amino acid properties
+featColors[grepl('^[[:upper:]]{3}_', row.names(stats_weighted)) | grepl('^CA$', row.names(stats_weighted))] = resiFeats[4] # amino acid identities
+
+resiFeatTag = featColors %in% resiFeats
+pocketFeatTag = featColors %in% pocketFeats
+
+
+
+
+annotation <- data.frame(Var1 = factor(1:10 %% 2 == 0, labels = c("Exp1", "Exp2")))
+
+pheatmap(t(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))]),
+         color = colorRampPalette(c("royalblue1", "grey90", "gold1"))(length(breakLst)),
+         # display_numbers = ifelse(t(stats_weighted[,grepl('_adj$', colnames(stats_weighted))]) < 0.01, "*", ""), fontsize_number = 18,
+         labels_row = gsub('_effectSize$', '', colnames(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))])),
+         main = '',
+         breaks = breakLst,
+         show_colnames = T)
 
 #######################
 # Shared significant features for similar ligands
