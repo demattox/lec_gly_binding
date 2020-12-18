@@ -15,7 +15,7 @@ library(seqinr)
 library(stringr)
 library(pheatmap)
 
-source_url("https://raw.githubusercontent.com/obigriffith/biostar-tutorials/master/Heatmaps/heatmap.3.R")
+# source_url("https://raw.githubusercontent.com/obigriffith/biostar-tutorials/master/Heatmaps/heatmap.3.R")
 
 ##########################
 
@@ -486,9 +486,9 @@ bTag = bracCnt >= 1 # Branched glycans
 
 hist(manCnt)
 
-manTag = manCnt > 3 # High mannose
-neuTag = neuCnt >= 1 # Has sialic acid
-fucTag = grepl('^Fuc',ligSort50) # Has a terminal fucose
+manTag = manCnt >= 3 & grepl('^Man',ligSort50) # High mannose
+neuTag = grepl('^NeuAc',ligSort50) & !mTag # Has terminal sialic acid and is not a monosacc.
+fucTag = grepl('^Fuc',ligSort50) & !mTag # Has a terminal fucose
 
 # ligSort50[mTag]
 # ligSort50[dTag]
@@ -498,13 +498,13 @@ fucTag = grepl('^Fuc',ligSort50) # Has a terminal fucose
 # 
 # ligSort50[bTag]
 # 
-# ligSort50[manTag]
-# ligSort50[neuTag]
-# ligSort50[fucTag]
+ligSort50[manTag]
+ligSort50[neuTag]
+ligSort50[fucTag]
 
 sacc_col =  colorRampPalette(c("plum1","tomato", "firebrick4"))(5)
 
-pdf(file = paste('./analysis/sfgPlots/', 
+pdf(file = paste('./manuscript/figures/', 
                  'clusts_with_ligands_id50',
                  '.pdf', sep = ''),
     width = 18,
@@ -586,9 +586,9 @@ bTag = bracCnt >= 1 # Branched glycans
 
 hist(manCnt)
 
-manTag = manCnt > 3 # High mannose
-neuTag = neuCnt >= 1 # Has sialic acid
-fucTag = grepl('^Fuc',ligSort80) # Has a terminal fucose
+manTag = manCnt >= 3 & grepl('^Man',ligSort80) # High mannose
+neuTag = grepl('^NeuAc',ligSort80) & !mTag # Has terminal sialic acid and is not a monosacc.
+fucTag = grepl('^Fuc',ligSort80) & !mTag # Has a terminal fucose
 
 pdf(file = paste('./analysis/sfgPlots/', 
                  'clusts_with_ligands_id80',
@@ -692,6 +692,74 @@ ggplot(melt_ligOccur, aes(fill = Clust_ID, x = Ligand, alpha = Ligand, y = Clust
   labs(title = "Well-represented ligands in lectin clusters", x = "IUPAC Ligands", y = "Percent of clusters with ligand") +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
 dev.off()
+
+
+melt_ligOccur = melt(data =topLigOccurences[1,], id.vars = 'id_cutoff')
+colnames(melt_ligOccur) = c('Clust_ID', 'Ligand', 'Cluster_Percent_w_ligand')
+
+pdf(file = paste('./manuscript/figures/', 
+                 'clust50_pcts_w_TopLigands',
+                 '.pdf', sep = ''),
+    width = 15,
+    height = 10.5)
+ggplot(melt_ligOccur, aes(fill = Clust_ID, x = Ligand, alpha = Ligand, y = Cluster_Percent_w_ligand)) + geom_bar(stat="identity", color="black", position=position_dodge())+
+  scale_fill_manual(values=mycol[c(4)], guide = F) +
+  scale_alpha_manual(values=c(rep(0.6,3), rep(.9,12)), guide = F) +
+  ylim(c(0, 30)) +
+  geom_hline(yintercept = c(5)) +
+  geom_vline(xintercept = c(3.5), lty = 2) +
+  theme_linedraw(base_size = 22) +
+  labs(title = "Well-represented ligands in lectin clusters", x = "IUPAC Ligands", y = "Percent of clusters with ligand") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
+dev.off()
+
+# Ligand tags
+parenCnt = bracCnt = manCnt = neuCnt = bracCnt = rep(0,length(uniLigs))
+for (i in 1:length(uniLigs)){
+  lig = uniLigs[i]
+  parenCnt[i] = lengths(regmatches(lig, gregexpr("\\(", lig)))
+  bracCnt[i] = lengths(regmatches(lig, gregexpr("\\[", lig)))
+  manCnt[i] = lengths(regmatches(lig, gregexpr("Man", lig)))
+  neuCnt[i] = lengths(regmatches(lig, gregexpr("NeuAc", lig)))
+}
+
+mTag = parenCnt == 0 & bracCnt == 0 # Monosaccharides
+dTag = parenCnt == 1 & bracCnt == 0 # Disaccharides
+tTag = (parenCnt == 2 & bracCnt == 0) | (parenCnt == 2 & bracCnt == 1) # Trisaccharides
+qTag = (parenCnt == 3 & bracCnt == 0) | (parenCnt == 3 & bracCnt == 1) | (parenCnt == 1 & bracCnt == 2) # Tetrasaccharides
+pTag = !(mTag | dTag | tTag | qTag) # 5+ sugars
+bTag = bracCnt >= 1 # Branched glycans
+
+manTag = manCnt >= 3 & grepl('^Man',uniLigs) # High mannose
+neuTag = grepl('^NeuAc',uniLigs) & !mTag # Has terminal sialic acid and is not a monosacc.
+fucTag = grepl('^Fuc',uniLigs) & !mTag # Has a terminal fucose
+
+uniLigs[manTag]
+uniLigs[neuTag]
+uniLigs[fucTag]
+
+# get tags to indicate binding sites containing one of the 15 ligands of interest
+ligTags = as.data.frame(matrix(F, nrow = nrow(bsResiDat), ncol = 3+length(top50)))
+row.names(ligTags) =  row.names(bsResiDat)
+colnames(ligTags) = colnames(topLigOccurences)[2:ncol(topLigOccurences)]
+
+ligTags$High_Mannose = bsResiDat$iupac %in% uniLigs[manTag]
+ligTags$Sialic_Acid = bsResiDat$iupac %in% uniLigs[neuTag]
+ligTags$Terminal_Fucose = bsResiDat$iupac %in% uniLigs[fucTag]
+
+
+for (i in 1:length(top50)){
+  lig = top50[i]
+  lig = gsub('\\(', '\\\\(', lig)
+  lig = gsub('\\)', '\\\\)', lig)
+  lig = gsub('\\[', '\\\\]', lig)
+  lig = gsub('\\[', '\\\\]', lig)
+  lig = gsub('^', '\\^', lig)
+  lig = gsub('$', '\\$', lig)
+
+  colInd = grep(lig, colnames(ligTags))
+  ligTags[,colInd] = grepl(lig, bsResiDat$iupac)
+}
 
 
 ###########################

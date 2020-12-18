@@ -132,51 +132,6 @@ ggplot(meltMc, aes(fill = Bin_Number, x = Amino_acid, y = PercentDiff_McCaldon))
 # Mean-based WMW test
 ###########################
 
-# # Ligand tags
-# parenCnt = bracCnt = manCnt = neuCnt = bracCnt = rep(0,length(uniLigs))
-# for (i in 1:length(uniLigs)){
-#   lig = uniLigs[i]
-#   parenCnt[i] = lengths(regmatches(lig, gregexpr("\\(", lig)))
-#   bracCnt[i] = lengths(regmatches(lig, gregexpr("\\[", lig)))
-#   manCnt[i] = lengths(regmatches(lig, gregexpr("Man", lig)))
-#   neuCnt[i] = lengths(regmatches(lig, gregexpr("NeuAc", lig)))
-# }
-# 
-# mTag = parenCnt == 0 & bracCnt == 0 # Monosaccharides
-# dTag = parenCnt == 1 & bracCnt == 0 # Disaccharides
-# tTag = (parenCnt == 2 & bracCnt == 0) | (parenCnt == 2 & bracCnt == 1) # Trisaccharides
-# qTag = (parenCnt == 3 & bracCnt == 0) | (parenCnt == 3 & bracCnt == 1) | (parenCnt == 1 & bracCnt == 2) # Tetrasaccharides
-# pTag = !(mTag | dTag | tTag | qTag) # 5+ sugars
-# bTag = bracCnt >= 1 # Branched glycans
-# 
-# manTag = manCnt > 3 # High mannose
-# neuTag = neuCnt >= 1 # Has sialic acid
-# fucTag = grepl('^Fuc',uniLigs) # Has a terminal fucose
-# 
-# 
-# # get tags to indicate binding sites containing one of the 15 ligands of interest
-# ligTags = as.data.frame(matrix(F, nrow = nrow(bsResiDat), ncol = 3+length(top50)))
-# row.names(ligTags) =  row.names(bsResiDat)
-# colnames(ligTags) = colnames(topLigOccurences)[2:ncol(topLigOccurences)] 
-# 
-# ligTags$High_Mannose = bsResiDat$iupac %in% uniLigs[manTag]
-# ligTags$Sialic_Acid = bsResiDat$iupac %in% uniLigs[neuTag]
-# ligTags$Terminal_Fucose = bsResiDat$iupac %in% uniLigs[fucTag]
-# 
-# 
-# for (i in 1:length(top50)){
-#   lig = top50[i]
-#   lig = gsub('\\(', '\\\\(', lig)
-#   lig = gsub('\\)', '\\\\)', lig)
-#   lig = gsub('\\[', '\\\\]', lig)
-#   lig = gsub('\\[', '\\\\]', lig)
-#   lig = gsub('^', '\\^', lig)
-#   lig = gsub('$', '\\$', lig)
-#   
-#   colInd = grep(lig, colnames(ligTags))
-#   ligTags[,colInd] = grepl(lig, bsResiDat$iupac)
-# }
-
 # Add tags to bsResiDat
 # bsResiDat = cbind(bsResiDat, ligTags)
 
@@ -664,7 +619,7 @@ dev.off()
 # Heatmaps with features in columns
 #######################
 
-breakLst = seq(-0.5,0.5,0.05)
+breakLst = seq(-0.5,0.5,0.01)
 
 
 featColors = rep('', nrow(stats_weighted))
@@ -688,10 +643,119 @@ pocketFeatTag = featColors %in% pocketFeats
 
 
 
-annotation <- data.frame(Var1 = factor(1:10 %% 2 == 0, labels = c("Exp1", "Exp2")))
+annot <- data.frame(Feature_Type = rep("", nrow(stats_weighted)))
+row.names(annot) = row.names(stats_weighted)
+
+annot$Feature_Type[featColors == 'forestgreen'] <- 'PLIP interaction counts'
+
+annot$Feature_Type[grep('^vol_4Ang$', row.names(stats_weighted)) : grep('^leftskew_10Ang$', row.names(stats_weighted))] <- 'Pocket and D2 distribution'
+annot$Feature_Type[grepl('^binnedD2', row.names(stats_weighted))] <- 'D2 Principal Components'
+annot$Feature_Type[grepl('^zern', row.names(stats_weighted))] <- '3DZD Principal Components'
+
+annot$Feature_Type[grepl('^numBSresis', row.names(stats_weighted))] <- 'Residue counts/bin'
+annot$Feature_Type[gsub('_bin\\d{1}', '', row.names(stats_weighted)) %in% c('H', 'B', 'E', 'G', 'T', 'S', 'X.')] <- 'Residue sec struct.'
+annot$Feature_Type[gsub('_bin\\d{1}', '', row.names(stats_weighted)) %in% c('nonpolar', 'polar', 'posCharge', 'negCharge', 'aromatic')] <- 'Amino acid property counts'
+annot$Feature_Type[grepl('^[[:upper:]]{3}_', row.names(stats_weighted)) | grepl('^CA$', row.names(stats_weighted))] <- 'Residue identities'
+
+annot$Feature_Type <- factor(annot$Feature_Type, levels = unique(annot$Feature_Type))
+
+
+
+Feature_Type <- unique(featColors)
+names(Feature_Type) <- levels(annot$Feature_Type)
+anno_colors <- list(Feature_Type = Feature_Type)
 
 pheatmap(t(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))]),
          color = colorRampPalette(c("royalblue1", "grey90", "gold1"))(length(breakLst)),
+         clustering_distance_rows = 'correlation',
+         # clustering_distance_cols = 'correlation',
+         # display_numbers = ifelse(t(stats_weighted[,grepl('_adj$', colnames(stats_weighted))]) < 0.01, "*", ""), fontsize_number = 18,
+         labels_row = gsub('_effectSize$', '', colnames(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))])),
+         annotation_col = annot, annotation_colors = anno_colors,
+         main = '',
+         breaks = breakLst,
+         show_colnames = F)
+
+
+# Residue features only
+
+resiAnnot = data.frame(Feature_Type = rep("", sum(resiFeatTag)))
+row.names(resiAnnot) = row.names(stats_weighted)[resiFeatTag]
+
+resiAnnot$Feature_Type = as.character(annot$Feature_Type[resiFeatTag])
+resiAnnot$Feature_Type <- factor(resiAnnot$Feature_Type, levels = unique(resiAnnot$Feature_Type))
+
+resiAnnot$Bin = rep("", sum(resiFeatTag))
+resiAnnot$Bin[grepl('_bin1$', row.names(resiAnnot))] = 'Bin 1'
+resiAnnot$Bin[grepl('_bin2$', row.names(resiAnnot))] = 'Bin 2'
+resiAnnot$Bin[grepl('_bin3$', row.names(resiAnnot))] = 'Bin 3'
+resiAnnot$Bin[grepl('_bin4$', row.names(resiAnnot))] = 'Bin 4'
+resiAnnot$Bin[grepl('^CA$', row.names(resiAnnot))] = 'Bin 1'
+resiAnnot$Bin <- factor(resiAnnot$Bin, levels = unique(resiAnnot$Bin))
+
+
+
+Feature_Type <- unique(featColors[resiFeatTag])
+names(Feature_Type) <- levels(resiAnnot$Feature_Type)
+
+Bin <- c('firebrick3', 'darkorange2', 'darkgoldenrod2', 'gold2')
+names(Bin) <- levels(resiAnnot$Bin)
+
+resiAnnot_cols <- list(Feature_Type = Feature_Type, Bin = Bin)
+
+pheatmap(t(stats_weighted[resiFeatTag,grepl('_effectSize$', colnames(stats_weighted))]),
+         color = colorRampPalette(c("royalblue1", "grey90", "gold1"))(length(breakLst)),
+         clustering_distance_rows = 'correlation',
+         # display_numbers = ifelse(t(stats_weighted[,grepl('_adj$', colnames(stats_weighted))]) < 0.01, "*", ""), fontsize_number = 18,
+         labels_row = gsub('_effectSize$', '', colnames(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))])),
+         annotation_col = resiAnnot, annotation_colors = resiAnnot_cols,
+         legend_breaks = c(1,5),
+         main = '',
+         breaks = breakLst,
+         show_colnames = T)
+
+# Pocket features only
+
+pockAnnot = data.frame(Feature_Type = rep("", sum(pocketFeatTag)))
+row.names(pockAnnot) = row.names(stats_weighted)[pocketFeatTag]
+
+pockAnnot$Feature_Type = as.character(annot$Feature_Type[pocketFeatTag])
+pockAnnot$Feature_Type <- factor(pockAnnot$Feature_Type, levels = unique(pockAnnot$Feature_Type))
+
+pockAnnot$Threshold = rep("", sum(pocketFeatTag))
+pockAnnot$Threshold[grepl('_4Ang$', row.names(pockAnnot))] = '4 Ang thresh'
+pockAnnot$Threshold[grepl('_6Ang$', row.names(pockAnnot))] = '6 Ang thresh'
+pockAnnot$Threshold[grepl('_8Ang$', row.names(pockAnnot))] = '8 Ang thresh'
+pockAnnot$Threshold[grepl('_10Ang$', row.names(pockAnnot))] = '10 Ang thresh'
+pockAnnot$Threshold[pockAnnot$Threshold == ""] = 'NA'
+pockAnnot$Threshold <- factor(pockAnnot$Threshold, levels = unique(pockAnnot$Threshold))
+
+
+
+Feature_Type <- unique(featColors[pocketFeatTag])
+names(Feature_Type) <- levels(pockAnnot$Feature_Type)
+
+Threshold <- c('firebrick3', 'darkorange2', 'darkgoldenrod2', 'gold2', 'grey75')
+names(Threshold) <- levels(pockAnnot$Threshold)
+
+pockAnnot_cols <- list(Feature_Type = Feature_Type, Threshold = Threshold)
+
+pheatmap(t(stats_weighted[pocketFeatTag,grepl('_effectSize$', colnames(stats_weighted))]),
+         color = colorRampPalette(c("royalblue1", "grey90", "gold1"))(length(breakLst)),
+         clustering_distance_rows = 'correlation',
+         # display_numbers = ifelse(t(stats_weighted[,grepl('_adj$', colnames(stats_weighted))]) < 0.01, "*", ""), fontsize_number = 18,
+         labels_row = gsub('_effectSize$', '', colnames(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))])),
+         annotation_col = pockAnnot, annotation_colors = pockAnnot_cols,
+         main = '',
+         breaks = breakLst,
+         show_colnames = T)
+
+
+# PLIP features only
+
+pheatmap(t(stats_weighted[1:11,grepl('_effectSize$', colnames(stats_weighted))]),
+         color = colorRampPalette(c("royalblue1", "grey90", "gold1"))(length(breakLst)),
+         clustering_distance_rows = 'correlation',
          # display_numbers = ifelse(t(stats_weighted[,grepl('_adj$', colnames(stats_weighted))]) < 0.01, "*", ""), fontsize_number = 18,
          labels_row = gsub('_effectSize$', '', colnames(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))])),
          main = '',
@@ -847,21 +911,84 @@ venn.diagram(
 
 
 
-
+#######################
+# Shared features by sig & feat importance
+#######################
 # Re-do and filter by median feature importance percentile (>= nth percentile)
 
-percentThresh = 0.50 # >= 50th percentile in feature importance
+percentThresh = 0.75 # >= 75th percentile in feature importance in each feature class
 
-all(row.names(medFeatPercentiles) == row.names(stats_weighted)) # Ported over from results.R
+all(gsub('_effectSize','',colnames(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))])) == colnames(medFeatPercentiles))
+
+stratAllFeatsImp = rbind(PLIPmeds, RESImeds, POCKmeds)
+all(row.names(stratAllFeatsImp) == row.names(stats_weighted))
+
+topImpfeats = as.data.frame(stratAllFeatsImp >= percentThresh) # Logical dataframe, indicates if feature passes threshold for stratified median feature importance percentiles
+all(colnames(medFeatPercentiles) == colnames(topImpfeats))
+
+
+sigFeats = as.data.frame(stats_weighted[,grepl('_adj$', colnames(stats_weighted))] < 0.01) # Logical dataframe, indicates if feature passes threshold for significance from WMW test, FDR of 1%
+colnames(sigFeats) = gsub('_adj$', '', colnames(sigFeats))
+all(colnames(sigFeats) == colnames(topImpfeats))
+
+par(mfrow = c(3,5))
+for (i in 1:ncol(medFeatPercentiles)){
+  lig = colnames(medFeatPercentiles)[i]
+  
+  plot(abs(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))][,i]), medFeatPercentiles[,i],
+       xlab = '|Effect size|', ylab = 'Overall feat imp percentile', main = lig,
+       col = alpha(featColors, 0.4),
+       xlim = c(0,0.4),
+       ylim = c(0,1),
+       pch = 19)
+  par(new=T)
+  plot(abs(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))][topImpfeats[,i] & sigFeats[,i],i]), medFeatPercentiles[topImpfeats[,i] & sigFeats[,i],i],
+       xlab = '', ylab = '', main = '',
+       xlim = c(0,0.4),
+       ylim = c(0,1),
+       col = alpha(featColors[topImpfeats[,i] & sigFeats[,i]], 1),
+       pch = 19,
+       cex = 1.5)
+  text(x = 0.35,
+       y=0.05,
+       labels = paste('R=', as.character(round(cor(abs(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))][,i]), medFeatPercentiles[,i]), 3)), sep = ''))
+}
+
+# Plot with STRATIFIED median feature importance percentiles on the y-axis
+par(mfrow = c(3,5))
+for (i in 1:ncol(medFeatPercentiles)){
+  lig = colnames(medFeatPercentiles)[i]
+  
+  plot(abs(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))][,i]), stratAllFeatsImp[,i],
+       xlab = '|Effect size|', ylab = 'Stratified feat imp percentile', main = lig,
+       col = alpha(featColors, 0.4),
+       xlim = c(0,0.4),
+       ylim = c(0,1),
+       pch = 19)
+  par(new=T)
+  plot(abs(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))][topImpfeats[,i] & sigFeats[,i],i]), stratAllFeatsImp[topImpfeats[,i] & sigFeats[,i],i],
+       xlab = '', ylab = '', main = '',
+       xlim = c(0,0.4),
+       ylim = c(0,1),
+       col = alpha(featColors[topImpfeats[,i] & sigFeats[,i]], 1),
+       pch = 19,
+       cex = 1.5)
+  text(x = 0.35,
+       y=0.05,
+       labels = paste('R=', as.character(round(cor(abs(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))][,i]), stratAllFeatsImp[,i]), 3)), sep = ''))
+  abline(h = percentThresh, lty = 2)
+}
+
 
 # Sialic acid features
-siaBindingFeats_pos = list(row.names(stats_weighted)[stats_weighted$Sialic_Acid_adj < 0.01 & stats_weighted$Sialic_Acid_effectSize > 0 & medFeatPercentiles$Sialic_Acid >= percentThresh],
-                           row.names(stats_weighted)[stats_weighted$NeuAc_adj < 0.01 & stats_weighted$NeuAc_effectSize > 0 & medFeatPercentiles$NeuAc >= percentThresh],
-                           row.names(stats_weighted)[stats_weighted$NeuAc.a2.3.Gal.b1.4.Glc_adj < 0.01 & stats_weighted$NeuAc.a2.3.Gal.b1.4.Glc_effectSize > 0 & medFeatPercentiles$NeuAc.a2.3.Gal.b1.4.Glc >= percentThresh])
+siaBindingFeats_pos = list(row.names(stats_weighted)[sigFeats$Sialic_Acid & stats_weighted$Sialic_Acid_effectSize > 0 & topImpfeats$Sialic_Acid],
+                           row.names(stats_weighted)[sigFeats$NeuAc & stats_weighted$NeuAc_effectSize > 0 & topImpfeats$NeuAc],
+                           row.names(stats_weighted)[sigFeats$NeuAc.a2.3.Gal.b1.4.Glc & stats_weighted$NeuAc.a2.3.Gal.b1.4.Glc_effectSize > 0 & topImpfeats$NeuAc.a2.3.Gal.b1.4.Glc])
 
-siaBindingFeats_neg = list(row.names(stats_weighted)[stats_weighted$Sialic_Acid_adj < 0.01 & stats_weighted$Sialic_Acid_effectSize < 0 & medFeatPercentiles$Sialic_Acid >= percentThresh],
-                           row.names(stats_weighted)[stats_weighted$NeuAc_adj < 0.01 & stats_weighted$NeuAc_effectSize < 0 & medFeatPercentiles$NeuAc >= percentThresh],
-                           row.names(stats_weighted)[stats_weighted$NeuAc.a2.3.Gal.b1.4.Glc_adj < 0.01 & stats_weighted$NeuAc.a2.3.Gal.b1.4.Glc_effectSize < 0 & medFeatPercentiles$NeuAc.a2.3.Gal.b1.4.Glc >= percentThresh])
+siaBindingFeats_neg = list(row.names(stats_weighted)[sigFeats$Sialic_Acid & stats_weighted$Sialic_Acid_effectSize < 0 & topImpfeats$Sialic_Acid],
+                           row.names(stats_weighted)[sigFeats$NeuAc & stats_weighted$NeuAc_effectSize < 0 & topImpfeats$NeuAc],
+                           row.names(stats_weighted)[sigFeats$NeuAc.a2.3.Gal.b1.4.Glc & stats_weighted$NeuAc.a2.3.Gal.b1.4.Glc_effectSize < 0 & topImpfeats$NeuAc.a2.3.Gal.b1.4.Glc])
+
 venn.diagram(
   x = siaBindingFeats_pos,
   category.names = c("Sialic acid" , "NeuAc" , "NeuAc(a2-3)Gal(b1-4)Glc"),
@@ -913,11 +1040,11 @@ intersect(intersect(siaBindingFeats_neg[[1]], siaBindingFeats_neg[[2]]), siaBind
 
 
 # Fucose binding
-fucBindingFeats_pos = list(row.names(stats_weighted)[stats_weighted$Fuc_adj < 0.01 & stats_weighted$Fuc_effectSize > 0 & medFeatPercentiles$Fuc >= percentThresh],
-                           row.names(stats_weighted)[stats_weighted$Terminal_Fucose_adj < 0.01 & stats_weighted$Terminal_Fucose_effectSize > 0 & medFeatPercentiles$Terminal_Fucose >= percentThresh])
+fucBindingFeats_pos = list(row.names(stats_weighted)[stats_weighted$Fuc_effectSize > 0 & sigFeats$Fuc & topImpfeats$Fuc],
+                           row.names(stats_weighted)[stats_weighted$Terminal_Fucose_effectSize > 0 & sigFeats$Terminal_Fucose & topImpfeats$Terminal_Fucose])
 
-fucBindingFeats_neg = list(row.names(stats_weighted)[stats_weighted$Fuc_adj < 0.01 & stats_weighted$Fuc_effectSize < 0 & medFeatPercentiles$Fuc >= percentThresh],
-                           row.names(stats_weighted)[stats_weighted$Terminal_Fucose_adj < 0.01 & stats_weighted$Terminal_Fucose_effectSize < 0 & medFeatPercentiles$Terminal_Fucose >= percentThresh])
+fucBindingFeats_neg = list(row.names(stats_weighted)[stats_weighted$Fuc_effectSize < 0 & sigFeats$Fuc & topImpfeats$Fuc],
+                           row.names(stats_weighted)[stats_weighted$Terminal_Fucose_effectSize < 0 & sigFeats$Terminal_Fucose & topImpfeats$Terminal_Fucose])
 
 intersect(fucBindingFeats_pos[[1]], fucBindingFeats_pos[[2]])
 intersect(fucBindingFeats_neg[[1]], fucBindingFeats_neg[[2]])
@@ -951,13 +1078,13 @@ draw.pairwise.venn(area1 = length(fucBindingFeats_neg[[1]]),
 )
 
 # Mannose binding
-manBindingFeats_pos = list(row.names(stats_weighted)[stats_weighted$Man_adj < 0.1 & stats_weighted$Man_effectSize > 0 & medFeatPercentiles$Man >= percentThresh],
-                           row.names(stats_weighted)[stats_weighted$High_Mannose_adj < 0.1 & stats_weighted$High_Mannose_effectSize > 0 & medFeatPercentiles$High_Mannose >= percentThresh],
-                           row.names(stats_weighted)[stats_weighted$Man.a1.2.Man_adj < 0.1 & stats_weighted$Man.a1.2.Man_effectSize > 0 & medFeatPercentiles$Man.a1.2.Man >= percentThresh])
+manBindingFeats_pos = list(row.names(stats_weighted)[stats_weighted$Man_effectSize > 0 & sigFeats$Man & topImpfeats$Man],
+                           row.names(stats_weighted)[stats_weighted$High_Mannose_effectSize > 0 & sigFeats$High_Mannose & topImpfeats$High_Mannose],
+                           row.names(stats_weighted)[stats_weighted$Man.a1.2.Man_effectSize > 0 & sigFeats$Man.a1.2.Man & topImpfeats$Man.a1.2.Man])
 
-manBindingFeats_neg = list(row.names(stats_weighted)[stats_weighted$Man_adj < 0.1 & stats_weighted$Man_effectSize < 0 & medFeatPercentiles$Man >= percentThresh], 
-                           row.names(stats_weighted)[stats_weighted$High_Mannose_adj < 0.1 & stats_weighted$High_Mannose_effectSize < 0 & medFeatPercentiles$High_Mannose >= percentThresh], 
-                           row.names(stats_weighted)[stats_weighted$Man.a1.2.Man_adj < 0.1 & stats_weighted$Man.a1.2.Man_effectSize < 0 & medFeatPercentiles$Man.a1.2.Man >= percentThresh])
+manBindingFeats_neg = list(row.names(stats_weighted)[stats_weighted$Man_effectSize < 0 & sigFeats$Man & topImpfeats$Man],
+                           row.names(stats_weighted)[stats_weighted$High_Mannose_effectSize < 0 & sigFeats$High_Mannose & topImpfeats$High_Mannose],
+                           row.names(stats_weighted)[stats_weighted$Man.a1.2.Man_effectSize < 0 & sigFeats$Man.a1.2.Man & topImpfeats$Man.a1.2.Man])
 
 intersect(intersect(manBindingFeats_pos[[1]], manBindingFeats_pos[[2]]), manBindingFeats_pos[[3]])
 intersect(intersect(manBindingFeats_neg[[1]], manBindingFeats_neg[[2]]), manBindingFeats_neg[[3]])
@@ -986,6 +1113,7 @@ venn.diagram(
   cat.col = c("#440154ff", '#21908dff', '#DAA520FF'),
   rotation = 1
 )
+
 
 venn.diagram(
   x = manBindingFeats_neg,

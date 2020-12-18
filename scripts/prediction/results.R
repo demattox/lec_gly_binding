@@ -359,7 +359,7 @@ title(xlab = "Ligands", ylab = "Kappa", main = "5x CV + LOCO\nKappa compared to 
 xLim = c(-2,30)
 yLim = c(0,1)
 
-par(mar = c(8.1, 5.1, 5.1, 4.1), # change the margins
+par(mar = c(8.6, 5.1, 5.1, 4.1), # change the margins
     lwd = 2, # increase the line thickness
     cex.axis = 1.2 # increase default axis label size
 )
@@ -622,6 +622,25 @@ for(i in 1:ncol(ligTags)){
 #######################
 # Feature importance
 #######################
+
+featColors = rep('', nrow(feats))
+resiFeats = colorRampPalette(c("plum1","tomato", "firebrick4"))(4)
+pocketFeats = colorRampPalette(c('turquoise', 'dodgerblue1', 'blue2'))(3)
+
+featColors[1:11] = 'forestgreen'
+
+featColors[grep('^vol_4Ang$', row.names(feats)) : grep('^leftskew_10Ang$', row.names(feats))] = pocketFeats[1] # features within the d2Feats range
+featColors[grepl('^binnedD2', row.names(feats))] = pocketFeats[2] # PCs from the binned D2 measures
+featColors[grepl('^zern', row.names(feats))] = pocketFeats[3] # PCs from the 3DZDs
+
+featColors[grepl('^numBSresis', row.names(feats))] = resiFeats[1] # number of residues in binding site features
+featColors[gsub('_bin\\d{1}', '', row.names(feats)) %in% c('H', 'B', 'E', 'G', 'T', 'S', 'X.')] = resiFeats[2] # secondary structure features
+featColors[gsub('_bin\\d{1}', '', row.names(feats)) %in% c('nonpolar', 'polar', 'posCharge', 'negCharge', 'aromatic')] = resiFeats[3] # amino acid properties
+featColors[grepl('^[[:upper:]]{3}_', row.names(feats)) | grepl('^CA$', row.names(feats))] = resiFeats[4] # amino acid identities
+
+resiFeatTag = featColors %in% resiFeats
+pocketFeatTag = featColors %in% pocketFeats
+
 # rm(feats)
 for(i in 1:length(dir(predDirs))){
   lig = colnames(ligTags)[as.numeric(dir(predDirs)[i])]
@@ -646,18 +665,77 @@ for(i in 1:length(dir(predDirs))){
 
 perc.rank <- function(x) trunc(rank(x))/length(x)
 
-feats = apply(feats, 2, perc.rank)
+featPercentiles = apply(feats, 2, perc.rank)
+RESIpercents = apply(feats[resiFeatTag,], 2, perc.rank)
+POCKpercents = apply(feats[pocketFeatTag,], 2, perc.rank)
+PLIPpercents = apply(feats[1:11,], 2, perc.rank)
 
-medFeatPercentiles = as.data.frame(matrix(0, nrow = nrow(feats), ncol = length(unique(colnames(feats)))))
-row.names(medFeatPercentiles) = row.names(feats)
-colnames(medFeatPercentiles) = unique(colnames(feats))
 
-for (i in 1:length(unique(colnames(feats)))){
-  lig = unique(colnames(feats))[i]
-  medFeatPercentiles[,i] = apply(feats[,grepl(lig, colnames(feats))], 1, median)
+medFeatPercentiles = as.data.frame(matrix(0, nrow = nrow(featPercentiles), ncol = length(unique(colnames(featPercentiles)))))
+row.names(medFeatPercentiles) = row.names(featPercentiles)
+colnames(medFeatPercentiles) = colnames(ligTags)
+
+RESImeds = medFeatPercentiles[resiFeatTag,]
+POCKmeds = medFeatPercentiles[pocketFeatTag,]
+PLIPmeds = medFeatPercentiles[1:11,]
+
+
+for (i in 1:length(unique(colnames(featPercentiles)))){
+  lig = unique(colnames(featPercentiles))[i]
+  medFeatPercentiles[,i] = apply(featPercentiles[,grepl(lig, colnames(featPercentiles))], 1, median)
+  RESImeds[,i] = apply(RESIpercents[,grepl(lig, colnames(RESIpercents))], 1, median)
+  POCKmeds[,i] = apply(POCKpercents[,grepl(lig, colnames(POCKpercents))], 1, median)
+  PLIPmeds[,i] = apply(PLIPpercents[,grepl(lig, colnames(PLIPpercents))], 1, median)
+  
 }
 
+plot(medFeatPercentiles$Fuc[order(medFeatPercentiles$Fuc, decreasing = T)], pch = 19, col = featColors[order(medFeatPercentiles$Fuc, decreasing = T)])
+plot(RESImeds$Fuc[order(RESImeds$Fuc, decreasing = T)], pch = 19, col = featColors[resiFeatTag][order(RESImeds$Fuc, decreasing = T)])
+plot(POCKmeds$Fuc[order(POCKmeds$Fuc, decreasing = T)], pch = 19, col = featColors[pocketFeatTag][order(POCKmeds$Fuc, decreasing = T)])
+plot(PLIPmeds$Fuc[order(PLIPmeds$Fuc, decreasing = T)], pch = 19, col = featColors[1:11][order(PLIPmeds$Fuc, decreasing = T)])
 
+
+par(mfrow = c(3,5))
+for (i in 1:ncol(medFeatPercentiles)){
+  plot(medFeatPercentiles[order(medFeatPercentiles[, i], decreasing = T), i],
+       pch = 19,
+       col = featColors[order(medFeatPercentiles[,i], decreasing = T)],
+       ylab = 'Median importance percentile')
+  title(main = colnames(medFeatPercentiles)[i], col.main = ligColors[i])
+}
+
+par(mfrow = c(3,5))
+for (i in 1:ncol(RESImeds)){
+  plot(RESImeds[order(RESImeds[, i], decreasing = T), i],
+       pch = 19,
+       col = featColors[resiFeatTag][order(RESImeds[,i], decreasing = T)],
+       ylab = 'Median importance percentile',
+       ylim = c(0,1))
+  abline(h = 0.75)
+  title(main = colnames(RESImeds)[i], col.main = ligColors[i])
+}
+
+par(mfrow = c(3,5))
+for (i in 1:ncol(POCKmeds)){
+  plot(POCKmeds[order(POCKmeds[, i], decreasing = T), i],
+       pch = 19,
+       col = featColors[pocketFeatTag][order(POCKmeds[,i], decreasing = T)],
+       ylab = 'Median importance percentile',
+       ylim = c(0,1))
+  abline(h = 0.75)
+  title(main = colnames(POCKmeds)[i], col.main = ligColors[i])
+}
+
+par(mfrow = c(3,5))
+for (i in 1:ncol(PLIPmeds)){
+  plot(PLIPmeds[order(PLIPmeds[, i], decreasing = T), i],
+       pch = 19,
+       col = featColors[1:11][order(PLIPmeds[,i], decreasing = T)],
+       ylab = 'Median importance percentile',
+       ylim = c(0,1))
+  abline(h = 0.75)
+  title(main = colnames(PLIPmeds)[i], col.main = ligColors[i])
+}
 
 # neuFeats = c('negCharge_bin1','ASP_bin1', 'majorMaxima_8Ang')
 # 
