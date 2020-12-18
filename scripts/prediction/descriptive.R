@@ -35,8 +35,18 @@ for(i in 1:ncol(scaledFeats)){
   scaledFeats[,i] = (scaledFeats[,i] - min(scaledFeats[,i])) / (max(scaledFeats[,i]) - min(scaledFeats[,i]))
 }
 
+# unique(bsResiDat$iupac[apply(ligTags, 1, sum) == 2])
+
+ligNames = colnames(ligTags)
+ligNames[4] = "Gal(b1-4)Glc"
+ligNames[9] = "NeuAc(a2-3)Gal(b1-4)Glc"
+ligNames[11] = "Gal(b1-4)GlcNAc"
+ligNames[12] = "Man(a1-2)Man"
+ligNames[15] = "Gal(b1-3)GalNAc"
+ligNames = gsub('_', ' ', ligNames)
+
 ###########################
-# McCaldon analysis
+## McCaldon analysis
 ###########################
 mccaldon$aa = lapply(mccaldon$aa, FUN = aaa) # convert from 1-letter aminoacid code to 3, capitalized
 mccaldon$aa = lapply(mccaldon$aa, FUN = str_to_upper)
@@ -129,7 +139,7 @@ ggplot(meltMc, aes(fill = Bin_Number, x = Amino_acid, y = PercentDiff_McCaldon))
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
 
 ###########################
-# Mean-based WMW test
+## Mean-based WMW test
 ###########################
 
 # Add tags to bsResiDat
@@ -430,7 +440,7 @@ for(i in 1:ncol(ligTags)){
   par(new=T)
   
   plot(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))][,i], -log10(stats_weighted[,grepl('_adj$', colnames(stats_weighted))][,i]), # Plot all points w/ color @ alpha 0.5
-       xlab = "Effect size", ylab = "-log10(FDR)", main = colnames(ligTags)[i],
+       xlab = "Effect size", ylab = "-log10(FDR)", main = ligNames[i],
        pch = 19, cex = 2, col = alpha(featColors, 0.5),
        cex.axis = 1.5, cex.main = 2, cex.lab = 1.5,
        xlim = xLim, ylim = yLim)
@@ -452,9 +462,9 @@ dev.off()
 plot(0,0,axes = F, main = '', xlab = '', ylab = '', pch = NA)
 legend(x = 'center',
        col = c('forestgreen', resiFeats, pocketFeats),
-       legend = c('PLIP interactions',
-                  'bs resi cnt', 'sec struct', 'aa type', 'aa ident',
-                  'D2 feats', 'D2 PCs', 'Zern PCs'),
+       legend = c('PLIP interaction counts',
+                  'Residue counts/bin', 'Residue sec struct.', 'Amino acid property counts', 'Residue identities',
+                  'Pocket and D2 distribution', '3DZD Principal Components', 'Zern PCs'),
        pch = 19)
 
 dev.off()
@@ -515,7 +525,7 @@ dev.off()
 
 
 #######################
-# Compare weighted test to mean-based approach
+## Compare weighted test to mean-based approach
 #######################
 par(mfrow=c(3,5))
 xLim = c(0,1)
@@ -544,7 +554,7 @@ for (i in 1:ncol(ligTags)){
 }
 
 #######################
-# Correlation between features for each ligand
+## Correlation between features for each ligand
 #######################
 # Correlations by all features
 pdf(file = paste('./manuscript/figures/subplots/', 

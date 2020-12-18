@@ -46,7 +46,29 @@ ligTags = read.delim(file = './analysis/training/data_in/ligTags.tsv', sep = '\t
 predFeats = read.delim(file = './analysis/training/data_in/predFeats.csv', sep = ',', stringsAsFactors = F)
 bsResiDat = read.delim(file = './analysis/training/data_in/bsResiDat.tsv', sep = '\t', stringsAsFactors = F)
 
-ligColors = colfunc(ncol(ligTags))
+ligNames = colnames(ligTags)
+ligNames[4] = "Gal(b1-4)Glc"
+ligNames[9] = "NeuAc(a2-3)Gal(b1-4)Glc"
+ligNames[11] = "Gal(b1-4)GlcNAc"
+ligNames[12] = "Man(a1-2)Man"
+ligNames[15] = "Gal(b1-3)GalNAc"
+ligNames = gsub('_', ' ', ligNames)
+
+# ligColors = colfunc(ncol(ligTags))
+ligColors = rep('', ncol(ligTags))
+ligColors[1] = 'darkviolet' # Sialic Acid
+ligColors[8] = 'purple2' # NeuAc monosacc.
+ligColors[9] = 'mediumpurple2' # 3' Sialyllactose
+
+ligColors[1] = 'darkviolet' # Sialic Acid
+ligColors[1] = 'darkviolet' # Sialic Acid
+ligColors[1] = 'darkviolet' # Sialic Acid
+ligColors[1] = 'darkviolet' # Sialic Acid
+ligColors[1] = 'darkviolet' # Sialic Acid
+ligColors[1] = 'darkviolet' # Sialic Acid
+ligColors[1] = 'darkviolet' # Sialic Acid
+
+
 
 # inDir = './analysis/training/train_and_validate/seqID50/'
 # inDir = './analysis/training/train_and_validate/seqID80/'
