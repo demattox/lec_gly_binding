@@ -498,9 +498,9 @@ fucTag = grepl('^Fuc',ligSort50) & !mTag # Has a terminal fucose
 # 
 # ligSort50[bTag]
 # 
-ligSort50[manTag]
-ligSort50[neuTag]
-ligSort50[fucTag]
+# ligSort50[manTag]
+# ligSort50[neuTag]
+# ligSort50[fucTag]
 
 sacc_col =  colorRampPalette(c("plum1","tomato", "firebrick4"))(5)
 
@@ -543,6 +543,7 @@ legend(x = 'topright', pch = c(rep(15,9),21,23, 24),
        pt.bg = c(rep(NA,9),
               'forestgreen', 'darkorchid', 'firebrick1'),
        pt.cex =1.8)
+abline(h = 5, lty = 2)
 dev.off()
 
 topLigOccurences$High_Mannose[1] = 0
@@ -693,7 +694,7 @@ ggplot(melt_ligOccur, aes(fill = Clust_ID, x = Ligand, alpha = Ligand, y = Clust
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
 dev.off()
 
-
+topLigOccurences = topLigOccurences[,c(1,3,2,4:16)]
 melt_ligOccur = melt(data =topLigOccurences[1,], id.vars = 'id_cutoff')
 colnames(melt_ligOccur) = c('Clust_ID', 'Ligand', 'Cluster_Percent_w_ligand')
 
@@ -734,9 +735,9 @@ manTag = manCnt >= 3 & grepl('^Man',uniLigs) # High mannose
 neuTag = grepl('^NeuAc',uniLigs) & !mTag # Has terminal sialic acid and is not a monosacc.
 fucTag = grepl('^Fuc',uniLigs) & !mTag # Has a terminal fucose
 
-uniLigs[manTag]
-uniLigs[neuTag]
-uniLigs[fucTag]
+# uniLigs[manTag]
+# uniLigs[neuTag]
+# uniLigs[fucTag]
 
 # get tags to indicate binding sites containing one of the 15 ligands of interest
 ligTags = as.data.frame(matrix(F, nrow = nrow(bsResiDat), ncol = 3+length(top50)))
@@ -761,6 +762,7 @@ for (i in 1:length(top50)){
   ligTags[,colInd] = grepl(lig, bsResiDat$iupac)
 }
 
+# unique(bsResiDat$iupac[apply(ligTags, 1, sum) == 2])
 
 ###########################
 # Extract features from d2Dists and d2Feats
