@@ -46,15 +46,28 @@ ligTags = read.delim(file = './analysis/training/data_in/ligTags.tsv', sep = '\t
 predFeats = read.delim(file = './analysis/training/data_in/predFeats.csv', sep = ',', stringsAsFactors = F)
 bsResiDat = read.delim(file = './analysis/training/data_in/bsResiDat.tsv', sep = '\t', stringsAsFactors = F)
 
+####
 ligNames = colnames(ligTags)
-ligNames[4] = "Gal(b1-4)Glc"
-ligNames[9] = "NeuAc(a2-3)Gal(b1-4)Glc"
-ligNames[11] = "Gal(b1-4)GlcNAc"
-ligNames[12] = "Man(a1-2)Man"
-ligNames[15] = "Gal(b1-3)GalNAc"
 ligNames = gsub('_', ' ', ligNames)
 
-# ligColors = colfunc(ncol(ligTags))
+ligNames[12] = expression(bold(paste("2", alpha, "-Mannobiose", sep = '')))
+
+ligNames[1] = expression(bold("Terminal NeuAc Group"))
+ligNames[2] = expression(bold("High Mannose Group"))
+ligNames[3] = expression(bold("Terminal Fuc Group"))
+ligNames[4] = expression(bold("Lactose"))
+ligNames[5] = expression(bold("Galactose"))
+ligNames[6] = expression(bold("Mannose"))
+ligNames[7] = expression(bold("N-Acetyl Galactosamine"))
+ligNames[8] = expression(bold("N-Acetyl Neuraminic Acid"))
+ligNames[9] = expression(bold("3'-Siayllactose"))
+ligNames[10] = expression(bold("Glucose"))
+ligNames[11] = expression(bold("N-Acetyl Lactosamine"))
+ligNames[13] = expression(bold("N-Acetyl Glucosamine"))
+ligNames[14] = expression(bold("Fucose"))
+ligNames[15] = expression(bold("TF Antigen"))
+
+
 ligColors = rep('', ncol(ligTags))
 ligColors[1] = 'purple2' # Sialic Acid
 ligColors[8] = 'darkviolet' # NeuAc monosacc.
@@ -67,14 +80,15 @@ ligColors[12] = 'forestgreen' # 2alpha mannobiose
 ligColors[3] = 'red1' # Terminal Fuc
 ligColors[14] = 'firebrick3' # Fuc monosacc.
 
-ligColors[4] = 'gold2' # Lactose
-ligColors[5] = 'darkgoldenrod2' # Gal monosacc.
-ligColors[7] = 'darkgoldenrod2' # GalNAc (Tn antigen)
-ligColors[11] = 'gold2' # N-Acetyllactosamine (LacNAc)
-ligColors[15] = 'darkviolet' # TF antigen
+ligColors[4] = 'goldenrod2' # Lactose
+ligColors[5] = 'darkgoldenrod3' # Gal monosacc.
+ligColors[7] = 'darkgoldenrod3' # GalNAc (Tn antigen)
+ligColors[11] = 'goldenrod2' # N-Acetyllactosamine (LacNAc)
+ligColors[15] = 'goldenrod2' # TF antigen
 
 ligColors[10] = 'mediumblue' # Glc monosacc.
 ligColors[13] = 'royalblue2' # GlcNAc
+####
 
 # inDir = './analysis/training/train_and_validate/seqID50/'
 # inDir = './analysis/training/train_and_validate/seqID80/'
@@ -226,7 +240,7 @@ ggplot(data = mTrain, aes(x = metric, y = value, col = ligand, fill = classifier
 xLim = c(0,30)
 yLim = c(0,1)
 
-par(cex.lab=1.5, mar = c(5, 4, 4, 4) + 0.3)
+par(cex.lab=1.5, mar = c(8.6, 5.1, 5.1, 4.1))
 plot(0,0,col = 'white', xlab = '',ylab = '',type="n",
      axes=FALSE,ann=FALSE,
      xlim = xLim,
@@ -252,19 +266,33 @@ for(j in 1:ncol(ligTags)){
           col = alpha(ligColors[j],0.2), border = 'grey50',
           axes = F, xlab = '', ylab = '', xlim = xLim, ylim = yLim)
 }
-axis(side=1,at=seq.int(1,29,2), labels = colnames(ligTags))
+axis(side=1,at=seq.int(1,29,2), labels = F)
 axis(side=2,at=pretty(c(0,1)))
 axis(side = 4, at = pretty(c(0,1)))  # Add second axis
-abline(h = 0.5, lwd = 0.75, lty = 2)
+# abline(h = 0.5, lwd = 0.75, lty = 2)
+abline(v = 6, lwd = 0.75, lty=1)
 mtext("Precision", side = 4, line = 3, cex = 2, col = alpha('black',0.85))  # Add second axis label
-title(main = "5x CV + LOCO - TRAINING\nPrecision & Recall vs random", xlab = "Ligands", ylab = "Recall", cex = 2)
+title(main = "5x CV + LOCO - TRAINING\nPrecision & Recall vs random", xlab = "", ylab = "Recall", cex.lab = 2)
 # labs(title = , x = "Ligands", y = "Recall") +
 #   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
+text(x = seq.int(1,29,2),                   
+     y = par("usr")[3] - 0.05,
+     labels = ligNames,
+     col = ligColors,
+     ## Change the clipping region.
+     xpd = NA,
+     ## Rotate the labels by 35 degrees.
+     srt = 35,
+     ## Adjust the labels to almost 100% right-justified.
+     adj = 0.965,
+     ## Increase label size.
+     cex = 1.2)
 
 
 ###############
 # Validation performance
 ###############
+# rm(testDat)
 for(i in 1:length(dir(predDirs))){
   lig = colnames(ligTags)[as.numeric(dir(predDirs)[i])]
   cat(lig,'\n')
@@ -290,10 +318,10 @@ for(i in 1:length(dir(predDirs))){
     outTmp$mode = 'pred'
     outTmp$ligand = lig
     outTmp$batch = as.numeric(subDirs[j])
-    if (! exists('test')){
-      test = outTmp
+    if (! exists('testDat')){
+      testDat = outTmp
     }else{
-      test = rbind(test, outTmp)
+      testDat = rbind(testDat, outTmp)
     }
   }
 }
@@ -323,16 +351,16 @@ for(i in 1:length(dir(randDirs))){
     outTmp$mode = 'rand'
     outTmp$ligand = lig
     outTmp$batch = as.numeric(subDirs[j])
-    if (! exists('test')){
-      test = outTmp
+    if (! exists('testDat')){
+      testDat = outTmp
     }else{
-      test = rbind(test, outTmp)
+      testDat = rbind(testDat, outTmp)
     }
   }
 }
 
 
-mTest= melt(test[test$mode == 'pred',], id.vars = 'ligand', measure.vars = c('kappa', 'recall', 'prec'))
+mTest= melt(testDat[testDat$mode == 'pred',], id.vars = 'ligand', measure.vars = c('kappa', 'recall', 'prec'))
 colnames(mTest) = c('ligand', 'metric', 'value')
 
 
@@ -347,110 +375,43 @@ ggplot(data = mTest, aes(x = metric, y = value, col = ligand, fill = metric)) +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
 
 # Kappa vs random
-par(cex.lab=1.5)
+par(mar = c(8.6, 5.1, 5.1, 4.1), # change the margins
+    lwd = 2, # increase the line thickness
+    cex.axis = 1.2) # increase default axis label size
 plot(0,0,col = 'white', xlab = '',ylab = '',type="n",
      axes=FALSE,ann=FALSE,
      xlim = c(0,16),
      ylim = c(-1,1))
 i<-1 
-vioplot(test$kappa[(test$ligand == colnames(ligTags)[i]) & (test$mode == 'pred')], at = i, side = 'left',
+vioplot(testDat$kappa[(testDat$ligand == colnames(ligTags)[i]) & (testDat$mode == 'pred')], at = i, side = 'left',
         add=T,
         col = ligColors[i],
         xlim = c(0,16), ylim = c(-1,1),
         plotCentre = "line")
-vioplot(test$kappa[(test$ligand == colnames(ligTags)[i]) & (test$mode == 'rand')], at = i, side = 'right',
+vioplot(testDat$kappa[(testDat$ligand == colnames(ligTags)[i]) & (testDat$mode == 'rand')], at = i, side = 'right',
         add = T,
         col = alpha(ligColors[i],0.33),
         xlim = c(0,16), ylim = c(-1,1),
         plotCentre = "line")
 for(i in 2:ncol(ligTags)){
-  vioplot(test$kappa[(test$ligand == colnames(ligTags)[i]) & (test$mode == 'pred')], at = i, side = 'left',
+  vioplot(testDat$kappa[(testDat$ligand == colnames(ligTags)[i]) & (testDat$mode == 'pred')], at = i, side = 'left',
           col = ligColors[i],
           xlim = c(0,16), ylim = c(-1,1),
           add = T,
           plotCentre = "line")
-  vioplot(test$kappa[(test$ligand == colnames(ligTags)[i]) & (test$mode == 'rand')], at = i, side = 'right',
+  vioplot(testDat$kappa[(testDat$ligand == colnames(ligTags)[i]) & (testDat$mode == 'rand')], at = i, side = 'right',
           add = T,
           col = alpha(ligColors[i],0.3),
           xlim = c(0,16), ylim = c(-1,1),
           plotCentre = "line")
 }
 abline(h=0, lty = 2)
-axis(side=1,at=1:15, labels = rep('', 15))
+axis(side=1,at=1:15, labels = F)
 axis(side=2,at=seq.int(-1,1,0.5))
-title(xlab = "Ligands", ylab = "Kappa", main = "5x CV + LOCO\nKappa compared to random classifiers")
-
-#########################
-## Figure 3
-#########################
-## P & R same plot with violin & box plots
-xLim = c(-2,30)
-yLim = c(0,1)
-
-par(mar = c(8.6, 5.1, 5.1, 4.1), # change the margins
-    lwd = 2, # increase the line thickness
-    cex.axis = 1.2 # increase default axis label size
-)
-# par(cex.lab=1.5, mar = c(5, 4, 4, 4) + 0.3)
-plot(0,0,col = 'white', xlab = '',ylab = '',type="n",
-     axes=FALSE,ann=FALSE,
-     xlim = xLim,
-     ylim = c(0,1))
-for(j in 1:ncol(ligTags)){
-  i = ((j-1) * 2) + 1
-  vioplot(test$recall[(test$ligand == colnames(ligTags)[j]) & (test$mode == 'pred')], at = i, side = 'left',
-          col = ligColors[j],
-          xlim = xLim, ylim = yLim,
-          add = T,
-          plotCentre = "line")
-  par(new = T)
-  boxplot(test$recall[(test$ligand == colnames(ligTags)[j]) & (test$mode == 'rand')], at = i-0.33, notch = T, outline = F,
-          col = alpha(ligColors[j],0.2), border = 'grey50',
-          axes = F, xlab = '', ylab = '', xlim = xLim, ylim = yLim)
-  vioplot(test$prec[(test$ligand == colnames(ligTags)[j]) & (test$mode == 'pred')], at = i, side = 'right',
-          add = T,
-          col = alpha(ligColors[j],0.8),
-          xlim = xLim, ylim = yLim,
-          plotCentre = "line")
-  par(new = T)
-  boxplot(test$prec[(test$ligand == colnames(ligTags)[j]) & (test$mode == 'rand')], at = i+0.33, notch = T, outline = F,
-          col = alpha(ligColors[j],0.2), border = 'grey50',
-          axes = F, xlab = '', ylab = '', xlim = xLim, ylim = yLim)
-}
-
-par(new = T) 
-plot(0,0, col = 'white', type = 'n',
-     xlim = xLim,
-     ylim = c(0, 9),
-     axes = F, xlab = '', ylab ='')
-lines(x = c(1,30), y = c(0,0), lwd = 2)
-for(j in 1:ncol(ligTags)){
-  i = ((j-1) * 2) + 1
-  par(new = T)
-  boxplot(log10(trainDat$sampSizes[trainDat$ligand == colnames(ligTags)[j] & trainDat$mode == 'pred']),
-          at = i,
-          col = ligColors[j], border = ligColors[j],
-          boxwex = 2.5,
-          xlim = xLim,
-          ylim = c(0, 9),
-          axes = F, xlab = '', ylab ='')
-}
-axis(side=2,at=log10(c(1,10,50,100,200)), labels = c(1,10,50,100,200), las = 2, pos = 0.3)
-
-
-par(new = T)
-plot(0,0,col = 'white', xlab = '',ylab = '',type="n",
-     axes=FALSE,ann=FALSE,
-     xlim = xLim,
-     ylim = c(0,1))
-axis(side=1,at=seq.int(1,29,2), labels = F)
-axis(side=2,at=pretty(c(0,1)), las = 2)
-axis(side = 4, at = pretty(c(0,1)), las = 2)  # Add second axis
-mtext("Precision", side = 4, line = 3, cex = 2, col = alpha('black',0.85))  # Add second axis label
-title(xlab = "", ylab = "Recall", main = "5x CV + LOCO - VALIDATION\nPrecision & Recall vs random", cex.main = 1.5, cex.lab = 2)
-text(x = seq.int(1,29,2),
-     y = par("usr")[3] - 0.05,
-     labels = colnames(ligTags),
+title(xlab = "", ylab = "Kappa", main = "5x CV + LOCO\nKappa compared to random classifiers")
+text(x = 1:15,
+     y = par("usr")[3] - 0.08,
+     labels = ligNames,
      col = ligColors,
      ## Change the clipping region.
      xpd = NA,
@@ -460,13 +421,6 @@ text(x = seq.int(1,29,2),
      adj = 0.965,
      ## Increase label size.
      cex = 1.2)
-
-
-
-
-
-
-#########################
 
 # Check training sample sizes
 trainDat$sampSizes = apply(trainDat[,4:7], MARGIN = 1, FUN = sum)
@@ -479,12 +433,12 @@ plot(0,0, type = 'n',
 for (i in 1:ncol(ligTags)){
   par(new = T)
   plot(trainDat$sampSizes[trainDat$ligand == colnames(ligTags)[i] & trainDat$mode == 'pred'], trainDat$kappa[trainDat$ligand == colnames(ligTags)[i] & trainDat$mode == 'pred'],
-      col = alpha(ligColors[i], 0.3), pch = 19,
-      xlim = c(0,175), ylim = c(-1, 1),
-      axes = F, xlab = '', ylab ='')
+       col = alpha(ligColors[i], 0.3), pch = 19,
+       xlim = c(0,175), ylim = c(-1, 1),
+       axes = F, xlab = '', ylab ='')
 }
 title(xlab = 'Number of samples used for training', ylab = 'Kappa', cex.lab = 1.5 )
-text(x = 110, y = -0.8, labels = 'Pearson corr: 0.41 (p<0.001)', cex = 1.3)
+text(x = 110, y = -0.8, labels = 'Pearson corr: 0.53 (p<0.001)', cex = 1.3)
 
 
 
@@ -523,16 +477,129 @@ mycol = colorRampPalette(c("ivory", "cornflowerblue", "navy"))(n = length(breakL
 # 
 # cor.test(sampSizes, testMeds$kappa)
 
+#########################
+## Figure 3
+#########################
+## P & R same plot with violin & box plots
+xLim = c(-1,30)
+yLim = c(0,1)
+
+par(mar = c(8.6, 5.1, 5.1, 4.1), # change the margins
+    lwd = 2, # increase the line thickness
+    cex.axis = 1.2 # increase default axis label size
+)
+# par(cex.lab=1.5, mar = c(5, 4, 4, 4) + 0.3)
+plot(0,0,col = 'white', xlab = '',ylab = '',type="n",
+     axes=FALSE,ann=FALSE,
+     xlim = xLim,
+     ylim = c(0,1))
+for(j in 1:ncol(ligTags)){
+  i = ((j-1) * 2) + 1
+  vioplot(testDat$recall[(testDat$ligand == colnames(ligTags)[j]) & (testDat$mode == 'pred')], at = i, side = 'left',
+          col = ligColors[j],
+          xlim = xLim, ylim = yLim,
+          add = T,
+          plotCentre = "line")
+  par(new = T)
+  boxplot(testDat$recall[(testDat$ligand == colnames(ligTags)[j]) & (testDat$mode == 'rand')], at = i-0.33, notch = T, outline = F,
+          col = alpha(ligColors[j],0.2), border = 'grey50',
+          axes = F, xlab = '', ylab = '', xlim = xLim, ylim = yLim)
+  vioplot(testDat$prec[(testDat$ligand == colnames(ligTags)[j]) & (testDat$mode == 'pred')], at = i, side = 'right',
+          add = T,
+          col = alpha(ligColors[j],0.8),
+          xlim = xLim, ylim = yLim,
+          plotCentre = "line")
+  par(new = T)
+  boxplot(testDat$prec[(testDat$ligand == colnames(ligTags)[j]) & (testDat$mode == 'rand')], at = i+0.33, notch = T, outline = F,
+          col = alpha(ligColors[j],0.2), border = 'grey50',
+          axes = F, xlab = '', ylab = '', xlim = xLim, ylim = yLim)
+}
+
+par(new = T) 
+plot(0,0, col = 'white', type = 'n',
+     xlim = xLim,
+     ylim = c(1.3, 4),
+     axes = F, xlab = '', ylab ='')
+lines(x = c(1,30), y = c(0,0), lwd = 2)
+for(j in 1:ncol(ligTags)){
+  i = ((j-1) * 2) + 1
+  par(new = T)
+  boxplot(log10(trainDat$sampSizes[trainDat$ligand == colnames(ligTags)[j] & trainDat$mode == 'pred']),
+          at = i,
+          col = ligColors[j], border = ligColors[j],
+          boxwex = 2.5,
+          xlim = xLim,
+          ylim = c(1.3, 4),
+          axes = F, xlab = '', ylab ='')
+}
+logTicks = c(20,50,100,150)
+axis(side=2,at=log10(logTicks), labels = logTicks, las = 2, pos = 0.3)
+
+
+par(new = T)
+plot(0,0,col = 'white', xlab = '',ylab = '',type="n",
+     axes=FALSE,ann=FALSE,
+     xlim = xLim,
+     ylim = c(0,1))
+axis(side=1,at=seq.int(1,29,2), labels = F)
+axis(side=2,at=pretty(c(0,1)), las = 2)
+axis(side = 4, at = pretty(c(0,1)), las = 2)  # Add second axis
+# abline(v=6, lwd = 0.75)
+mtext("Precision", side = 4, line = 3, cex = 2, col = alpha('black',0.85))  # Add second axis label
+title(xlab = "", ylab = "Recall", main = "5x CV Random Forest - LO(C)O Validation performance\nPrecision & Recall vs random", cex.main = 1.5, cex.lab = 2)
+text(x = seq.int(1,29,2),
+     y = par("usr")[3] - 0.05,
+     labels = ligNames,
+     col = ligColors,
+     ## Change the clipping region.
+     xpd = NA,
+     ## Rotate the labels by 35 degrees.
+     srt = 35,
+     ## Adjust the labels to almost 100% right-justified.
+     adj = 0.965,
+     ## Increase label size.
+     cex = 1.2)
+
+
+
+
+
+
+
 #######################
 # PR curves
 #######################
+
+rawLigNames = rep('',length(ligNames))
+rawLigNames[12] = "2 alpha-Mannobiose"
+
+rawLigNames[1] = "Terminal NeuAc Group"
+rawLigNames[2] = "High Mannose Group"
+rawLigNames[3] = "Terminal Fuc Group"
+rawLigNames[4] = "Lactose"
+rawLigNames[5] = "Galactose"
+rawLigNames[6] = "Mannose"
+rawLigNames[7] = "N-Acetyl Galactosamine"
+rawLigNames[8] = "N-Acetyl Neuraminic Acid"
+rawLigNames[9] = "3'-Siayllactose"
+rawLigNames[10] = "Glucose"
+rawLigNames[11] = "N-Acetyl Lactosamine"
+rawLigNames[13] = "N-Acetyl Glucosamine"
+rawLigNames[14] = "Fucose"
+rawLigNames[15] = "TF Antigen"
+
 
 par(mfrow = c(3,5))
 
 ligDirs = dir(predDirs)  
 ligDirs  = ligDirs[order(as.numeric(ligDirs))]
 
-for(i in 1:length(ligDirs)){
+allPredAUCs = as.data.frame(matrix(0, nrow = 100, ncol = ncol(ligTags)))
+colnames(allPredAUCs) = colnames(ligTags)
+
+allRandAUCs = allPredAUCs
+
+for(i in 9:length(ligDirs)){
   lig = colnames(ligTags)[as.numeric(ligDirs[i])]
   cat(lig,'\n')
   
@@ -541,9 +608,10 @@ for(i in 1:length(ligDirs)){
   
   subDirs = dir(curDir)
   
-  predAUC = randAUC = rep(0,100)
+  # predAUC = randAUC = rep(0,100)
   
   for (j in 1:length(subDirs)){
+    cat(j, '\t')
     #read in pred
     inFiles = dir(paste(curDir, subDirs[j], sep = '/'))
     
@@ -564,41 +632,58 @@ for(i in 1:length(ligDirs)){
     
     tmp = read.delim(file = paste(ranDir, subDirs[j], readFile, sep = '/'), header = T, sep = ',', stringsAsFactors = F)
     
+    extraRows = as.data.frame(matrix(NA, nrow = sum(!row.names(bsResiDat) %in% row.names(tmp)), ncol = 10))
+    row.names(extraRows) = row.names(bsResiDat)[!row.names(bsResiDat) %in% row.names(tmp)]
+    
+    tmp = rbind(tmp, extraRows)
+    tmp = tmp[row.names(bsResiDat),]
+    
     if (! exists('Rand_outcomes')){
       Rand_outcomes = tmp
+
     }else{
       Rand_outcomes = cbind(Rand_outcomes, tmp)
     }
   }
+  cat('\n')
   
+  Rand_outcomes = Rand_outcomes[! apply(is.na(Rand_outcomes), 1, all), ] # drop rows that don't have any values
+  Rand_outcomes = Rand_outcomes[row.names(outcomes),]
   
   obs = ligTags[row.names(outcomes), lig]
-  
+
   al = 0.1
   wid = 2
   
   n=1
   pr = pr.curve(outcomes[(obs == T) & (!is.na(outcomes[,n])), n], outcomes[(obs == F) & (!is.na(outcomes[,n])), n], curve= T, rand.compute = T)
-  predAUC[n] = pr$auc.integral
+  allPredAUCs[n,i] = pr$auc.integral
   plot(pr$curve[,1:2], type = 'l', lwd = wid, col = alpha(ligColors[i],al),
        xlim = c(0,1), ylim = c(0,1),
-       xlab = 'Recall', ylab = 'Precision')
+       xlab = 'Recall', ylab = 'Precision', cex.lab = 1.5)
   
   rand_pr = pr.curve(Rand_outcomes[(obs == T) & (!is.na(Rand_outcomes[,n])), n], Rand_outcomes[(obs == F) & (!is.na(Rand_outcomes[,n])), n], curve= T, rand.compute = T)
   lines(rand_pr$curve[,1:2], lwd = wid, col = alpha('black',al))
-  randAUC[n] = rand_pr$auc.integral
+  allRandAUCs[n,i] = rand_pr$auc.integral
+  
   for(n in (2:ncol(outcomes))){
     pr = pr.curve(outcomes[(obs == T) & (!is.na(outcomes[,n])), n], outcomes[(obs == F) & (!is.na(outcomes[,n])), n], curve= T, rand.compute = T)
-    predAUC[n] = pr$auc.integral
+    allPredAUCs[n,i] = pr$auc.integral
     lines(pr$curve[,1:2], lwd = wid, col = alpha(ligColors[i],al))
     
     rand_pr = pr.curve(Rand_outcomes[(obs == T) & (!is.na(Rand_outcomes[,n])), n], Rand_outcomes[(obs == F) & (!is.na(Rand_outcomes[,n])), n], curve= T, rand.compute = T)
     lines(rand_pr$curve[,1:2], lwd = wid, col = alpha('black',al))
-    randAUC[n] = rand_pr$auc.integral
+    allRandAUCs[n,i] = rand_pr$auc.integral
   }
-  
-  title(main = paste('PR Curves - ', lig, '\nMean AUC: ', round(mean(predAUC),2), ' (random: ', round(mean(randAUC),2), ')', sep = ''))
-  
+
+  if (i != 12){
+    title(main = bquote(atop("PR Curve" ~ - ~ bold(.(rawLigNames[i])),
+                             "Mean AUC:" ~ .(round(mean(allPredAUCs[,i]),2)) ~ '(random:' ~ .(round(mean(allRandAUCs[,i]),2)) ~ ')')))
+  }else{
+    title(main = bquote(atop("PR Curve" ~ - ~ bold( "2" ~ alpha ~ "-Mannobiose"),
+                             "Mean AUC:" ~ .(round(mean(allPredAUCs[,i]),2)) ~ '(random:' ~ .(round(mean(allRandAUCs[,i]),2)) ~ ')')))
+  }
+
   rm(outcomes, Rand_outcomes)
   
 }
@@ -611,39 +696,39 @@ for(i in 1:length(ligDirs)){
 
 
 
-for(i in 1:ncol(ligTags)){
-  lig = gsub('(.*)_outcomes.csv', '\\1', inOutcomes)[i]
-  outcomes = read.delim(file = paste(inDir, inOutcomes[i], sep = ''), header = T, sep = ',', stringsAsFactors = F)
-  
-  boundLigs = unique(bsResiDat$iupac[ligTags[,i]]) # UniProt IDs of all lectins that do have any examples of binding
-  boundIDs = unique(bsResiDat$uniparc[bsResiDat$iupac %in% boundLigs])
-  fpBS = row.names(outcomes)[outcomes$Pred >= 0.5 & outcomes$Obs == F] # Binding sites that ended up as false positives
-  fpLecs = unique(bsResiDat$uniparc[row.names(bsResiDat) %in% fpBS]) # unique lectin uniprot ids of lectins that show up as false positives
-  fpIDs = bsResiDat$uniparc[row.names(bsResiDat) %in% fpBS] # UniProt ID for FP binding site
-  
-  negBS = row.names(outcomes)[outcomes$Obs == F]
-  negIDs = bsResiDat$uniparc[row.names(bsResiDat) %in% negBS] # UniProt IDs of lectins with negative binding sites that DO bind ligand in other structures
-  bound_NegBS = negBS[negIDs %in% boundIDs] # Negative binding sites from 
-
-  pr = pr.curve(outcomes$Pred[outcomes$Obs == T], outcomes$Pred[outcomes$Obs == F], curve= T, rand.compute = T)
-  
-  R = test$recall[i]
-  P = test$precision[i]
-  
-  plot(pr$curve[,1:2], type = 'l', lwd = 4, col = ligColors[i],
-       xlim = c(0,1), ylim = c(0,1),
-       xlab = 'Recall', ylab = 'Precision', main = paste('PR Curve - ', lig, '\nAUC = ', as.character(round(pr$auc.integral, digits = 5)), sep = ''))
-  abline(h = pr$rand$auc.integral, lty = 1, lwd = 2)
-  lines(x = c(R,R), y = c(-1,P), lty = 2)
-  lines(x = c(-1,R), y = c(P,P), lty = 2)
-  points(R,P, pch = 19)
-  tag = pr$curve[,3] %in% outcomes[bound_NegBS, "Pred"]
-  rug((pr$curve[tag,1][pr$curve[tag,1] > R]), col = alpha('black',0.7))
-  rug((pr$curve[tag,1][pr$curve[tag,1] <= R]), col = alpha('red',0.7))
-  rug((pr$curve[tag,2][pr$curve[tag,2] < P]), col = alpha('black',0.7), side = 2)
-  rug((pr$curve[tag,2][pr$curve[tag,2] >= P]), col = alpha('red',0.7), side = 2)
-  text(x= 0.7, y = 0.9, labels = paste(round(100 * sum(fpIDs %in% boundIDs)/length(fpIDs),2), '% of ', length(fpIDs), ' FPs', sep = ''), col = 'red', cex = 1.2)
-}
+# for(i in 1:ncol(ligTags)){
+#   lig = gsub('(.*)_outcomes.csv', '\\1', inOutcomes)[i]
+#   outcomes = read.delim(file = paste(inDir, inOutcomes[i], sep = ''), header = T, sep = ',', stringsAsFactors = F)
+#   
+#   boundLigs = unique(bsResiDat$iupac[ligTags[,i]]) # UniProt IDs of all lectins that do have any examples of binding
+#   boundIDs = unique(bsResiDat$uniparc[bsResiDat$iupac %in% boundLigs])
+#   fpBS = row.names(outcomes)[outcomes$Pred >= 0.5 & outcomes$Obs == F] # Binding sites that ended up as false positives
+#   fpLecs = unique(bsResiDat$uniparc[row.names(bsResiDat) %in% fpBS]) # unique lectin uniprot ids of lectins that show up as false positives
+#   fpIDs = bsResiDat$uniparc[row.names(bsResiDat) %in% fpBS] # UniProt ID for FP binding site
+#   
+#   negBS = row.names(outcomes)[outcomes$Obs == F]
+#   negIDs = bsResiDat$uniparc[row.names(bsResiDat) %in% negBS] # UniProt IDs of lectins with negative binding sites that DO bind ligand in other structures
+#   bound_NegBS = negBS[negIDs %in% boundIDs] # Negative binding sites from 
+# 
+#   pr = pr.curve(outcomes$Pred[outcomes$Obs == T], outcomes$Pred[outcomes$Obs == F], curve= T, rand.compute = T)
+#   
+#   R = test$recall[i]
+#   P = test$precision[i]
+#   
+#   plot(pr$curve[,1:2], type = 'l', lwd = 4, col = ligColors[i],
+#        xlim = c(0,1), ylim = c(0,1),
+#        xlab = 'Recall', ylab = 'Precision', main = paste('PR Curve - ', lig, '\nAUC = ', as.character(round(pr$auc.integral, digits = 5)), sep = ''))
+#   abline(h = pr$rand$auc.integral, lty = 1, lwd = 2)
+#   lines(x = c(R,R), y = c(-1,P), lty = 2)
+#   lines(x = c(-1,R), y = c(P,P), lty = 2)
+#   points(R,P, pch = 19)
+#   tag = pr$curve[,3] %in% outcomes[bound_NegBS, "Pred"]
+#   rug((pr$curve[tag,1][pr$curve[tag,1] > R]), col = alpha('black',0.7))
+#   rug((pr$curve[tag,1][pr$curve[tag,1] <= R]), col = alpha('red',0.7))
+#   rug((pr$curve[tag,2][pr$curve[tag,2] < P]), col = alpha('black',0.7), side = 2)
+#   rug((pr$curve[tag,2][pr$curve[tag,2] >= P]), col = alpha('red',0.7), side = 2)
+#   text(x= 0.7, y = 0.9, labels = paste(round(100 * sum(fpIDs %in% boundIDs)/length(fpIDs),2), '% of ', length(fpIDs), ' FPs', sep = ''), col = 'red', cex = 1.2)
+# }
 
 
 
@@ -729,7 +814,7 @@ for (i in 1:ncol(medFeatPercentiles)){
        pch = 19,
        col = featColors[order(medFeatPercentiles[,i], decreasing = T)],
        ylab = 'Median importance percentile')
-  title(main = colnames(medFeatPercentiles)[i], col.main = ligColors[i])
+  title(main = ligNames[i], col.main = ligColors[i])
 }
 
 par(mfrow = c(3,5))
@@ -740,7 +825,7 @@ for (i in 1:ncol(RESImeds)){
        ylab = 'Median importance percentile',
        ylim = c(0,1))
   abline(h = 0.75)
-  title(main = colnames(RESImeds)[i], col.main = ligColors[i])
+  title(main = ligNames[i], col.main = ligColors[i])
 }
 
 par(mfrow = c(3,5))
@@ -751,7 +836,7 @@ for (i in 1:ncol(POCKmeds)){
        ylab = 'Median importance percentile',
        ylim = c(0,1))
   abline(h = 0.75)
-  title(main = colnames(POCKmeds)[i], col.main = ligColors[i])
+  title(main = ligNames[i], col.main = ligColors[i])
 }
 
 par(mfrow = c(3,5))
@@ -762,7 +847,7 @@ for (i in 1:ncol(PLIPmeds)){
        ylab = 'Median importance percentile',
        ylim = c(0,1))
   abline(h = 0.75)
-  title(main = colnames(PLIPmeds)[i], col.main = ligColors[i])
+  title(main = ligNames[i], col.main = ligColors[i])
 }
 
 # neuFeats = c('negCharge_bin1','ASP_bin1', 'majorMaxima_8Ang')
