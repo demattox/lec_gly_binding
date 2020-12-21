@@ -736,7 +736,13 @@ neuTag = grepl('^NeuAc',uniLigs) & !mTag # Has terminal sialic acid and is not a
 fucTag = grepl('^Fuc',uniLigs) & !mTag # Has a terminal fucose
 
 # uniLigs[manTag]
+# for (i in 1:length(uniLigs[manTag])){
+#   cat(uniLigs[manTag][i],'\n')
+# }
 # uniLigs[neuTag]
+# for (i in 1:length(uniLigs[neuTag])){
+#   cat(uniLigs[neuTag][i],'\n')
+# }
 # uniLigs[fucTag]
 
 # get tags to indicate binding sites containing one of the 15 ligands of interest

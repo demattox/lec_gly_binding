@@ -56,19 +56,25 @@ ligNames = gsub('_', ' ', ligNames)
 
 # ligColors = colfunc(ncol(ligTags))
 ligColors = rep('', ncol(ligTags))
-ligColors[1] = 'darkviolet' # Sialic Acid
-ligColors[8] = 'purple2' # NeuAc monosacc.
-ligColors[9] = 'mediumpurple2' # 3' Sialyllactose
+ligColors[1] = 'purple2' # Sialic Acid
+ligColors[8] = 'darkviolet' # NeuAc monosacc.
+ligColors[9] = 'purple2' # 3' Sialyllactose
 
-ligColors[1] = 'darkviolet' # Sialic Acid
-ligColors[1] = 'darkviolet' # Sialic Acid
-ligColors[1] = 'darkviolet' # Sialic Acid
-ligColors[1] = 'darkviolet' # Sialic Acid
-ligColors[1] = 'darkviolet' # Sialic Acid
-ligColors[1] = 'darkviolet' # Sialic Acid
-ligColors[1] = 'darkviolet' # Sialic Acid
+ligColors[2] = 'forestgreen' # High mannose
+ligColors[6] = 'darkgreen' # Mannose monosacc.
+ligColors[12] = 'forestgreen' # 2alpha mannobiose
 
+ligColors[3] = 'red1' # Terminal Fuc
+ligColors[14] = 'firebrick3' # Fuc monosacc.
 
+ligColors[4] = 'gold2' # Lactose
+ligColors[5] = 'darkgoldenrod2' # Gal monosacc.
+ligColors[7] = 'darkgoldenrod2' # GalNAc (Tn antigen)
+ligColors[11] = 'gold2' # N-Acetyllactosamine (LacNAc)
+ligColors[15] = 'darkviolet' # TF antigen
+
+ligColors[10] = 'mediumblue' # Glc monosacc.
+ligColors[13] = 'royalblue2' # GlcNAc
 
 # inDir = './analysis/training/train_and_validate/seqID50/'
 # inDir = './analysis/training/train_and_validate/seqID80/'

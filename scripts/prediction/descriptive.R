@@ -37,13 +37,49 @@ for(i in 1:ncol(scaledFeats)){
 
 # unique(bsResiDat$iupac[apply(ligTags, 1, sum) == 2])
 
+####
 ligNames = colnames(ligTags)
-ligNames[4] = "Gal(b1-4)Glc"
-ligNames[9] = "NeuAc(a2-3)Gal(b1-4)Glc"
-ligNames[11] = "Gal(b1-4)GlcNAc"
-ligNames[12] = "Man(a1-2)Man"
-ligNames[15] = "Gal(b1-3)GalNAc"
 ligNames = gsub('_', ' ', ligNames)
+
+ligNames[12] = expression(bold(paste("2", alpha, "-Mannobiose", sep = '')))
+
+ligNames[1] = expression(bold("Terminal NeuAc Group"))
+ligNames[2] = expression(bold("High Mannose Group"))
+ligNames[3] = expression(bold("Terminal Fuc Group"))
+ligNames[4] = expression(bold("Lactose"))
+ligNames[5] = expression(bold("Galactose"))
+ligNames[6] = expression(bold("Mannose"))
+ligNames[7] = expression(bold("N-Acetyl Galactosamine"))
+ligNames[8] = expression(bold("N-Acetyl Neuraminic Acid"))
+ligNames[9] = expression(bold("3'-Siayllactose"))
+ligNames[10] = expression(bold("Glucose"))
+ligNames[11] = expression(bold("N-Acetyl Lactosamine"))
+ligNames[13] = expression(bold("N-Acetyl Glucosamine"))
+ligNames[14] = expression(bold("Fucose"))
+ligNames[15] = expression(bold("TF Antigen"))
+
+
+ligColors = rep('', ncol(ligTags))
+ligColors[1] = 'purple2' # Sialic Acid
+ligColors[8] = 'darkviolet' # NeuAc monosacc.
+ligColors[9] = 'purple2' # 3' Sialyllactose
+
+ligColors[2] = 'forestgreen' # High mannose
+ligColors[6] = 'darkgreen' # Mannose monosacc.
+ligColors[12] = 'forestgreen' # 2alpha mannobiose
+
+ligColors[3] = 'red1' # Terminal Fuc
+ligColors[14] = 'firebrick3' # Fuc monosacc.
+
+ligColors[4] = 'goldenrod2' # Lactose
+ligColors[5] = 'darkgoldenrod3' # Gal monosacc.
+ligColors[7] = 'darkgoldenrod3' # GalNAc (Tn antigen)
+ligColors[11] = 'goldenrod2' # N-Acetyllactosamine (LacNAc)
+ligColors[15] = 'goldenrod2' # TF antigen
+
+ligColors[10] = 'mediumblue' # Glc monosacc.
+ligColors[13] = 'royalblue2' # GlcNAc
+####
 
 ###########################
 ## McCaldon analysis
@@ -440,10 +476,15 @@ for(i in 1:ncol(ligTags)){
   par(new=T)
   
   plot(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))][,i], -log10(stats_weighted[,grepl('_adj$', colnames(stats_weighted))][,i]), # Plot all points w/ color @ alpha 0.5
-       xlab = "Effect size", ylab = "-log10(FDR)", main = ligNames[i],
+       xlab = "Effect size", ylab = "-log10(FDR)", main = '',
        pch = 19, cex = 2, col = alpha(featColors, 0.5),
-       cex.axis = 1.5, cex.main = 2, cex.lab = 1.5,
+       cex.axis = 1.5, cex.lab = 1.5,
        xlim = xLim, ylim = yLim)
+  # title(main = ligNames[i], col.main = ligColors[i], cex.main = 1.8, font.main  = 2)
+  mtext(ligNames[i], col = ligColors[i],
+        side=3, adj=0, outer = T,
+        line=1.2, cex=1, font=2)
+
   par(new=T)
   plot(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))][tag,i], -log10(stats_weighted[,grepl('_adj$', colnames(stats_weighted))][tag,i]), # Plot stat sig points again with alpha 1
        pch = 19, col = featColors[tag], cex = 2,
@@ -461,11 +502,14 @@ for(i in 1:ncol(ligTags)){
 dev.off()
 plot(0,0,axes = F, main = '', xlab = '', ylab = '', pch = NA)
 legend(x = 'center',
-       col = c('forestgreen', resiFeats, pocketFeats),
-       legend = c('PLIP interaction counts',
-                  'Residue counts/bin', 'Residue sec struct.', 'Amino acid property counts', 'Residue identities',
-                  'Pocket and D2 distribution', '3DZD Principal Components', 'Zern PCs'),
-       pch = 19)
+       col = c('forestgreen', 'white','white',
+               c(rbind(resiFeats,rep('white', length(resiFeats)))), 'white',
+               c(rbind(pocketFeats,rep('white', length(pocketFeats)))), 'white'),
+       legend = c('PLIP interaction\ncounts', '','',
+                  'Residue\ncounts/bin', '', 'Residue\nsec struct.', '', 'Amino acid\nproperty counts', '', 'Residue\nidentities', '','',
+                  'Pocket and\nD2 distribution', '', 'D2 Principal\nComponents', '', '3DZD Principal\nComponents', ''),
+       pch = 19,
+       pt.cex = 2.5)
 
 dev.off()
 
@@ -680,7 +724,7 @@ pheatmap(t(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))]),
          clustering_distance_rows = 'correlation',
          # clustering_distance_cols = 'correlation',
          # display_numbers = ifelse(t(stats_weighted[,grepl('_adj$', colnames(stats_weighted))]) < 0.01, "*", ""), fontsize_number = 18,
-         labels_row = gsub('_effectSize$', '', colnames(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))])),
+         labels_row = ligNames,
          annotation_col = annot, annotation_colors = anno_colors,
          main = '',
          breaks = breakLst,
@@ -717,9 +761,9 @@ pheatmap(t(stats_weighted[resiFeatTag,grepl('_effectSize$', colnames(stats_weigh
          color = colorRampPalette(c("royalblue1", "grey90", "gold1"))(length(breakLst)),
          clustering_distance_rows = 'correlation',
          # display_numbers = ifelse(t(stats_weighted[,grepl('_adj$', colnames(stats_weighted))]) < 0.01, "*", ""), fontsize_number = 18,
-         labels_row = gsub('_effectSize$', '', colnames(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))])),
+         labels_row = ligNames,
          annotation_col = resiAnnot, annotation_colors = resiAnnot_cols,
-         legend_breaks = c(1,5),
+         # legend_breaks = c(1,5),
          main = '',
          breaks = breakLst,
          show_colnames = T)
@@ -754,7 +798,7 @@ pheatmap(t(stats_weighted[pocketFeatTag,grepl('_effectSize$', colnames(stats_wei
          color = colorRampPalette(c("royalblue1", "grey90", "gold1"))(length(breakLst)),
          clustering_distance_rows = 'correlation',
          # display_numbers = ifelse(t(stats_weighted[,grepl('_adj$', colnames(stats_weighted))]) < 0.01, "*", ""), fontsize_number = 18,
-         labels_row = gsub('_effectSize$', '', colnames(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))])),
+         labels_row = ligNames,
          annotation_col = pockAnnot, annotation_colors = pockAnnot_cols,
          main = '',
          breaks = breakLst,
@@ -767,7 +811,7 @@ pheatmap(t(stats_weighted[1:11,grepl('_effectSize$', colnames(stats_weighted))])
          color = colorRampPalette(c("royalblue1", "grey90", "gold1"))(length(breakLst)),
          clustering_distance_rows = 'correlation',
          # display_numbers = ifelse(t(stats_weighted[,grepl('_adj$', colnames(stats_weighted))]) < 0.01, "*", ""), fontsize_number = 18,
-         labels_row = gsub('_effectSize$', '', colnames(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))])),
+         labels_row = ligNames,
          main = '',
          breaks = breakLst,
          show_colnames = T)
