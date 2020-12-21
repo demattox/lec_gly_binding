@@ -850,51 +850,234 @@ for (i in 1:ncol(PLIPmeds)){
   title(main = ligNames[i], col.main = ligColors[i])
 }
 
-# neuFeats = c('negCharge_bin1','ASP_bin1', 'majorMaxima_8Ang')
-# 
-# neuInds = (1:nrow(feats))[row.names(feats)[order(feats$Sialic_Acid, decreasing = T)] %in% neuFeats]
-# row.names(feats)[order(feats$Sialic_Acid, decreasing = T)][neuInds]
-# 100 - (neuInds/nrow(feats))*100
-# 
-# neuInds = (1:nrow(feats))[row.names(feats)[order(feats$NeuAc, decreasing = T)] %in% neuFeats]
-# row.names(feats)[order(feats$NeuAc, decreasing = T)][neuInds]
-# 100 - (neuInds/nrow(feats))*100
-# 
-# neuInds = (1:nrow(feats))[row.names(feats)[order(feats$NeuAc.a2.3.Gal.b1.4.Glc, decreasing = T)] %in% neuFeats]
-# row.names(feats)[order(feats$NeuAc.a2.3.Gal.b1.4.Glc, decreasing = T)][neuInds]
-# 100 - (neuInds/nrow(feats))*100
-# 
-# 
-# fucFeats = c('aromatic_bin2','binnedD2_PC7', 'zern_PC4')
-# 
-# fucInds = (1:nrow(feats))[row.names(feats)[order(feats$Fuc, decreasing = T)] %in% fucFeats]
-# row.names(feats)[order(feats$Fuc, decreasing = T)][fucInds]
-# 100 - (fucInds/nrow(feats))*100
-# 
-# fucInds = (1:nrow(feats))[row.names(feats)[order(feats$Terminal_Fucose, decreasing = T)] %in% fucFeats]
-# row.names(feats)[order(feats$Terminal_Fucose, decreasing = T)][fucInds]
-# 100 - (fucInds/nrow(feats))*100
-# 
-# 
-# manFeats = c('hydrophobics', 'nonpolar_bin2', 'aromatic_bin2', 'var_4Ang', 'med_4Ang', 'q3_4Ang', 'var_6Ang', 'med_6Ang', 'q3_6Ang', 'binnedD2_PC5')
-# 
-# manInds = (1:nrow(feats))[row.names(feats)[order(feats$Man, decreasing = T)] %in% manFeats]
-# row.names(feats)[order(feats$Man, decreasing = T)][manInds]
-# 100 - (manInds/nrow(feats))*100
-# for(i in 1:length(manFeats)){
-#   cat(row.names(feats)[order(feats$Man, decreasing = T)][manInds][i], ' ', (100 - (manInds/nrow(feats))*100)[i], '\n')
-# }
-# 
-# manInds = (1:nrow(feats))[row.names(feats)[order(feats$High_Mannose, decreasing = T)] %in% manFeats]
-# row.names(feats)[order(feats$High_Mannose, decreasing = T)][manInds]
-# 100 - (manInds/nrow(feats))*100
-# for(i in 1:length(manFeats)){
-#   cat(row.names(feats)[order(feats$High_Mannose, decreasing = T)][manInds][i], ' ', (100 - (manInds/nrow(feats))*100)[i], '\n')
-# }
-# 
-# manInds = (1:nrow(feats))[row.names(feats)[order(feats$Man.a1.2.Man, decreasing = T)] %in% manFeats]
-# row.names(feats)[order(feats$Man.a1.2.Man, decreasing = T)][manInds]
-# 100 - (manInds/nrow(feats))*100
-# for(i in 1:length(manFeats)){
-#   cat(row.names(feats)[order(feats$Man.a1.2.Man, decreasing = T)][manInds][i], ' ', (100 - (manInds/nrow(feats))*100)[i], '\n')
-# }
+#######################
+# Shared features by sig & feat importance
+#######################
+# Re-do and filter by median feature importance percentile (>= nth percentile)
+
+stats = read.delim(file = './analysis/training/weightedWMW_stats.tsv', sep = '\t', stringsAsFactors = F)
+# all(round(stats,4) == round(stats_weighted,4))
+
+percentThresh = 0.75 # >= 75th percentile in feature importance in each feature class
+
+all(gsub('_effectSize','',colnames(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))])) == colnames(medFeatPercentiles))
+
+stratAllFeatsImp = rbind(PLIPmeds, RESImeds, POCKmeds)
+all(row.names(stratAllFeatsImp) == row.names(stats_weighted))
+
+topImpfeats = as.data.frame(stratAllFeatsImp >= percentThresh) # Logical dataframe, indicates if feature passes threshold for stratified median feature importance percentiles
+all(colnames(medFeatPercentiles) == colnames(topImpfeats))
+
+
+sigFeats = as.data.frame(stats_weighted[,grepl('_adj$', colnames(stats_weighted))] < 0.01) # Logical dataframe, indicates if feature passes threshold for significance from WMW test, FDR of 1%
+colnames(sigFeats) = gsub('_adj$', '', colnames(sigFeats))
+all(colnames(sigFeats) == colnames(topImpfeats))
+
+par(mfrow = c(3,5))
+for (i in 1:ncol(medFeatPercentiles)){
+  lig = colnames(medFeatPercentiles)[i]
+  
+  plot(abs(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))][,i]), medFeatPercentiles[,i],
+       xlab = '|Effect size|', ylab = 'Overall feat imp percentile', main = lig,
+       col = alpha(featColors, 0.4),
+       xlim = c(0,0.4),
+       ylim = c(0,1),
+       pch = 19)
+  par(new=T)
+  plot(abs(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))][topImpfeats[,i] & sigFeats[,i],i]), medFeatPercentiles[topImpfeats[,i] & sigFeats[,i],i],
+       xlab = '', ylab = '', main = '',
+       xlim = c(0,0.4),
+       ylim = c(0,1),
+       col = alpha(featColors[topImpfeats[,i] & sigFeats[,i]], 1),
+       pch = 19,
+       cex = 1.5)
+  text(x = 0.35,
+       y=0.05,
+       labels = paste('R=', as.character(round(cor(abs(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))][,i]), medFeatPercentiles[,i]), 3)), sep = ''))
+}
+
+# Plot with STRATIFIED median feature importance percentiles on the y-axis
+par(mfrow = c(3,5))
+for (i in 1:ncol(medFeatPercentiles)){
+  lig = colnames(medFeatPercentiles)[i]
+  
+  plot(abs(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))][,i]), stratAllFeatsImp[,i],
+       xlab = '|Effect size|', ylab = 'Stratified feat imp percentile', main = lig,
+       col = alpha(featColors, 0.4),
+       xlim = c(0,0.4),
+       ylim = c(0,1),
+       pch = 19)
+  par(new=T)
+  plot(abs(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))][topImpfeats[,i] & sigFeats[,i],i]), stratAllFeatsImp[topImpfeats[,i] & sigFeats[,i],i],
+       xlab = '', ylab = '', main = '',
+       xlim = c(0,0.4),
+       ylim = c(0,1),
+       col = alpha(featColors[topImpfeats[,i] & sigFeats[,i]], 1),
+       pch = 19,
+       cex = 1.5)
+  text(x = 0.35,
+       y=0.05,
+       labels = paste('R=', as.character(round(cor(abs(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))][,i]), stratAllFeatsImp[,i]), 3)), sep = ''))
+  abline(h = percentThresh, lty = 2)
+}
+
+
+# Sialic acid features
+siaBindingFeats_pos = list(row.names(stats_weighted)[sigFeats$Sialic_Acid & stats_weighted$Sialic_Acid_effectSize > 0 & topImpfeats$Sialic_Acid],
+                           row.names(stats_weighted)[sigFeats$NeuAc & stats_weighted$NeuAc_effectSize > 0 & topImpfeats$NeuAc],
+                           row.names(stats_weighted)[sigFeats$NeuAc.a2.3.Gal.b1.4.Glc & stats_weighted$NeuAc.a2.3.Gal.b1.4.Glc_effectSize > 0 & topImpfeats$NeuAc.a2.3.Gal.b1.4.Glc])
+
+siaBindingFeats_neg = list(row.names(stats_weighted)[sigFeats$Sialic_Acid & stats_weighted$Sialic_Acid_effectSize < 0 & topImpfeats$Sialic_Acid],
+                           row.names(stats_weighted)[sigFeats$NeuAc & stats_weighted$NeuAc_effectSize < 0 & topImpfeats$NeuAc],
+                           row.names(stats_weighted)[sigFeats$NeuAc.a2.3.Gal.b1.4.Glc & stats_weighted$NeuAc.a2.3.Gal.b1.4.Glc_effectSize < 0 & topImpfeats$NeuAc.a2.3.Gal.b1.4.Glc])
+
+venn.diagram(
+  x = siaBindingFeats_pos,
+  category.names = c("Sialic acid" , "NeuAc" , "NeuAc(a2-3)Gal(b1-4)Glc"),
+  filename = './manuscript/figures/subplots/neuac_feats_up.png',
+  output=F,
+  imagetype="png" ,
+  height = 480 , 
+  width = 480 , 
+  resolution = 300,
+  compression = "lzw",
+  lwd = 1,
+  col=c("#440154ff", '#21908dff', '#DAA520FF'),
+  fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3), alpha('#DAA520FF',0.3)),
+  cex = 0.5,
+  fontfamily = "sans",
+  cat.cex = 0.3,
+  cat.default.pos = "outer",
+  cat.pos = c(-27, 27, 135),
+  cat.dist = c(0.055, 0.055, 0.085),
+  cat.fontfamily = "sans",
+  cat.col = c("#440154ff", '#21908dff', '#DAA520FF'),
+  rotation = 1
+)
+venn.diagram(
+  x = siaBindingFeats_neg,
+  category.names = c("Sialic acid" , "NeuAc" , "NeuAc(a2-3)Gal(b1-4)Glc"),
+  filename = './manuscript/figures/subplots/neuac_feats_down.png',
+  output=F,
+  imagetype="png" ,
+  height = 480 , 
+  width = 480 , 
+  resolution = 300,
+  compression = "lzw",
+  lwd = 1,
+  col=c("#440154ff", '#21908dff', '#DAA520FF'),
+  fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3), alpha('#DAA520FF',0.3)),
+  cex = 0.5,
+  fontfamily = "sans",
+  cat.cex = 0.3,
+  cat.default.pos = "outer",
+  cat.pos = c(-27, 27, 135),
+  cat.dist = c(0.055, 0.055, 0.085),
+  cat.fontfamily = "sans",
+  cat.col = c("#440154ff", '#21908dff', '#DAA520FF'),
+  rotation = 1
+)
+intersect(intersect(siaBindingFeats_pos[[1]], siaBindingFeats_pos[[2]]), siaBindingFeats_pos[[3]])
+intersect(intersect(siaBindingFeats_neg[[1]], siaBindingFeats_neg[[2]]), siaBindingFeats_neg[[3]])
+
+
+# Fucose binding
+fucBindingFeats_pos = list(row.names(stats_weighted)[stats_weighted$Fuc_effectSize > 0 & sigFeats$Fuc & topImpfeats$Fuc],
+                           row.names(stats_weighted)[stats_weighted$Terminal_Fucose_effectSize > 0 & sigFeats$Terminal_Fucose & topImpfeats$Terminal_Fucose])
+
+fucBindingFeats_neg = list(row.names(stats_weighted)[stats_weighted$Fuc_effectSize < 0 & sigFeats$Fuc & topImpfeats$Fuc],
+                           row.names(stats_weighted)[stats_weighted$Terminal_Fucose_effectSize < 0 & sigFeats$Terminal_Fucose & topImpfeats$Terminal_Fucose])
+
+intersect(fucBindingFeats_pos[[1]], fucBindingFeats_pos[[2]])
+intersect(fucBindingFeats_neg[[1]], fucBindingFeats_neg[[2]])
+
+dev.off()
+draw.pairwise.venn(area1 = length(fucBindingFeats_pos[[1]]),
+                   area2 = length(fucBindingFeats_pos[[2]]),
+                   cross.area = length(intersect(fucBindingFeats_pos[[1]], fucBindingFeats_pos[[2]])),
+                   euler.d = T, scaled = T, ext.text = F, cex = 2,
+                   category = c('Fucose (monosacc.)', 'Terminal fucose'), cat.cex = 2,
+                   cat.pos = c(340,20),
+                   cat.dist = c(0.04, 0.05),
+                   fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3)),
+                   col = c("#440154ff", '#21908dff'),
+                   cat.col = c("#440154ff", '#21908dff'),
+                   cat.fontfamily = "sans",
+                   fontfamily = "sans"
+)
+dev.off()
+draw.pairwise.venn(area1 = length(fucBindingFeats_neg[[1]]),
+                   area2 = length(fucBindingFeats_neg[[2]]),
+                   cross.area = length(intersect(fucBindingFeats_neg[[1]], fucBindingFeats_neg[[2]])),
+                   euler.d = T, scaled = T, ext.text = F, cex = 2,
+                   category = c('Fucose (monosacc.)', 'Terminal fucose'), cat.cex = 2,
+                   cat.pos = c(340,30),
+                   fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3)),
+                   col = c("#440154ff", '#21908dff'),
+                   cat.col = c("#440154ff", '#21908dff'),
+                   cat.fontfamily = "sans",
+                   fontfamily = "sans"
+)
+
+# Mannose binding
+manBindingFeats_pos = list(row.names(stats_weighted)[stats_weighted$Man_effectSize > 0 & sigFeats$Man & topImpfeats$Man],
+                           row.names(stats_weighted)[stats_weighted$High_Mannose_effectSize > 0 & sigFeats$High_Mannose & topImpfeats$High_Mannose],
+                           row.names(stats_weighted)[stats_weighted$Man.a1.2.Man_effectSize > 0 & sigFeats$Man.a1.2.Man & topImpfeats$Man.a1.2.Man])
+
+manBindingFeats_neg = list(row.names(stats_weighted)[stats_weighted$Man_effectSize < 0 & sigFeats$Man & topImpfeats$Man],
+                           row.names(stats_weighted)[stats_weighted$High_Mannose_effectSize < 0 & sigFeats$High_Mannose & topImpfeats$High_Mannose],
+                           row.names(stats_weighted)[stats_weighted$Man.a1.2.Man_effectSize < 0 & sigFeats$Man.a1.2.Man & topImpfeats$Man.a1.2.Man])
+
+intersect(intersect(manBindingFeats_pos[[1]], manBindingFeats_pos[[2]]), manBindingFeats_pos[[3]])
+intersect(intersect(manBindingFeats_neg[[1]], manBindingFeats_neg[[2]]), manBindingFeats_neg[[3]])
+
+dev.off()
+venn.diagram(
+  x = manBindingFeats_pos,
+  category.names = c("Man" , "High_mannose" , "Man(a1-2)Man"),
+  filename = './manuscript/figures/subplots/man_feats_up.png',
+  output=F,
+  imagetype="png" ,
+  height = 480 , 
+  width = 480 , 
+  resolution = 300,
+  compression = "lzw",
+  lwd = 1,
+  col=c("#440154ff", '#21908dff', '#DAA520FF'),
+  fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3), alpha('#DAA520FF',0.3)),
+  cex = 0.5,
+  fontfamily = "sans",
+  cat.cex = 0.3,
+  cat.default.pos = "outer",
+  cat.pos = c(-27, 27, 135),
+  cat.dist = c(0.055, 0.055, 0.085),
+  cat.fontfamily = "sans",
+  cat.col = c("#440154ff", '#21908dff', '#DAA520FF'),
+  rotation = 1
+)
+
+
+venn.diagram(
+  x = manBindingFeats_neg,
+  category.names = c("Man" , "High_mannose" , "Man(a1-2)Man"),
+  filename = './manuscript/figures/subplots/man_feats_down.png',
+  output=F,
+  imagetype="png" ,
+  height = 480 , 
+  width = 480 , 
+  resolution = 300,
+  compression = "lzw",
+  lwd = 1,
+  col=c("#440154ff", '#21908dff', '#DAA520FF'),
+  fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3), alpha('#DAA520FF',0.3)),
+  cex = 0.5,
+  fontfamily = "sans",
+  cat.cex = 0.3,
+  cat.default.pos = "outer",
+  cat.pos = c(-27, 27, 135),
+  cat.dist = c(0.055, 0.055, 0.085),
+  cat.fontfamily = "sans",
+  cat.col = c("#440154ff", '#21908dff', '#DAA520FF'),
+  rotation = 1
+)
+
