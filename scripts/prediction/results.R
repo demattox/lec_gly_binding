@@ -5,6 +5,7 @@ library(philentropy)
 library(pheatmap)
 library(PRROC)
 library(vioplot)
+library(VennDiagram)
 
 ###############
 # Functions
@@ -169,7 +170,7 @@ for(i in 1:length(dir(predDirs))){
   curDir = paste(predDirs, dir(predDirs)[i], sep = '')
   subDirs = dir(curDir)
   for (j in 1:length(subDirs)){
-    cat(j,'\n')
+    cat(j,'\t')
     inFiles = dir(paste(curDir, subDirs[j], sep = '/'))
     
     readFile = inFiles[grepl('training.csv', inFiles)] # change here to read other files
@@ -183,6 +184,7 @@ for(i in 1:length(dir(predDirs))){
       trainDat = rbind(trainDat, tmp)
     }
   }
+  cat('\n')
 }
 
 
@@ -192,7 +194,7 @@ for(i in 1:length(dir(randDirs))){
   curDir = paste(randDirs, dir(randDirs)[i], sep = '')
   subDirs = dir(curDir)
   for (j in 1:length(subDirs)){
-    cat(j,'\n')
+    cat(j,'\t')
     inFiles = dir(paste(curDir, subDirs[j], sep = '/'))
     
     readFile = inFiles[grepl('training.csv', inFiles)] # change here to read other files
@@ -206,6 +208,7 @@ for(i in 1:length(dir(randDirs))){
       trainDat = rbind(trainDat, tmp)
     }
   }
+  cat('\n')
 }
   
 
@@ -225,15 +228,15 @@ mTrain = melt(trainDat, id.vars = c('ligand', 'mode'), measure.vars = c('kappa',
 colnames(mTrain) = c('ligand', 'classifier', 'metric', 'value')
 
 # Light colors all box plots
-ggplot(data = mTrain, aes(x = metric, y = value, col = ligand, fill = classifier)) +
-  geom_point(position = position_jitterdodge(jitter.width = 0.05), alpha = 0.1) +
-  geom_boxplot(outlier.alpha = 0) +
-  ylim(c(-1, 1)) +
-  scale_fill_manual(values = c(alpha('snow3', 0.6), alpha('black',0.8))) +
-  scale_color_manual(values = ligColors) +
-  labs(title = '5x CV with LOCO validation - Training Performance', x = "Metric type", y = "Metric value") +
-  theme_light(base_size = 22) +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
+# ggplot(data = mTrain, aes(x = metric, y = value, col = ligand, fill = classifier)) +
+#   geom_point(position = position_jitterdodge(jitter.width = 0.05), alpha = 0.1) +
+#   geom_boxplot(outlier.alpha = 0) +
+#   ylim(c(-1, 1)) +
+#   scale_fill_manual(values = c(alpha('snow3', 0.6), alpha('black',0.8))) +
+#   scale_color_manual(values = ligColors) +
+#   labs(title = '5x CV with LOCO validation - Training Performance', x = "Metric type", y = "Metric value") +
+#   theme_light(base_size = 22) +
+#   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
 
 
 ## P & R same plot with violin & box plots
@@ -299,7 +302,7 @@ for(i in 1:length(dir(predDirs))){
   curDir = paste(predDirs, dir(predDirs)[i], sep = '')
   subDirs = dir(curDir)
   for (j in 1:length(subDirs)){
-    cat(j,'\n')
+    cat(j,'\t')
     inFiles = dir(paste(curDir, subDirs[j], sep = '/'))
     
     readFile = inFiles[grepl('testing.csv', inFiles)] # change here to read other files
@@ -324,6 +327,7 @@ for(i in 1:length(dir(predDirs))){
       testDat = rbind(testDat, outTmp)
     }
   }
+  cat('\n')
 }
 
 for(i in 1:length(dir(randDirs))){
@@ -332,7 +336,7 @@ for(i in 1:length(dir(randDirs))){
   curDir = paste(randDirs, dir(randDirs)[i], sep = '')
   subDirs = dir(curDir)
   for (j in 1:length(subDirs)){
-    cat(j,'\n')
+    cat(j,'\t')
     inFiles = dir(paste(curDir, subDirs[j], sep = '/'))
     
     readFile = inFiles[grepl('testing.csv', inFiles)] # change here to read other files
@@ -357,6 +361,7 @@ for(i in 1:length(dir(randDirs))){
       testDat = rbind(testDat, outTmp)
     }
   }
+  cat('\n')
 }
 
 
@@ -364,15 +369,15 @@ mTest= melt(testDat[testDat$mode == 'pred',], id.vars = 'ligand', measure.vars =
 colnames(mTest) = c('ligand', 'metric', 'value')
 
 
-ggplot(data = mTest, aes(x = metric, y = value, col = ligand, fill = metric)) +
-  geom_point(position = position_jitterdodge(jitter.width = 0.05), alpha = 0.4) +
-  geom_boxplot(outlier.alpha = 0) +
-  ylim(c(-0.15, 1)) +
-  scale_fill_manual(values = alpha(rep('snow3',length(unique(mTest$metric))), 0.6), guide =F) +
-  scale_color_manual(values = ligColors) +
-  labs(title = '5x CV with LOCO validation - Validation Performance', x = "Metric type", y = "Metric value") +
-  theme_light(base_size = 22) +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
+# ggplot(data = mTest, aes(x = metric, y = value, col = ligand, fill = metric)) +
+#   geom_point(position = position_jitterdodge(jitter.width = 0.05), alpha = 0.4) +
+#   geom_boxplot(outlier.alpha = 0) +
+#   ylim(c(-0.15, 1)) +
+#   scale_fill_manual(values = alpha(rep('snow3',length(unique(mTest$metric))), 0.6), guide =F) +
+#   scale_color_manual(values = ligColors) +
+#   labs(title = '5x CV with LOCO validation - Validation Performance', x = "Metric type", y = "Metric value") +
+#   theme_light(base_size = 22) +
+#   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
 
 # Kappa vs random
 par(mar = c(8.6, 5.1, 5.1, 4.1), # change the margins
@@ -736,24 +741,6 @@ for(i in 9:length(ligDirs)){
 # Feature importance
 #######################
 
-featColors = rep('', nrow(feats))
-resiFeats = colorRampPalette(c("plum1","tomato", "firebrick4"))(4)
-pocketFeats = colorRampPalette(c('turquoise', 'dodgerblue1', 'blue2'))(3)
-
-featColors[1:11] = 'forestgreen'
-
-featColors[grep('^vol_4Ang$', row.names(feats)) : grep('^leftskew_10Ang$', row.names(feats))] = pocketFeats[1] # features within the d2Feats range
-featColors[grepl('^binnedD2', row.names(feats))] = pocketFeats[2] # PCs from the binned D2 measures
-featColors[grepl('^zern', row.names(feats))] = pocketFeats[3] # PCs from the 3DZDs
-
-featColors[grepl('^numBSresis', row.names(feats))] = resiFeats[1] # number of residues in binding site features
-featColors[gsub('_bin\\d{1}', '', row.names(feats)) %in% c('H', 'B', 'E', 'G', 'T', 'S', 'X.')] = resiFeats[2] # secondary structure features
-featColors[gsub('_bin\\d{1}', '', row.names(feats)) %in% c('nonpolar', 'polar', 'posCharge', 'negCharge', 'aromatic')] = resiFeats[3] # amino acid properties
-featColors[grepl('^[[:upper:]]{3}_', row.names(feats)) | grepl('^CA$', row.names(feats))] = resiFeats[4] # amino acid identities
-
-resiFeatTag = featColors %in% resiFeats
-pocketFeatTag = featColors %in% pocketFeats
-
 # rm(feats)
 for(i in 1:length(dir(predDirs))){
   lig = colnames(ligTags)[as.numeric(dir(predDirs)[i])]
@@ -761,7 +748,7 @@ for(i in 1:length(dir(predDirs))){
   curDir = paste(predDirs, dir(predDirs)[i], sep = '')
   subDirs = dir(curDir)
   for (j in 1:length(subDirs)){
-    cat(j,'\n')
+    cat(j,'\t')
     inFiles = dir(paste(curDir, subDirs[j], sep = '/'))
     
     readFile = inFiles[grepl('features.csv', inFiles)] # change here to read other files
@@ -774,7 +761,27 @@ for(i in 1:length(dir(predDirs))){
       feats = cbind(feats, tmp)
     }
   }
+  cat('\n')
 }
+
+featColors = rep('', nrow(feats))
+resiFeats = colorRampPalette(c("plum1","tomato", "firebrick4"))(4)
+pocketFeats = colorRampPalette(c('paleturquoise3', 'deepskyblue', 'mediumblue'))(4)
+
+featColors[1:11] = 'forestgreen'
+
+featColors[grep('^vol_4Ang$', row.names(feats)) : grep('^leftskew_10Ang$', row.names(feats))] = pocketFeats[2] # features within the d2Feats range
+featColors[grepl('^vol_', row.names(feats)) | grepl('^pcntSurf_', row.names(feats))] = pocketFeats[1] # General pocket descriptors
+featColors[grepl('^binnedD2', row.names(feats))] = pocketFeats[3] # PCs from the binned D2 measures
+featColors[grepl('^zern', row.names(feats))] = pocketFeats[4] # PCs from the 3DZDs
+
+featColors[grepl('^numBSresis', row.names(feats))] = resiFeats[1] # number of residues in binding site features
+featColors[gsub('_bin\\d{1}', '', row.names(feats)) %in% c('H', 'B', 'E', 'G', 'T', 'S', 'X.')] = resiFeats[2] # secondary structure features
+featColors[gsub('_bin\\d{1}', '', row.names(feats)) %in% c('nonpolar', 'polar', 'posCharge', 'negCharge', 'aromatic')] = resiFeats[3] # amino acid properties
+featColors[grepl('^[[:upper:]]{3}_', row.names(feats)) | grepl('^CA$', row.names(feats))] = resiFeats[4] # amino acid identities
+
+resiFeatTag = featColors %in% resiFeats
+pocketFeatTag = featColors %in% pocketFeats
 
 perc.rank <- function(x) trunc(rank(x))/length(x)
 
@@ -860,55 +867,55 @@ stats = read.delim(file = './analysis/training/weightedWMW_stats.tsv', sep = '\t
 
 percentThresh = 0.75 # >= 75th percentile in feature importance in each feature class
 
-all(gsub('_effectSize','',colnames(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))])) == colnames(medFeatPercentiles))
+all(gsub('_effectSize','',colnames(stats[,grepl('_effectSize$', colnames(stats))])) == colnames(medFeatPercentiles))
 
 stratAllFeatsImp = rbind(PLIPmeds, RESImeds, POCKmeds)
-all(row.names(stratAllFeatsImp) == row.names(stats_weighted))
+all(row.names(stratAllFeatsImp) == row.names(stats))
 
 topImpfeats = as.data.frame(stratAllFeatsImp >= percentThresh) # Logical dataframe, indicates if feature passes threshold for stratified median feature importance percentiles
 all(colnames(medFeatPercentiles) == colnames(topImpfeats))
 
 
-sigFeats = as.data.frame(stats_weighted[,grepl('_adj$', colnames(stats_weighted))] < 0.01) # Logical dataframe, indicates if feature passes threshold for significance from WMW test, FDR of 1%
+sigFeats = as.data.frame(stats[,grepl('_adj$', colnames(stats))] < 0.01) # Logical dataframe, indicates if feature passes threshold for significance from WMW test, FDR of 1%
 colnames(sigFeats) = gsub('_adj$', '', colnames(sigFeats))
 all(colnames(sigFeats) == colnames(topImpfeats))
 
-par(mfrow = c(3,5))
-for (i in 1:ncol(medFeatPercentiles)){
-  lig = colnames(medFeatPercentiles)[i]
-  
-  plot(abs(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))][,i]), medFeatPercentiles[,i],
-       xlab = '|Effect size|', ylab = 'Overall feat imp percentile', main = lig,
-       col = alpha(featColors, 0.4),
-       xlim = c(0,0.4),
-       ylim = c(0,1),
-       pch = 19)
-  par(new=T)
-  plot(abs(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))][topImpfeats[,i] & sigFeats[,i],i]), medFeatPercentiles[topImpfeats[,i] & sigFeats[,i],i],
-       xlab = '', ylab = '', main = '',
-       xlim = c(0,0.4),
-       ylim = c(0,1),
-       col = alpha(featColors[topImpfeats[,i] & sigFeats[,i]], 1),
-       pch = 19,
-       cex = 1.5)
-  text(x = 0.35,
-       y=0.05,
-       labels = paste('R=', as.character(round(cor(abs(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))][,i]), medFeatPercentiles[,i]), 3)), sep = ''))
-}
+# par(mfrow = c(3,5))
+# for (i in 1:ncol(medFeatPercentiles)){
+#   lig = colnames(medFeatPercentiles)[i]
+#   
+#   plot(abs(stats[,grepl('_effectSize$', colnames(stats))][,i]), medFeatPercentiles[,i],
+#        xlab = '|Effect size|', ylab = 'Overall feat imp percentile', main = lig,
+#        col = alpha(featColors, 0.4),
+#        xlim = c(0,0.4),
+#        ylim = c(0,1),
+#        pch = 19)
+#   par(new=T)
+#   plot(abs(stats[,grepl('_effectSize$', colnames(stats))][topImpfeats[,i] & sigFeats[,i],i]), medFeatPercentiles[topImpfeats[,i] & sigFeats[,i],i],
+#        xlab = '', ylab = '', main = '',
+#        xlim = c(0,0.4),
+#        ylim = c(0,1),
+#        col = alpha(featColors[topImpfeats[,i] & sigFeats[,i]], 1),
+#        pch = 19,
+#        cex = 1.5)
+#   text(x = 0.35,
+#        y=0.05,
+#        labels = paste('R=', as.character(round(cor(abs(stats[,grepl('_effectSize$', colnames(stats))][,i]), medFeatPercentiles[,i]), 3)), sep = ''))
+# }
 
 # Plot with STRATIFIED median feature importance percentiles on the y-axis
 par(mfrow = c(3,5))
 for (i in 1:ncol(medFeatPercentiles)){
   lig = colnames(medFeatPercentiles)[i]
   
-  plot(abs(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))][,i]), stratAllFeatsImp[,i],
-       xlab = '|Effect size|', ylab = 'Stratified feat imp percentile', main = lig,
+  plot(abs(stats[,grepl('_effectSize$', colnames(stats))][,i]), stratAllFeatsImp[,i],
+       xlab = '|Effect size|', ylab = 'Stratified feat imp percentile', main = ligNames[i], col.main = ligColors[i],
        col = alpha(featColors, 0.4),
        xlim = c(0,0.4),
        ylim = c(0,1),
        pch = 19)
   par(new=T)
-  plot(abs(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))][topImpfeats[,i] & sigFeats[,i],i]), stratAllFeatsImp[topImpfeats[,i] & sigFeats[,i],i],
+  plot(abs(stats[,grepl('_effectSize$', colnames(stats))][topImpfeats[,i] & sigFeats[,i],i]), stratAllFeatsImp[topImpfeats[,i] & sigFeats[,i],i],
        xlab = '', ylab = '', main = '',
        xlim = c(0,0.4),
        ylim = c(0,1),
@@ -917,19 +924,23 @@ for (i in 1:ncol(medFeatPercentiles)){
        cex = 1.5)
   text(x = 0.35,
        y=0.05,
-       labels = paste('R=', as.character(round(cor(abs(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))][,i]), stratAllFeatsImp[,i]), 3)), sep = ''))
+       labels = paste('R=', as.character(round(cor(abs(stats[,grepl('_effectSize$', colnames(stats))][,i]), stratAllFeatsImp[,i]), 3)), sep = ''),
+       cex = 1.4)
   abline(h = percentThresh, lty = 2)
 }
 
 
 # Sialic acid features
-siaBindingFeats_pos = list(row.names(stats_weighted)[sigFeats$Sialic_Acid & stats_weighted$Sialic_Acid_effectSize > 0 & topImpfeats$Sialic_Acid],
-                           row.names(stats_weighted)[sigFeats$NeuAc & stats_weighted$NeuAc_effectSize > 0 & topImpfeats$NeuAc],
-                           row.names(stats_weighted)[sigFeats$NeuAc.a2.3.Gal.b1.4.Glc & stats_weighted$NeuAc.a2.3.Gal.b1.4.Glc_effectSize > 0 & topImpfeats$NeuAc.a2.3.Gal.b1.4.Glc])
+siaBindingFeats_pos = list(row.names(stats)[sigFeats$Sialic_Acid & stats$Sialic_Acid_effectSize > 0 & topImpfeats$Sialic_Acid],
+                           row.names(stats)[sigFeats$NeuAc & stats$NeuAc_effectSize > 0 & topImpfeats$NeuAc],
+                           row.names(stats)[sigFeats$NeuAc.a2.3.Gal.b1.4.Glc & stats$NeuAc.a2.3.Gal.b1.4.Glc_effectSize > 0 & topImpfeats$NeuAc.a2.3.Gal.b1.4.Glc])
 
-siaBindingFeats_neg = list(row.names(stats_weighted)[sigFeats$Sialic_Acid & stats_weighted$Sialic_Acid_effectSize < 0 & topImpfeats$Sialic_Acid],
-                           row.names(stats_weighted)[sigFeats$NeuAc & stats_weighted$NeuAc_effectSize < 0 & topImpfeats$NeuAc],
-                           row.names(stats_weighted)[sigFeats$NeuAc.a2.3.Gal.b1.4.Glc & stats_weighted$NeuAc.a2.3.Gal.b1.4.Glc_effectSize < 0 & topImpfeats$NeuAc.a2.3.Gal.b1.4.Glc])
+siaBindingFeats_neg = list(row.names(stats)[sigFeats$Sialic_Acid & stats$Sialic_Acid_effectSize < 0 & topImpfeats$Sialic_Acid],
+                           row.names(stats)[sigFeats$NeuAc & stats$NeuAc_effectSize < 0 & topImpfeats$NeuAc],
+                           row.names(stats)[sigFeats$NeuAc.a2.3.Gal.b1.4.Glc & stats$NeuAc.a2.3.Gal.b1.4.Glc_effectSize < 0 & topImpfeats$NeuAc.a2.3.Gal.b1.4.Glc])
+
+intersect(intersect(siaBindingFeats_pos[[1]], siaBindingFeats_pos[[2]]), siaBindingFeats_pos[[3]])
+intersect(intersect(siaBindingFeats_neg[[1]], siaBindingFeats_neg[[2]]), siaBindingFeats_neg[[3]])
 
 venn.diagram(
   x = siaBindingFeats_pos,
@@ -977,16 +988,14 @@ venn.diagram(
   cat.col = c("#440154ff", '#21908dff', '#DAA520FF'),
   rotation = 1
 )
-intersect(intersect(siaBindingFeats_pos[[1]], siaBindingFeats_pos[[2]]), siaBindingFeats_pos[[3]])
-intersect(intersect(siaBindingFeats_neg[[1]], siaBindingFeats_neg[[2]]), siaBindingFeats_neg[[3]])
 
 
 # Fucose binding
-fucBindingFeats_pos = list(row.names(stats_weighted)[stats_weighted$Fuc_effectSize > 0 & sigFeats$Fuc & topImpfeats$Fuc],
-                           row.names(stats_weighted)[stats_weighted$Terminal_Fucose_effectSize > 0 & sigFeats$Terminal_Fucose & topImpfeats$Terminal_Fucose])
+fucBindingFeats_pos = list(row.names(stats)[stats$Fuc_effectSize > 0 & sigFeats$Fuc & topImpfeats$Fuc],
+                           row.names(stats)[stats$Terminal_Fucose_effectSize > 0 & sigFeats$Terminal_Fucose & topImpfeats$Terminal_Fucose])
 
-fucBindingFeats_neg = list(row.names(stats_weighted)[stats_weighted$Fuc_effectSize < 0 & sigFeats$Fuc & topImpfeats$Fuc],
-                           row.names(stats_weighted)[stats_weighted$Terminal_Fucose_effectSize < 0 & sigFeats$Terminal_Fucose & topImpfeats$Terminal_Fucose])
+fucBindingFeats_neg = list(row.names(stats)[stats$Fuc_effectSize < 0 & sigFeats$Fuc & topImpfeats$Fuc],
+                           row.names(stats)[stats$Terminal_Fucose_effectSize < 0 & sigFeats$Terminal_Fucose & topImpfeats$Terminal_Fucose])
 
 intersect(fucBindingFeats_pos[[1]], fucBindingFeats_pos[[2]])
 intersect(fucBindingFeats_neg[[1]], fucBindingFeats_neg[[2]])
@@ -1020,13 +1029,13 @@ draw.pairwise.venn(area1 = length(fucBindingFeats_neg[[1]]),
 )
 
 # Mannose binding
-manBindingFeats_pos = list(row.names(stats_weighted)[stats_weighted$Man_effectSize > 0 & sigFeats$Man & topImpfeats$Man],
-                           row.names(stats_weighted)[stats_weighted$High_Mannose_effectSize > 0 & sigFeats$High_Mannose & topImpfeats$High_Mannose],
-                           row.names(stats_weighted)[stats_weighted$Man.a1.2.Man_effectSize > 0 & sigFeats$Man.a1.2.Man & topImpfeats$Man.a1.2.Man])
+manBindingFeats_pos = list(row.names(stats)[stats$Man_effectSize > 0 & sigFeats$Man & topImpfeats$Man],
+                           row.names(stats)[stats$High_Mannose_effectSize > 0 & sigFeats$High_Mannose & topImpfeats$High_Mannose],
+                           row.names(stats)[stats$Man.a1.2.Man_effectSize > 0 & sigFeats$Man.a1.2.Man & topImpfeats$Man.a1.2.Man])
 
-manBindingFeats_neg = list(row.names(stats_weighted)[stats_weighted$Man_effectSize < 0 & sigFeats$Man & topImpfeats$Man],
-                           row.names(stats_weighted)[stats_weighted$High_Mannose_effectSize < 0 & sigFeats$High_Mannose & topImpfeats$High_Mannose],
-                           row.names(stats_weighted)[stats_weighted$Man.a1.2.Man_effectSize < 0 & sigFeats$Man.a1.2.Man & topImpfeats$Man.a1.2.Man])
+manBindingFeats_neg = list(row.names(stats)[stats$Man_effectSize < 0 & sigFeats$Man & topImpfeats$Man],
+                           row.names(stats)[stats$High_Mannose_effectSize < 0 & sigFeats$High_Mannose & topImpfeats$High_Mannose],
+                           row.names(stats)[stats$Man.a1.2.Man_effectSize < 0 & sigFeats$Man.a1.2.Man & topImpfeats$Man.a1.2.Man])
 
 intersect(intersect(manBindingFeats_pos[[1]], manBindingFeats_pos[[2]]), manBindingFeats_pos[[3]])
 intersect(intersect(manBindingFeats_neg[[1]], manBindingFeats_neg[[2]]), manBindingFeats_neg[[3]])
@@ -1081,3 +1090,117 @@ venn.diagram(
   rotation = 1
 )
 
+# Galactose binding
+galBindingFeats_pos = list(row.names(stats)[stats$Gal.b1.4.Glc_effectSize > 0 & sigFeats$Gal.b1.4.Glc & topImpfeats$Gal.b1.4.Glc],
+                           row.names(stats)[stats$Gal_effectSize > 0 & sigFeats$Gal & topImpfeats$Gal],
+                           row.names(stats)[stats$GalNAc_effectSize > 0 & sigFeats$GalNAc & topImpfeats$GalNAc],
+                           row.names(stats)[stats$Gal.b1.4.GlcNAc_effectSize > 0 & sigFeats$Gal.b1.4.GlcNAc & topImpfeats$Gal.b1.4.GlcNAc])
+
+galBindingFeats_neg = list(row.names(stats)[stats$Gal.b1.4.Glc_effectSize < 0 & sigFeats$Gal.b1.4.Glc & topImpfeats$Gal.b1.4.Glc],
+                           row.names(stats)[stats$Gal_effectSize < 0 & sigFeats$Gal & topImpfeats$Gal],
+                           row.names(stats)[stats$GalNAc_effectSize < 0 & sigFeats$Gal.b1.4.GlcNAc & topImpfeats$Gal.b1.4.GlcNAc],
+                           row.names(stats)[stats$Gal.b1.4.GlcNAc_effectSize < 0 & sigFeats$Gal.b1.4.GlcNAc & topImpfeats$Gal.b1.4.GlcNAc])
+
+
+intersect(intersect(intersect(galBindingFeats_pos[[1]], galBindingFeats_pos[[2]]), galBindingFeats_pos[[3]]), galBindingFeats_pos[[4]])
+intersect(intersect(intersect(galBindingFeats_neg[[1]], galBindingFeats_neg[[2]]), galBindingFeats_neg[[3]]), galBindingFeats_neg[[4]])
+
+dev.off()
+draw.quad.venn(area1 = length(galBindingFeats_pos[[1]]),
+               area2 = length(galBindingFeats_pos[[2]]),
+               area3 = length(galBindingFeats_pos[[3]]),
+               area4 = length(galBindingFeats_pos[[4]]),
+               
+               n12 = length(intersect(galBindingFeats_pos[[1]], galBindingFeats_pos[[2]])),
+               n13 = length(intersect(galBindingFeats_pos[[1]], galBindingFeats_pos[[3]])),
+               n14 = length(intersect(galBindingFeats_pos[[1]], galBindingFeats_pos[[4]])),
+               n23 = length(intersect(galBindingFeats_pos[[2]], galBindingFeats_pos[[3]])),
+               n24 = length(intersect(galBindingFeats_pos[[2]], galBindingFeats_pos[[4]])),
+               n34 = length(intersect(galBindingFeats_pos[[3]], galBindingFeats_pos[[4]])),
+               
+               n123 = length(intersect(intersect(galBindingFeats_pos[[1]], galBindingFeats_pos[[2]]), galBindingFeats_pos[[3]])),
+               n124 = length(intersect(intersect(galBindingFeats_pos[[1]], galBindingFeats_pos[[2]]), galBindingFeats_pos[[4]])),
+               n134 = length(intersect(intersect(galBindingFeats_pos[[1]], galBindingFeats_pos[[3]]), galBindingFeats_pos[[4]])),
+               n234 = length(intersect(intersect(galBindingFeats_pos[[2]], galBindingFeats_pos[[3]]), galBindingFeats_pos[[4]])),
+               
+               n1234 = length(intersect(intersect(intersect(galBindingFeats_pos[[1]], galBindingFeats_pos[[2]]), galBindingFeats_pos[[3]]), galBindingFeats_pos[[4]])),
+               
+               category = c('Lac', 'Gal', 'GalNAc', 'LacNAc'), cat.cex = 2,
+               cat.fontfamily = "sans",
+               fontfamily = "sans",
+               euler.d = T, scaled = T, ext.text = F, cex = 2,
+               
+               col=c("#440154ff", '#21908dff', '#DAA520FF', 'red3'),
+               fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3), alpha('#DAA520FF',0.3), alpha('red3',0.3)),
+               cat.col = c("#440154ff", '#21908dff', '#DAA520FF', 'red3')
+)
+
+
+dev.off()
+draw.quad.venn(area1 = length(galBindingFeats_neg[[1]]),
+               area2 = length(galBindingFeats_neg[[2]]),
+               area3 = length(galBindingFeats_neg[[3]]),
+               area4 = length(galBindingFeats_neg[[4]]),
+               
+               n12 = length(intersect(galBindingFeats_neg[[1]], galBindingFeats_neg[[2]])),
+               n13 = length(intersect(galBindingFeats_neg[[1]], galBindingFeats_neg[[3]])),
+               n14 = length(intersect(galBindingFeats_neg[[1]], galBindingFeats_neg[[4]])),
+               n23 = length(intersect(galBindingFeats_neg[[2]], galBindingFeats_neg[[3]])),
+               n24 = length(intersect(galBindingFeats_neg[[2]], galBindingFeats_neg[[4]])),
+               n34 = length(intersect(galBindingFeats_neg[[3]], galBindingFeats_neg[[4]])),
+               
+               n123 = length(intersect(intersect(galBindingFeats_neg[[1]], galBindingFeats_neg[[2]]), galBindingFeats_neg[[3]])),
+               n124 = length(intersect(intersect(galBindingFeats_neg[[1]], galBindingFeats_neg[[2]]), galBindingFeats_neg[[4]])),
+               n134 = length(intersect(intersect(galBindingFeats_neg[[1]], galBindingFeats_neg[[3]]), galBindingFeats_neg[[4]])),
+               n234 = length(intersect(intersect(galBindingFeats_neg[[2]], galBindingFeats_neg[[3]]), galBindingFeats_neg[[4]])),
+               
+               n1234 = length(intersect(intersect(intersect(galBindingFeats_neg[[1]], galBindingFeats_neg[[2]]), galBindingFeats_neg[[3]]), galBindingFeats_neg[[4]])),
+               
+               category = c('Lac', 'Gal', 'GalNAc', 'LacNAc'), cat.cex = 2,
+               cat.fontfamily = "sans",
+               fontfamily = "sans",
+               euler.d = T, scaled = T, ext.text = F, cex = 2,
+               
+               col=c("#440154ff", '#21908dff', '#DAA520FF', 'red3'),
+               fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3), alpha('#DAA520FF',0.3), alpha('red3',0.3)),
+               cat.col = c("#440154ff", '#21908dff', '#DAA520FF', 'red3')
+)
+
+
+# Glucose binding
+glcBindingFeats_pos = list(row.names(stats)[stats$Glc_effectSize > 0 & sigFeats$Glc & topImpfeats$Glc],
+                           row.names(stats)[stats$GlcNAc_effectSize > 0 & sigFeats$GlcNAc & topImpfeats$GlcNAc])
+
+glcBindingFeats_neg = list(row.names(stats)[stats$Glc_effectSize < 0 & sigFeats$Glc & topImpfeats$Glc],
+                           row.names(stats)[stats$GlcNAc_effectSize < 0 & sigFeats$GlcNAc & topImpfeats$GlcNAc])
+
+intersect(glcBindingFeats_pos[[1]], glcBindingFeats_pos[[2]])
+intersect(glcBindingFeats_neg[[1]], glcBindingFeats_neg[[2]])
+
+dev.off()
+draw.pairwise.venn(area1 = length(glcBindingFeats_pos[[1]]),
+                   area2 = length(glcBindingFeats_pos[[2]]),
+                   cross.area = length(intersect(glcBindingFeats_pos[[1]], glcBindingFeats_pos[[2]])),
+                   euler.d = T, scaled = T, ext.text = F, cex = 2,
+                   category = c('Glucose', 'GlcNAc'), cat.cex = 2,
+                   cat.pos = c(340,20),
+                   cat.dist = c(0.04, 0.05),
+                   fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3)),
+                   col = c("#440154ff", '#21908dff'),
+                   cat.col = c("#440154ff", '#21908dff'),
+                   cat.fontfamily = "sans",
+                   fontfamily = "sans"
+)
+dev.off()
+draw.pairwise.venn(area1 = length(glcBindingFeats_neg[[1]]),
+                   area2 = length(glcBindingFeats_neg[[2]]),
+                   cross.area = length(intersect(glcBindingFeats_neg[[1]], glcBindingFeats_neg[[2]])),
+                   euler.d = T, scaled = T, ext.text = F, cex = 2,
+                   category = c('Glucose', 'GlcNAc'), cat.cex = 2,
+                   cat.pos = c(340,30),
+                   fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3)),
+                   col = c("#440154ff", '#21908dff'),
+                   cat.col = c("#440154ff", '#21908dff'),
+                   cat.fontfamily = "sans",
+                   fontfamily = "sans"
+)

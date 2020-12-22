@@ -431,13 +431,14 @@ stats_weighted[,grepl('_adj$', colnames(stats_weighted))][stats_weighted[,grepl(
 # Colors to features for plotting
 featColors = rep('', nrow(stats_weighted))
 resiFeats = colorRampPalette(c("plum1","tomato", "firebrick4"))(4)
-pocketFeats = colorRampPalette(c('turquoise', 'dodgerblue1', 'blue2'))(3)
+pocketFeats = colorRampPalette(c('paleturquoise3', 'deepskyblue', 'mediumblue'))(4)
 
 featColors[1:11] = 'forestgreen'
 
-featColors[grep('^vol_4Ang$', row.names(stats_weighted)) : grep('^leftskew_10Ang$', row.names(stats_weighted))] = pocketFeats[1] # features within the d2Feats range
-featColors[grepl('^binnedD2', row.names(stats_weighted))] = pocketFeats[2] # PCs from the binned D2 measures
-featColors[grepl('^zern', row.names(stats_weighted))] = pocketFeats[3] # PCs from the 3DZDs
+featColors[grep('^vol_4Ang$', row.names(stats_weighted)) : grep('^leftskew_10Ang$', row.names(stats_weighted))] = pocketFeats[2] # features within the d2Feats range
+featColors[grepl('^vol_', row.names(stats_weighted)) | grepl('^pcntSurf_', row.names(stats_weighted))] = pocketFeats[1] # General pocket descriptors
+featColors[grepl('^binnedD2', row.names(stats_weighted))] = pocketFeats[3] # PCs from the binned D2 measures
+featColors[grepl('^zern', row.names(stats_weighted))] = pocketFeats[4] # PCs from the 3DZDs
 
 featColors[grepl('^numBSresis', row.names(stats_weighted))] = resiFeats[1] # number of residues in binding site features
 featColors[gsub('_bin\\d{1}', '', row.names(stats_weighted)) %in% c('H', 'B', 'E', 'G', 'T', 'S', 'X.')] = resiFeats[2] # secondary structure features
@@ -480,10 +481,10 @@ for(i in 1:ncol(ligTags)){
        pch = 19, cex = 2, col = alpha(featColors, 0.5),
        cex.axis = 1.5, cex.lab = 1.5,
        xlim = xLim, ylim = yLim)
-  # title(main = ligNames[i], col.main = ligColors[i], cex.main = 1.8, font.main  = 2)
-  mtext(ligNames[i], col = ligColors[i],
-        side=3, adj=0, outer = T,
-        line=1.2, cex=1, font=2)
+  title(main = ligNames[i], col.main = ligColors[i], cex.main = 1.8, font.main  = 2)
+  # mtext(ligNames[i], col = ligColors[i],
+  #       side=3, adj=0, outer = T,
+  #       line=1.2, cex=1, font=2)
 
   par(new=T)
   plot(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))][tag,i], -log10(stats_weighted[,grepl('_adj$', colnames(stats_weighted))][tag,i]), # Plot stat sig points again with alpha 1
@@ -500,6 +501,7 @@ for(i in 1:ncol(ligTags)){
 }
 
 dev.off()
+# par(mar = c(10,5,10,5))
 plot(0,0,axes = F, main = '', xlab = '', ylab = '', pch = NA)
 legend(x = 'center',
        col = c('forestgreen', 'white','white',
@@ -507,7 +509,7 @@ legend(x = 'center',
                c(rbind(pocketFeats,rep('white', length(pocketFeats)))), 'white'),
        legend = c('PLIP interaction\ncounts', '','',
                   'Residue\ncounts/bin', '', 'Residue\nsec struct.', '', 'Amino acid\nproperty counts', '', 'Residue\nidentities', '','',
-                  'Pocket and\nD2 distribution', '', 'D2 Principal\nComponents', '', '3DZD Principal\nComponents', ''),
+                  'Pocket features', '', 'D2 distribution\nfeatures', '','D2 Principal\nComponents', '', '3DZD Principal\nComponents', ''),
        pch = 19,
        pt.cex = 2.5)
 
@@ -673,36 +675,43 @@ dev.off()
 # Heatmaps with features in columns
 #######################
 
+# All-feature based correlogram
+pdf(file = paste('./manuscript/figures/subplots/', 
+                 'allFeats_MWM_corplots',
+                 '.pdf', sep = ''),
+    width = 11.5,
+    height = 8.25)
+breakLst = seq(-1,1,0.05)
+pheatmap(cor(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))], stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))], method = 'pearson'),
+         color = colorRampPalette(c("firebrick2", "grey95", "dodgerblue3"))(length(breakLst)),
+         legend_breaks = c(-1, -0.5, 0, 0.5, 1, 0.97),
+         legend_labels = c("-1", "-0.5", "0", "0.5", "1", "Pearson Corr\n\n"),
+         labels_row = ligNames,
+         main = ' ',
+         breaks = breakLst,
+         show_colnames = F,
+         cutree_rows = 1,
+         treeheight_col = 0)
+grid.text(label = 'Pearson correlations between feature-specific effect sizes across ligands',x = .415, y=0.985, gp=gpar(col="black", cex = 1.5))
+dev.off() 
+
+
+# corrmat = cor(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))], stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))], method = 'pearson')
+# row.names(corrmat) = ligNames
+# corrplot(corrmat, order = "hclust", method = "ellipse")
+
+
+
+
 breakLst = seq(-0.5,0.5,0.01)
-
-
-featColors = rep('', nrow(stats_weighted))
-resiFeats = colorRampPalette(c("plum1","tomato", "firebrick4"))(4)
-pocketFeats = colorRampPalette(c('turquoise', 'dodgerblue1', 'blue2'))(3)
-
-featColors[1:11] = 'forestgreen'
-
-featColors[grep('^vol_4Ang$', row.names(stats_weighted)) : grep('^leftskew_10Ang$', row.names(stats_weighted))] = pocketFeats[1] # features within the d2Feats range
-featColors[grepl('^binnedD2', row.names(stats_weighted))] = pocketFeats[2] # PCs from the binned D2 measures
-featColors[grepl('^zern', row.names(stats_weighted))] = pocketFeats[3] # PCs from the 3DZDs
-
-featColors[grepl('^numBSresis', row.names(stats_weighted))] = resiFeats[1] # number of residues in binding site features
-featColors[gsub('_bin\\d{1}', '', row.names(stats_weighted)) %in% c('H', 'B', 'E', 'G', 'T', 'S', 'X.')] = resiFeats[2] # secondary structure features
-featColors[gsub('_bin\\d{1}', '', row.names(stats_weighted)) %in% c('nonpolar', 'polar', 'posCharge', 'negCharge', 'aromatic')] = resiFeats[3] # amino acid properties
-featColors[grepl('^[[:upper:]]{3}_', row.names(stats_weighted)) | grepl('^CA$', row.names(stats_weighted))] = resiFeats[4] # amino acid identities
-
-resiFeatTag = featColors %in% resiFeats
-pocketFeatTag = featColors %in% pocketFeats
-
-
-
 
 annot <- data.frame(Feature_Type = rep("", nrow(stats_weighted)))
 row.names(annot) = row.names(stats_weighted)
 
 annot$Feature_Type[featColors == 'forestgreen'] <- 'PLIP interaction counts'
 
-annot$Feature_Type[grep('^vol_4Ang$', row.names(stats_weighted)) : grep('^leftskew_10Ang$', row.names(stats_weighted))] <- 'Pocket and D2 distribution'
+annot$Feature_Type[grep('^vol_4Ang$', row.names(stats_weighted)) : grep('^leftskew_10Ang$', row.names(stats_weighted))] <- 'D2 distribution features'
+annot$Feature_Type[grepl('^vol_', row.names(stats_weighted)) | grepl('^pcntSurf_', row.names(stats_weighted))] = 'Pocket descriptors' # General pocket descriptors
 annot$Feature_Type[grepl('^binnedD2', row.names(stats_weighted))] <- 'D2 Principal Components'
 annot$Feature_Type[grepl('^zern', row.names(stats_weighted))] <- '3DZD Principal Components'
 

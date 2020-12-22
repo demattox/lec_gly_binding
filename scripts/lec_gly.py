@@ -6,8 +6,8 @@ Created on Fri Aug 28 15:16:56 2020
 @author: dmattox
 """
 
-homeDir = '/dartfs-hpc/rc/home/y/f002tsy/cbklab/Mattox/lec_gly_binding/'
-# homeDir = '/Users/dmattox/cbk/lec_gly_binding'
+#homeDir = '/dartfs-hpc/rc/home/y/f002tsy/cbklab/Mattox/lec_gly_binding/'
+homeDir = '/Users/dmattox/cbk/lec_gly_binding'
 
 if homeDir[-1] != '/':
     homeDir += '/'
