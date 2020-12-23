@@ -427,6 +427,7 @@ text(x = 1:15,
      ## Increase label size.
      cex = 1.2)
 
+
 # Check training sample sizes
 trainDat$sampSizes = apply(trainDat[,4:7], MARGIN = 1, FUN = sum)
 
@@ -442,7 +443,7 @@ for (i in 1:ncol(ligTags)){
        xlim = c(0,175), ylim = c(-1, 1),
        axes = F, xlab = '', ylab ='')
 }
-title(xlab = 'Number of samples used for training', ylab = 'Kappa', cex.lab = 1.5 )
+title(xlab = 'Number of samples used for training', ylab = 'Training Kappa', cex.lab = 1.5 )
 text(x = 110, y = -0.8, labels = 'Pearson corr: 0.53 (p<0.001)', cex = 1.3)
 
 
@@ -929,7 +930,6 @@ for (i in 1:ncol(medFeatPercentiles)){
   abline(h = percentThresh, lty = 2)
 }
 
-
 # Sialic acid features
 siaBindingFeats_pos = list(row.names(stats)[sigFeats$Sialic_Acid & stats$Sialic_Acid_effectSize > 0 & topImpfeats$Sialic_Acid],
                            row.names(stats)[sigFeats$NeuAc & stats$NeuAc_effectSize > 0 & topImpfeats$NeuAc],
@@ -1204,3 +1204,113 @@ draw.pairwise.venn(area1 = length(glcBindingFeats_neg[[1]]),
                    cat.fontfamily = "sans",
                    fontfamily = "sans"
 )
+
+
+# Check across all ligands
+
+groupedLigNames = ligNames[c(1,8,9,
+                             3,14,
+                             2,6,12,
+                             4,5,7,11,15,
+                             10,13)]
+groupedLigCols = ligColors[c(1,8,9,
+                             3,14,
+                             2,6,12,
+                             4,5,7,11,15,
+                             10,13)]
+
+all(row.names(stats) == row.names(sigFeats))
+all(row.names(stats) == row.names(topImpfeats))
+
+minVal = 0.1
+weakVal = 0.3
+strongVal = 1
+
+allSigFeats = as.data.frame(matrix(0, nrow = 15, ncol = nrow(stats)))
+colnames(allSigFeats) = row.names(stats)
+row.names(allSigFeats) = colnames(ligTags)[c(1,8,9,
+                                             3,14,
+                                             2,6,12,
+                                             4,5,7,11,15,
+                                             10,13)]
+
+for (i in 1:nrow(allSigFeats)){
+  lig = row.names(allSigFeats)[i]
+  ligPattern = paste0('^', lig)
+  
+  up = row.names(stats)[stats[,grepl(paste0(ligPattern, '_effectSize$'), colnames(stats))] > 0 &
+                          sigFeats[,grepl(paste0(ligPattern, '$'), colnames(sigFeats))] &
+                          topImpfeats[,grepl(paste0(ligPattern, '$'), colnames(topImpfeats))]]
+  
+  down = row.names(stats)[stats[,grepl(paste0(ligPattern, '_effectSize$'), colnames(stats))] < 0 &
+                            sigFeats[,grepl(paste0(ligPattern, '$'), colnames(sigFeats))] &
+                            topImpfeats[,grepl(paste0(ligPattern, '$'), colnames(topImpfeats))]]
+  
+  weakUp = row.names(stats)[stats[,grepl(paste0(ligPattern, '_effectSize$'), colnames(stats))] > 0 &
+                            (sigFeats[,grepl(paste0(ligPattern, '$'), colnames(sigFeats))] | topImpfeats[,grepl(paste0(ligPattern, '$'), colnames(topImpfeats))])]
+  
+  weakDown = row.names(stats)[stats[,grepl(paste0(ligPattern, '_effectSize$'), colnames(stats))] < 0 &
+                            (sigFeats[,grepl(paste0(ligPattern, '$'), colnames(sigFeats))] | topImpfeats[,grepl(paste0(ligPattern, '$'), colnames(topImpfeats))])]
+  
+  allSigFeats[i,stats[,grepl(paste0(ligPattern, '_effectSize$'), colnames(stats))] > 0] = minVal
+  allSigFeats[i,stats[,grepl(paste0(ligPattern, '_effectSize$'), colnames(stats))] < 0] = -1 * minVal
+  
+  allSigFeats[i,weakUp] = weakVal
+  allSigFeats[i,weakDown] = -1 * weakVal
+  
+  allSigFeats[i,up] = strongVal
+  allSigFeats[i,down] = -1 * strongVal
+}
+
+breakLst = c(-1*c(strongVal,weakVal+.1,minVal+.1), c(minVal-.1,weakVal-.1,strongVal-.1))
+cols = c(alpha('royalblue', c(strongVal,weakVal,minVal)), alpha('gold2', c(minVal,weakVal,strongVal)))
+
+pheatmap(allSigFeats, cluster_rows = F, cluster_cols = F, # all features
+         color = cols, breaks = breakLst,
+         gaps_row = c(3,5,7,13))
+
+allSigFeats = allSigFeats[,apply(X = abs(allSigFeats) == 1, MARGIN = 2, FUN = any)]
+
+
+
+grep('bin2', colnames(allSigFeats))
+
+pheatmap(allSigFeats, cluster_rows = F, cluster_cols = F, # Sig for at least on ligand
+         color = cols, breaks = breakLst,
+         gaps_row = c(3,5,8,13))
+
+
+
+allSigFeats = allSigFeats[,!colnames(allSigFeats) %in% row.names(stats)[featColors == pocketFeats[2]] & (!grepl('^vol_',colnames(allSigFeats)))]
+
+pheatmap(allSigFeats, cluster_rows = F, cluster_cols = F, # Drop extra distribution descriptors
+         color = cols, breaks = breakLst,
+         gaps_row = c(3,5,8,13),
+         labels_row = groupedLigNames)
+
+allSigFeats = allSigFeats[c(1,3,
+                            5,
+                            6,7,8,
+                            9,10,
+                            14,15),]
+groupedLigNames = groupedLigNames[c(1,3,5,6,7,8,9,10,14,15)]
+groupedLigCols = groupedLigCols[c(1,3,5,6,7,8,9,10,14,15)]
+
+pheatmap(allSigFeats, cluster_rows = F, cluster_cols = F, # Dropped low performing models
+         color = cols, breaks = breakLst,
+         # gaps_row = c(3,5,8,13),
+         labels_row = groupedLigNames)
+
+
+allSigFeats = allSigFeats[,apply(X = abs(allSigFeats) == 1, MARGIN = 2, FUN = any)]
+
+grep('bin2', colnames(allSigFeats))
+grep('bin4', colnames(allSigFeats))
+grep('zern', colnames(allSigFeats))
+
+
+pheatmap(allSigFeats, cluster_rows = F, cluster_cols = F, # Drop empty columns after pruning rows
+         color = cols, breaks = breakLst,
+         gaps_row = c(2,3,6,8),
+         gaps_col = c(5,9,26,32,41,52,53,58),
+         labels_row = groupedLigNames)
