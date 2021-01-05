@@ -7,6 +7,10 @@ library(PRROC)
 library(vioplot)
 library(VennDiagram)
 
+# devtools::install_github("copenhagencenterforglycomics/ggsugar")
+library(ggsugar)
+
+
 ###############
 # Functions
 ###############
@@ -446,9 +450,25 @@ for (i in 1:ncol(ligTags)){
 title(xlab = 'Number of samples used for training', ylab = 'Training Kappa', cex.lab = 1.5 )
 text(x = 110, y = -0.8, labels = 'Pearson corr: 0.53 (p<0.001)', cex = 1.3)
 
+CVperf_melt = melt(trainDat[trainDat$mode == 'pred',], id.vars = c("ligand", "sampSizes", "kappa", "f2"))
 
 
+p = ggplot(data = CVperf_melt, aes(x = sampSizes, y = kappa, col = ligand))
 
+p + geom_point() + scale_color_manual(values = alpha(ligColors, 0.3))
+
+# p + geom_sugar(sugar='galnac')
+
+
+# ggplot(data = mTest, aes(x = metric, y = value, col = ligand, fill = metric)) +
+#   geom_point(position = position_jitterdodge(jitter.width = 0.05), alpha = 0.4) +
+#   geom_boxplot(outlier.alpha = 0) +
+#   ylim(c(-0.15, 1)) +
+#   scale_fill_manual(values = alpha(rep('snow3',length(unique(mTest$metric))), 0.6), guide =F) +
+#   scale_color_manual(values = ligColors) +
+#   labs(title = '5x CV with LOCO validation - Validation Performance', x = "Metric type", y = "Metric value") +
+#   theme_light(base_size = 22) +
+#   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
 
 
 

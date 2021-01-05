@@ -690,7 +690,7 @@ pheatmap(cor(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))], s
          main = ' ',
          breaks = breakLst,
          show_colnames = F,
-         cutree_rows = 1,
+         cutree_rows = 4,
          treeheight_col = 0)
 grid.text(label = 'Pearson correlations between feature-specific effect sizes across ligands',x = .415, y=0.985, gp=gpar(col="black", cex = 1.5))
 dev.off() 
