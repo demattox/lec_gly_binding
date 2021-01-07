@@ -675,6 +675,10 @@ dev.off()
 # Heatmaps with features in columns
 #######################
 
+cWidth = 8
+cHeight = 20
+
+
 # All-feature based correlogram
 pdf(file = paste('./manuscript/figures/subplots/', 
                  'allFeats_MWM_corplots',
@@ -683,7 +687,10 @@ pdf(file = paste('./manuscript/figures/subplots/',
     height = 8.25)
 breakLst = seq(-1,1,0.05)
 pheatmap(cor(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))], stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))], method = 'pearson'),
-         color = colorRampPalette(c("firebrick2", "grey95", "dodgerblue3"))(length(breakLst)),
+         color = colorRampPalette(c("firebrick2", "ivory", "dodgerblue3"))(length(breakLst)),
+         border_color = 'black',
+         cellwidth = cHeight,
+         cellheight = cHeight,
          legend_breaks = c(-1, -0.5, 0, 0.5, 1, 0.97),
          legend_labels = c("-1", "-0.5", "0", "0.5", "1", "Pearson Corr\n\n"),
          labels_row = ligNames,
@@ -691,6 +698,7 @@ pheatmap(cor(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))], s
          breaks = breakLst,
          show_colnames = F,
          cutree_rows = 4,
+         # cutree_cols = 4,
          treeheight_col = 0)
 grid.text(label = 'Pearson correlations between feature-specific effect sizes across ligands',x = .415, y=0.985, gp=gpar(col="black", cex = 1.5))
 dev.off() 
@@ -745,6 +753,17 @@ pheatmap(t(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))]),
 resiAnnot = data.frame(Feature_Type = rep("", sum(resiFeatTag)))
 row.names(resiAnnot) = row.names(stats_weighted)[resiFeatTag]
 
+row.names(resiAnnot) = gsub('^H_bin', 'a-helix_bin', row.names(resiAnnot))
+row.names(resiAnnot) = gsub('^B_bin', 'b-bridge_bin', row.names(resiAnnot))
+row.names(resiAnnot) = gsub('^E_bin', 'b-strand_bin', row.names(resiAnnot))
+row.names(resiAnnot) = gsub('^G_bin', '3/10-helix_bin', row.names(resiAnnot))
+row.names(resiAnnot) = gsub('^T_bin', 'turn_bin', row.names(resiAnnot))
+row.names(resiAnnot) = gsub('^S_bin', 'bend_bin', row.names(resiAnnot))
+row.names(resiAnnot) = gsub('^X._bin', 'loop_bin', row.names(resiAnnot))
+
+row.names(resiAnnot) = gsub('^CA$', 'Ca2+', row.names(resiAnnot))
+
+
 resiAnnot$Feature_Type = as.character(annot$Feature_Type[resiFeatTag])
 resiAnnot$Feature_Type <- factor(resiAnnot$Feature_Type, levels = unique(resiAnnot$Feature_Type))
 
@@ -753,10 +772,11 @@ resiAnnot$Bin[grepl('_bin1$', row.names(resiAnnot))] = 'Bin 1'
 resiAnnot$Bin[grepl('_bin2$', row.names(resiAnnot))] = 'Bin 2'
 resiAnnot$Bin[grepl('_bin3$', row.names(resiAnnot))] = 'Bin 3'
 resiAnnot$Bin[grepl('_bin4$', row.names(resiAnnot))] = 'Bin 4'
-resiAnnot$Bin[grepl('^CA$', row.names(resiAnnot))] = 'Bin 1'
+resiAnnot$Bin[grepl('^Ca2\\+$', row.names(resiAnnot))] = 'Bin 1'
 resiAnnot$Bin <- factor(resiAnnot$Bin, levels = unique(resiAnnot$Bin))
 
-
+resiFeat_stats = stats_weighted
+row.names(resiFeat_stats)[resiFeatTag] = row.names(resiAnnot)
 
 Feature_Type <- unique(featColors[resiFeatTag])
 names(Feature_Type) <- levels(resiAnnot$Feature_Type)
@@ -766,16 +786,28 @@ names(Bin) <- levels(resiAnnot$Bin)
 
 resiAnnot_cols <- list(Feature_Type = Feature_Type, Bin = Bin)
 
-pheatmap(t(stats_weighted[resiFeatTag,grepl('_effectSize$', colnames(stats_weighted))]),
-         color = colorRampPalette(c("royalblue1", "grey90", "gold1"))(length(breakLst)),
+pdf(file = paste('./manuscript/figures/subplots/', 
+                 'resiFeats_MWM_heatmap',
+                 '.pdf', sep = ''),
+    width = 24,
+    height = 7)
+pheatmap(t(resiFeat_stats[resiFeatTag,grepl('_effectSize$', colnames(resiFeat_stats))]),
+         color = colorRampPalette(c("royalblue1", "ivory", "gold1"))(length(breakLst)),
+         border_color = 'ivory',
+         cellwidth = cWidth,
+         cellheight = cHeight,
          clustering_distance_rows = 'correlation',
          # display_numbers = ifelse(t(stats_weighted[,grepl('_adj$', colnames(stats_weighted))]) < 0.01, "*", ""), fontsize_number = 18,
          labels_row = ligNames,
          annotation_col = resiAnnot, annotation_colors = resiAnnot_cols,
          # legend_breaks = c(1,5),
+         cutree_rows = 4,
          main = '',
          breaks = breakLst,
-         show_colnames = T)
+         show_colnames = T,
+         fontsize_col = 6,
+         angle_col = 45)
+dev.off()
 
 # Pocket features only
 
@@ -803,27 +835,49 @@ names(Threshold) <- levels(pockAnnot$Threshold)
 
 pockAnnot_cols <- list(Feature_Type = Feature_Type, Threshold = Threshold)
 
+pdf(file = paste('./manuscript/figures/subplots/', 
+                 'pocketFeats_MWM_heatmap',
+                 '.pdf', sep = ''),
+    width = 24,
+    height = 7)
 pheatmap(t(stats_weighted[pocketFeatTag,grepl('_effectSize$', colnames(stats_weighted))]),
-         color = colorRampPalette(c("royalblue1", "grey90", "gold1"))(length(breakLst)),
+         color = colorRampPalette(c("royalblue1", "ivory", "gold1"))(length(breakLst)),
+         border_color = 'ivory',
+         cellwidth = cWidth,
+         cellheight = cHeight,
          clustering_distance_rows = 'correlation',
          # display_numbers = ifelse(t(stats_weighted[,grepl('_adj$', colnames(stats_weighted))]) < 0.01, "*", ""), fontsize_number = 18,
          labels_row = ligNames,
          annotation_col = pockAnnot, annotation_colors = pockAnnot_cols,
          main = '',
+         cutree_rows = 4,
          breaks = breakLst,
-         show_colnames = T)
-
+         show_colnames = T,
+         fontsize_col = 6,
+         angle_col = 45)
+dev.off()
 
 # PLIP features only
-
+pdf(file = paste('./manuscript/figures/subplots/', 
+                 'plipFeats_MWM_heatmap',
+                 '.pdf', sep = ''),
+    width = 24,
+    height = 7)
 pheatmap(t(stats_weighted[1:11,grepl('_effectSize$', colnames(stats_weighted))]),
-         color = colorRampPalette(c("royalblue1", "grey90", "gold1"))(length(breakLst)),
+         color = colorRampPalette(c("royalblue1", "ivory", "gold1"))(length(breakLst)),
+         border_color = 'ivory',
+         cellwidth = cWidth,
+         cellheight = cHeight,
          clustering_distance_rows = 'correlation',
          # display_numbers = ifelse(t(stats_weighted[,grepl('_adj$', colnames(stats_weighted))]) < 0.01, "*", ""), fontsize_number = 18,
          labels_row = ligNames,
          main = '',
+         cutree_rows = 4,
          breaks = breakLst,
-         show_colnames = T)
+         show_colnames = T,
+         fontsize_col = 6,
+         angle_col = 45)
+dev.off()
 
 #######################
 # Shared significant features for similar ligands
