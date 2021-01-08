@@ -1282,7 +1282,7 @@ for (i in 1:nrow(allSigFeats)){
   allSigFeats[i,down] = -1 * strongVal
 }
 
-breakLst = c(-1*c(strongVal,weakVal+.1,minVal+.1), c(minVal-.1,weakVal-.1,strongVal-.1))
+breakLst = c(-1*c(strongVal,weakVal+.1,minVal+.1), c(minVal-.05,weakVal-.1,strongVal-.1))
 cols = c(alpha('royalblue', c(strongVal,weakVal,minVal)), alpha('gold2', c(minVal,weakVal,strongVal)))
 
 pheatmap(allSigFeats, cluster_rows = F, cluster_cols = F, # all features
@@ -1302,6 +1302,8 @@ pheatmap(allSigFeats, cluster_rows = F, cluster_cols = F, # Sig for at least on 
 
 
 allSigFeats = allSigFeats[,!colnames(allSigFeats) %in% row.names(stats)[featColors == pocketFeats[2]] & (!grepl('^vol_',colnames(allSigFeats)))]
+
+
 
 pheatmap(allSigFeats, cluster_rows = F, cluster_cols = F, # Drop extra distribution descriptors
          color = cols, breaks = breakLst,
@@ -1328,9 +1330,223 @@ grep('bin2', colnames(allSigFeats))
 grep('bin4', colnames(allSigFeats))
 grep('zern', colnames(allSigFeats))
 
+colnames(allSigFeats) = gsub('^H_bin', 'a-helix_bin', colnames(allSigFeats))
+colnames(allSigFeats) = gsub('^B_bin', 'b-bridge_bin', colnames(allSigFeats))
+colnames(allSigFeats) = gsub('^E_bin', 'b-strand_bin', colnames(allSigFeats))
+colnames(allSigFeats) = gsub('^G_bin', '3/10-helix_bin', colnames(allSigFeats))
+colnames(allSigFeats) = gsub('^T_bin', 'turn_bin', colnames(allSigFeats))
+colnames(allSigFeats) = gsub('^S_bin', 'bend_bin', colnames(allSigFeats))
+colnames(allSigFeats) = gsub('^X._bin', 'loop_bin', colnames(allSigFeats))
+
+cols = colorRampPalette(c("royalblue","lightblue2","white","lightgoldenrod1","goldenrod2"))(6)
+breakLst = c(-1*c(strongVal,weakVal+.1,minVal+.1), c(minVal-.1,weakVal-.1,strongVal-.1))
+
+# bk = allSigFeats
+allSigFeats = bk
+
+## Manually cluster groups of columns
+# CLuster PLIP columns
+clus = hclust(d = dist(t(allSigFeats[,1:5]), method = 'euc'), method = 'average')
+allSigFeats = allSigFeats[,c(clus$order, 6:ncol(allSigFeats))]
+
+# CLuster resi cnt columns
+strt = 6
+stp = 9
+clus = hclust(d = dist(t(allSigFeats[,strt:stp]), method = 'euc'), method = 'average')
+allSigFeats = allSigFeats[,c(1:(strt-1), ((strt-1)+clus$order), (stp+1):ncol(allSigFeats))]
+
+
+# CLuster resi bin1 columns
+strt = 10
+stp = 26
+clus = hclust(d = dist(t(allSigFeats[,strt:stp]), method = 'euc'), method = 'average')
+allSigFeats = allSigFeats[,c(1:(strt-1), ((strt-1)+clus$order), (stp+1):ncol(allSigFeats))]
+
+
+# CLuster resi bin2 columns
+strt = 27
+stp = 32
+clus = hclust(d = dist(t(allSigFeats[,strt:stp]), method = 'euc'), method = 'average')
+allSigFeats = allSigFeats[,c(1:(strt-1), ((strt-1)+clus$order), (stp+1):ncol(allSigFeats))]
+
+
+# CLuster resi bin3 columns
+strt = 33
+stp = 41
+clus = hclust(d = dist(t(allSigFeats[,strt:stp]), method = 'euc'), method = 'average')
+allSigFeats = allSigFeats[,c(1:(strt-1), ((strt-1)+clus$order), (stp+1):ncol(allSigFeats))]
+
+# CLuster resi bin4 columns
+strt = 42
+stp = 52
+clus = hclust(d = dist(t(allSigFeats[,strt:stp]), method = 'euc'), method = 'average')
+allSigFeats = allSigFeats[,c(1:(strt-1), ((strt-1)+clus$order), (stp+1):ncol(allSigFeats))]
+
+# Cluster pocket columns
+strt = 54
+stp = 58
+clus = hclust(d = dist(t(allSigFeats[,strt:stp]), method = 'euc'), method = 'average')
+allSigFeats = allSigFeats[,c(1:(strt-1), ((strt-1)+clus$order), (stp+1):ncol(allSigFeats))]
 
 pheatmap(allSigFeats, cluster_rows = F, cluster_cols = F, # Drop empty columns after pruning rows
-         color = cols, breaks = breakLst,
+         color = cols,
+         breaks = breakLst,
+         border_color = 'black',
+         cellwidth = 14,
+         cellheight = 20,
          gaps_row = c(2,3,6,8),
          gaps_col = c(5,9,26,32,41,52,53,58),
-         labels_row = groupedLigNames)
+         labels_row = groupedLigNames,
+         fontsize_col = 10,
+         angle_col = 45)
+
+## Cluster ligand groups by similarity
+fig4_dists = as.data.frame(matrix(0,nrow = 5, ncol = ncol(allSigFeats)))
+row.names(fig4_dists) = c('NeuAc', 'Fuc', 'Man', 'Gal', 'Glc')
+
+fig4_dists[1,] = apply(allSigFeats[1:2,], 2, mean)
+fig4_dists[2,] = allSigFeats[3,]
+fig4_dists[3,] = apply(allSigFeats[4:6,], 2, mean)
+fig4_dists[4,] = apply(allSigFeats[7:8,], 2, mean)
+fig4_dists[5,] = apply(allSigFeats[9:10,], 2, mean)
+
+clus = hclust(d = dist(fig4_dists, method = 'euc'), method = 'average')
+clus$labels[clus$order]
+
+allSigFeats = allSigFeats[c(3, # Fuc
+                            1:2, # NeuAc
+                            7:8, # Gal
+                            4:6, # Man
+                            9:10),] # Glc
+groupedLigNames = groupedLigNames[c(3, # Fuc
+                                    1:2, # NeuAc
+                                    7:8, # Gal
+                                    4:6, # Man
+                                    9:10)] # Glc
+
+## Cluster rows w/in Man group
+clus = hclust(d = dist(allSigFeats[6:8,], method = 'euc'), method = 'average')
+clus$labels[clus$order]
+
+allSigFeats = allSigFeats[c(1:5,
+                            7,6,8, # reordered rows with mannose
+                            9:10),]
+groupedLigNames = groupedLigNames[c(1:5,
+                     7,6,8,
+                     9:10)]
+
+## Add column annotation
+annot <- data.frame(Feature_Type = rep("", ncol(allSigFeats)))
+row.names(annot) = colnames(allSigFeats)
+
+names(featColors) = row.names(stats)
+
+names(featColors) = gsub('^H_bin', 'a-helix_bin', names(featColors))
+names(featColors) = gsub('^B_bin', 'b-bridge_bin', names(featColors))
+names(featColors) = gsub('^E_bin', 'b-strand_bin', names(featColors))
+names(featColors) = gsub('^G_bin', '3/10-helix_bin', names(featColors))
+names(featColors) = gsub('^T_bin', 'turn_bin', names(featColors))
+names(featColors) = gsub('^S_bin', 'bend_bin', names(featColors))
+names(featColors) = gsub('^X._bin', 'loop_bin', names(featColors))
+
+fig4_feat_colors = featColors[colnames(allSigFeats)]
+
+annot$Feature_Type[fig4_feat_colors == 'forestgreen'] <- 'PLIP interaction counts'
+
+annot$Feature_Type[grepl('^vol_', colnames(allSigFeats)) | grepl('^pcntSurf_', colnames(allSigFeats))] = 'Pocket descriptors' # General pocket descriptors
+annot$Feature_Type[grepl('^binnedD2', colnames(allSigFeats))] <- 'D2 Principal Components'
+annot$Feature_Type[grepl('^zern', colnames(allSigFeats))] <- '3DZD Principal Components'
+
+annot$Feature_Type[grepl('^numBSresis', colnames(allSigFeats))] <- 'Residue counts/bin'
+annot$Feature_Type[gsub('_bin\\d{1}', '', colnames(allSigFeats)) %in% c('a-helix', 'b-bridge', 'b-strand', '3/10-helix', 'turn', 'bend', 'loop')] <- 'Residue sec struct.'
+annot$Feature_Type[gsub('_bin\\d{1}', '', colnames(allSigFeats)) %in% c('nonpolar', 'polar', 'posCharge', 'negCharge', 'aromatic')] <- 'Amino acid property counts'
+annot$Feature_Type[grepl('^[[:upper:]]{3}_', colnames(allSigFeats)) | grepl('^CA$', colnames(allSigFeats))] <- 'Residue identities'
+
+annot$Feature_Type = as.character(annot$Feature_Type)
+annot$Feature_Type <- factor(annot$Feature_Type, levels = unique(annot$Feature_Type))
+
+annot$Bin = "NA"
+annot$Bin[grepl('_bin1$', row.names(annot))] = 'Bin 1'
+annot$Bin[grepl('_bin2$', row.names(annot))] = 'Bin 2'
+annot$Bin[grepl('_bin3$', row.names(annot))] = 'Bin 3'
+annot$Bin[grepl('_bin4$', row.names(annot))] = 'Bin 4'
+
+annot$Bin <- factor(annot$Bin, levels = c('Bin 1', 'Bin 2', 'Bin 3', 'Bin 4', 'NA'))
+
+all(colnames(allSigFeats) == row.names(annot)) 
+
+Feature_Type <- unique(fig4_feat_colors)
+names(Feature_Type) <- levels(annot$Feature_Type)
+
+Bin <- c('firebrick3', 'darkorange2', 'darkgoldenrod2', 'gold2','grey75')
+names(Bin) <- levels(annot$Bin)
+
+r_annot = data.frame(Gly_Type = rep("", nrow(allSigFeats)))
+row.names(r_annot) = row.names(allSigFeats)
+
+r_annot$Gly_Type[1] = 'Fucose'
+r_annot$Gly_Type[2:3] = 'Sialic Acid'
+r_annot$Gly_Type[4:5] = 'Galactose'
+r_annot$Gly_Type[6:8] = 'Mannose'
+r_annot$Gly_Type[9:10] = 'Glucose'
+
+r_annot$Gly_Type = factor(r_annot$Gly_Type, levels = unique(r_annot$Gly_Type))
+
+Gly_Type = c('red1', 'purple2', 'goldenrod2', 'forestgreen', 'royalblue2')
+names(Gly_Type) = levels(r_annot$Gly_Type)
+
+annot_cols <- list(Feature_Type = Feature_Type, Bin = Bin, Gly_Type = Gly_Type)
+
+pdf(file = paste('./manuscript/figures/subplots/', 
+                 'important_feats',
+                 '.pdf', sep = ''),
+    width = 18,
+    height = 7)
+pheatmap(allSigFeats, cluster_rows = F, cluster_cols = F, # Drop empty columns after pruning rows
+         color = cols,
+         breaks = breakLst,
+         border_color = 'black',
+         cellwidth = 14,
+         cellheight = 20,
+         gaps_row = c(1,3,5,8),
+         gaps_col = c(5,9,26,32,41,52,53,58),
+         annotation_col = annot,
+         annotation_row = r_annot,
+         annotation_colors = annot_cols,
+         labels_row = groupedLigNames,
+         fontsize_col = 10,
+         angle_col = 45)
+dev.off()
+
+plot(0,0, axes = F, xlab = '', ylab = '', col = 'white')
+legend(x = 'center',
+       pch = 22,
+       pt.cex = 2,  
+       col = c('white',
+                rep('black',3),
+                'white','white',
+               rep('black',3)),
+       pt.bg = c('white',
+               cols[1:3],
+               'white','white',
+               cols[4:6]),
+       legend = c(expression(bold('Depleted Features')),
+                  'High Imp RF & Stat Sig',
+                  'High Imp RF XOR Stat Sig',
+                  'Low Imp RF & Non Sig',
+                  '',
+                  expression(bold('Enriched Features')),
+                  'Low Imp RF & Non Sig',
+                  'High Imp RF XOR Stat Sig',
+                  'High Imp RF & Stat Sig'))
+
+
+## Fig 0 barplots
+fig0_feats = c('total','numBSresis_bin1', 'X._bin1', 'posCharge_bin1', 'ASP_bin1', 'pcntSurf_4Ang', 'var_4Ang', 'binnedD2_PC6', 'zern_PC4')
+
+fig0_means = as.data.frame(matrix(0, nrow = length(fig0_feats), ncol = 6))
+row.names(fig0_means) = fig0_feats
+colnames(fig0_means) = c('lac', 'no_lac',
+                         'man', 'no_man',
+                         'fuc', 'no_fuc')
+
