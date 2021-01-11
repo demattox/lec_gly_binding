@@ -400,8 +400,11 @@ scaledWMW_feats = cbind(scaledFeats,ligTags)
 scaled_des <- svydesign(ids = ~1, data = scaledWMW_feats, weights = 1/cuWeights)
 
 ligSpefic_feat_means = as.data.frame(matrix(0,nrow = ncol(predFeats), ncol = ncol(ligTags)))
-fuc = rep(0,ncol(scaledFeats))
-names(fuc) = colnames(scaledFeats)
+colnames(ligSpefic_feat_means) = colnames(ligTags)
+row.names(ligSpefic_feat_means) = colnames(predFeats)
+
+# fuc = rep(0,ncol(scaledFeats))
+# names(fuc) = colnames(scaledFeats)
 
 
 
@@ -417,7 +420,7 @@ for (i in 1:ncol(ligTags)){ # for ligand i
   des_wo = subset(des, subset = !ligTags[,i]) # same as above but WITHOUT the ligand of interest
   
 
-  #scaled_des_w = subset(scaled_des, subset = ligTags[,i]) # 
+  scaled_des_w = subset(scaled_des, subset = ligTags[,i]) # 
 
   for(k in 1:ncol(predFeats)){ # for each feature k
     ligTest = svyranktest(formula = as.formula(paste(colnames(predFeats)[k], ' ~ ', colnames(ligTags)[i], sep = '')), # Wilcoxon–Mann–Whitney test, sample sizes can be small (~5% of 230 clusters ~= 10), no reason to assume distribution is normal as it likely isn't
@@ -434,7 +437,7 @@ for (i in 1:ncol(ligTags)){ # for ligand i
     
     stats_weighted[k, grepl('_FC$', colnames(stats_weighted))][i] = svymean(predFeats[ligTags[,i],k], des_w)[1] / svymean(predFeats[!ligTags[,i],k], des_wo)[1] # Fold change in weighted means
     
-    fuc[k] = svymean(scaledFeats[ligTags[,i],k], scaled_des_w)[1]
+    ligSpefic_feat_means[k,i] = svymean(scaledFeats[ligTags[,i],k], scaled_des_w)[1] # Get the weighted mean for each feature in interactions with each glycan of interest
   }
 
   stats_weighted[,grepl('_adj$', colnames(stats_weighted))][,i] = p.adjust(stats_weighted[grepl('_p$', colnames(stats_weighted))][,i], method = "BH") # Benjamini-Hochberg MHT correction (FDR)
@@ -443,9 +446,12 @@ for (i in 1:ncol(ligTags)){ # for ligand i
 stats_weighted[,grepl('_adj$', colnames(stats_weighted))][stats_weighted[,grepl('_adj$', colnames(stats_weighted))] < 1e-16] <- 1e-16
 
 ####################
-fucDists = distance(rbind(fuc,scaledFeats[ligTags$Fuc,]), method = 'euclidean', use.row.names = T)
 
-which.min(fucDists[1,2:423])
+colnames(ligSpefic_feat_means) = gsub('$', '_weightedFeatureMean', colnames(ligSpefic_feat_means))
+
+# all(row.names(ligSpefic_feat_means) == row.names(stats_weighted))
+stats_weighted = cbind(stats_weighted, ligSpefic_feat_means)
+
 ####################
 
 
@@ -701,14 +707,50 @@ cWidth = 8
 cHeight = 20
 
 
+## Lignd annotation
+
+
 # All-feature based correlogram
+
+allFeatCorrs = cor(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))], stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))], method = 'pearson')
+row.names(allFeatCorrs)  = gsub('_effectSize$', '', row.names(allFeatCorrs))
+
+r_annot = data.frame(Terminal_Sugar = rep("", nrow(allFeatCorrs)))
+row.names(r_annot) = row.names(allFeatCorrs)
+
+r_annot$Terminal_Sugar[ligColors %in% c('purple2', 'darkviolet')] = 'NeuAc'
+r_annot$Terminal_Sugar[ligColors %in% c('forestgreen', 'darkgreen')] = 'Man'
+r_annot$Terminal_Sugar[ligColors %in% c('red1', 'firebrick3')] = 'Fuc'
+r_annot$Terminal_Sugar[ligColors %in% c('goldenrod2', 'darkgoldenrod3')] = 'Gal'
+r_annot$Terminal_Sugar[ligColors %in% c('mediumblue', 'royalblue2')] = 'Glc'
+
+r_annot$Terminal_Sugar = factor(r_annot$Terminal_Sugar, levels = unique(r_annot$Terminal_Sugar))
+
+Terminal_Sugar = c('purple2', 'forestgreen', 'red1', 'goldenrod2', 'mediumblue')
+names(Terminal_Sugar) = levels(r_annot$Terminal_Sugar)
+
+
+r_annot$Sugar_Cnt = rep("", nrow(allFeatCorrs))
+r_annot$Sugar_Cnt[c(1:3, 9)] = '3+'
+r_annot$Sugar_Cnt[c(4,11,12,15)] = '2'
+r_annot$Sugar_Cnt[c(5,6,7,8,10,13,14)] = '1'
+
+r_annot$Sugar_Cnt <- factor(r_annot$Sugar_Cnt, levels = c('1', '2', '3+'))
+
+Sugar_Cnt = colorspace::sequential_hcl(3)
+names(Sugar_Cnt) = levels(r_annot$Sugar_Cnt)
+
+
+annot_cols = list(Terminal_Sugar = Terminal_Sugar, Sugar_Cnt = Sugar_Cnt)
+
+
 pdf(file = paste('./manuscript/figures/subplots/', 
                  'allFeats_MWM_corplots',
                  '.pdf', sep = ''),
     width = 11.5,
     height = 8.25)
 breakLst = seq(-1,1,0.05)
-pheatmap(cor(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))], stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))], method = 'pearson'),
+pheatmap(allFeatCorrs,
          color = colorRampPalette(c("firebrick2", "ivory", "dodgerblue3"))(length(breakLst)),
          border_color = 'black',
          cellwidth = cHeight,
@@ -721,8 +763,11 @@ pheatmap(cor(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))], s
          show_colnames = F,
          cutree_rows = 4,
          # cutree_cols = 4,
-         treeheight_col = 0)
-grid.text(label = 'Pearson correlations between feature-specific effect sizes across ligands',x = .415, y=0.985, gp=gpar(col="black", cex = 1.5))
+         treeheight_col = 0,
+         
+         annotation_row = r_annot,
+         annotation_colors = annot_cols)
+# grid.text(label = 'Pearson correlations between feature-specific effect sizes across ligands',x = .415, y=0.985, gp=gpar(col="black", cex = 1.5))
 dev.off() 
 
 
@@ -806,14 +851,17 @@ names(Feature_Type) <- levels(resiAnnot$Feature_Type)
 Bin <- c('firebrick3', 'darkorange2', 'darkgoldenrod2', 'gold2')
 names(Bin) <- levels(resiAnnot$Bin)
 
-resiAnnot_cols <- list(Feature_Type = Feature_Type, Bin = Bin)
+resiAnnot_cols <- list(Feature_Type = Feature_Type, Bin = Bin, Terminal_Sugar = Terminal_Sugar, Sugar_Cnt = Sugar_Cnt)
+
+resiFeat_stats = t(resiFeat_stats[resiFeatTag,grepl('_effectSize$', colnames(resiFeat_stats))])
+row.names(resiFeat_stats) = gsub('_effectSize$', '', row.names(resiFeat_stats))
 
 pdf(file = paste('./manuscript/figures/subplots/', 
                  'resiFeats_MWM_heatmap',
                  '.pdf', sep = ''),
     width = 24,
     height = 7)
-pheatmap(t(resiFeat_stats[resiFeatTag,grepl('_effectSize$', colnames(resiFeat_stats))]),
+pheatmap(resiFeat_stats,
          color = colorRampPalette(c("royalblue1", "ivory", "gold1"))(length(breakLst)),
          border_color = 'ivory',
          cellwidth = cWidth,
@@ -821,7 +869,9 @@ pheatmap(t(resiFeat_stats[resiFeatTag,grepl('_effectSize$', colnames(resiFeat_st
          clustering_distance_rows = 'correlation',
          # display_numbers = ifelse(t(stats_weighted[,grepl('_adj$', colnames(stats_weighted))]) < 0.01, "*", ""), fontsize_number = 18,
          labels_row = ligNames,
-         annotation_col = resiAnnot, annotation_colors = resiAnnot_cols,
+         annotation_col = resiAnnot,
+         annotation_row = r_annot,
+         annotation_colors = resiAnnot_cols,
          # legend_breaks = c(1,5),
          cutree_rows = 4,
          main = '',
@@ -855,14 +905,18 @@ names(Feature_Type) <- levels(pockAnnot$Feature_Type)
 Threshold <- c('firebrick3', 'darkorange2', 'darkgoldenrod2', 'gold2', 'grey75')
 names(Threshold) <- levels(pockAnnot$Threshold)
 
-pockAnnot_cols <- list(Feature_Type = Feature_Type, Threshold = Threshold)
+pockAnnot_cols <- list(Feature_Type = Feature_Type, Threshold = Threshold, Terminal_Sugar = Terminal_Sugar, Sugar_Cnt = Sugar_Cnt)
+
+
+pocketFeat_stats = t(stats_weighted[pocketFeatTag,grepl('_effectSize$', colnames(stats_weighted))])
+row.names(pocketFeat_stats) = gsub('_effectSize$', '', row.names(pocketFeat_stats))
 
 pdf(file = paste('./manuscript/figures/subplots/', 
                  'pocketFeats_MWM_heatmap',
                  '.pdf', sep = ''),
     width = 24,
     height = 7)
-pheatmap(t(stats_weighted[pocketFeatTag,grepl('_effectSize$', colnames(stats_weighted))]),
+pheatmap(pocketFeat_stats,
          color = colorRampPalette(c("royalblue1", "ivory", "gold1"))(length(breakLst)),
          border_color = 'ivory',
          cellwidth = cWidth,
@@ -870,7 +924,9 @@ pheatmap(t(stats_weighted[pocketFeatTag,grepl('_effectSize$', colnames(stats_wei
          clustering_distance_rows = 'correlation',
          # display_numbers = ifelse(t(stats_weighted[,grepl('_adj$', colnames(stats_weighted))]) < 0.01, "*", ""), fontsize_number = 18,
          labels_row = ligNames,
-         annotation_col = pockAnnot, annotation_colors = pockAnnot_cols,
+         annotation_col = pockAnnot,
+         annotation_row = r_annot,
+         annotation_colors = pockAnnot_cols,
          main = '',
          cutree_rows = 4,
          breaks = breakLst,
@@ -880,12 +936,19 @@ pheatmap(t(stats_weighted[pocketFeatTag,grepl('_effectSize$', colnames(stats_wei
 dev.off()
 
 # PLIP features only
+
+annot_cols = list(Terminal_Sugar = Terminal_Sugar, Sugar_Cnt = Sugar_Cnt)
+
+plipFeat_stats = t(stats_weighted[1:11,grepl('_effectSize$', colnames(stats_weighted))])
+row.names(plipFeat_stats) = gsub('_effectSize$', '', row.names(plipFeat_stats))
+
+
 pdf(file = paste('./manuscript/figures/subplots/', 
                  'plipFeats_MWM_heatmap',
                  '.pdf', sep = ''),
     width = 24,
     height = 7)
-pheatmap(t(stats_weighted[1:11,grepl('_effectSize$', colnames(stats_weighted))]),
+pheatmap(plipFeat_stats,
          color = colorRampPalette(c("royalblue1", "ivory", "gold1"))(length(breakLst)),
          border_color = 'ivory',
          cellwidth = cWidth,
@@ -893,6 +956,8 @@ pheatmap(t(stats_weighted[1:11,grepl('_effectSize$', colnames(stats_weighted))])
          clustering_distance_rows = 'correlation',
          # display_numbers = ifelse(t(stats_weighted[,grepl('_adj$', colnames(stats_weighted))]) < 0.01, "*", ""), fontsize_number = 18,
          labels_row = ligNames,
+         annotation_row = r_annot,
+         annotation_colors = annot_cols,
          main = '',
          cutree_rows = 4,
          breaks = breakLst,
