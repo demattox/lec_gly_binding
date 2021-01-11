@@ -1225,8 +1225,9 @@ draw.pairwise.venn(area1 = length(glcBindingFeats_neg[[1]]),
                    fontfamily = "sans"
 )
 
-
-# Check across all ligands
+##################################
+###### Check across all ligands
+##################################
 
 groupedLigNames = ligNames[c(1,8,9,
                              3,14,
@@ -1497,6 +1498,9 @@ names(Gly_Type) = levels(r_annot$Gly_Type)
 
 annot_cols <- list(Feature_Type = Feature_Type, Bin = Bin, Gly_Type = Gly_Type)
 
+###
+# FIGURE 4
+###
 pdf(file = paste('./manuscript/figures/subplots/', 
                  'important_feats',
                  '.pdf', sep = ''),
@@ -1541,12 +1545,37 @@ legend(x = 'center',
                   'High Imp RF & Stat Sig'))
 
 
+
+
+###
 ## Fig 0 barplots
-fig0_feats = c('total','numBSresis_bin1', 'X._bin1', 'posCharge_bin1', 'ASP_bin1', 'pcntSurf_4Ang', 'var_4Ang', 'binnedD2_PC6', 'zern_PC4')
+###
+scaledFeats = predFeats
+for(i in 1:ncol(scaledFeats)){
+  scaledFeats[,i] = (scaledFeats[,i] - min(scaledFeats[,i])) / (max(scaledFeats[,i]) - min(scaledFeats[,i]))
+}
+
+fig0_feats = c('hbonds','numBSresis_bin3', 'E_bin4', 'negCharge_bin4', 'CA', 'pcntSurf_4Ang', 'var_4Ang', 'binnedD2_PC3', 'zern_PC5')
 
 fig0_means = as.data.frame(matrix(0, nrow = length(fig0_feats), ncol = 6))
 row.names(fig0_means) = fig0_feats
 colnames(fig0_means) = c('lac', 'no_lac',
                          'man', 'no_man',
                          'fuc', 'no_fuc')
+
+fig0_means$lac = apply(scaledFeats[ligTags$Gal.b1.4.Glc, fig0_feats], 2, mean)
+fig0_means$no_lac = apply(scaledFeats[! ligTags$Gal.b1.4.Glc, fig0_feats], 2, mean)
+
+fig0_means$man = apply(scaledFeats[ligTags$High_Mannose, fig0_feats], 2, mean)
+fig0_means$no_man = apply(scaledFeats[! ligTags$High_Mannose, fig0_feats], 2, mean)
+
+fig0_means$fuc = apply(scaledFeats[ligTags$Fuc, fig0_feats], 2, mean)
+fig0_means$no_fuc = apply(scaledFeats[! ligTags$Fuc, fig0_feats], 2, mean)
+
+barplot(as.matrix(t(fig0_means[,1:2])), beside = T, col = c('gold2', 'grey60'), ylim = c(0,1))
+
+barplot(as.matrix(t(fig0_means[,3:4])), beside = T, col = c('forestgreen', 'grey60'), ylim = c(0,1))
+
+barplot(as.matrix(t(fig0_means[,5:6])), beside = T, col = c('red2', 'grey60'), ylim = c(0,.7))
+
 

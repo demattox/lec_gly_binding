@@ -394,7 +394,18 @@ des <- svydesign(ids = ~1, data = wmwFeats, weights = 1/cuWeights)
 # svymean(predFeats[ligTags[,i],k], des_w)
 # svymean(predFeats[!ligTags[,i],k], des_wo)
 
+######################
+scaledWMW_feats = cbind(scaledFeats,ligTags)
 
+scaled_des <- svydesign(ids = ~1, data = scaledWMW_feats, weights = 1/cuWeights)
+
+ligSpefic_feat_means = as.data.frame(matrix(0,nrow = ncol(predFeats), ncol = ncol(ligTags)))
+fuc = rep(0,ncol(scaledFeats))
+names(fuc) = colnames(scaledFeats)
+
+
+
+######################
 
 
 stats_weighted = as.data.frame(matrix(0, nrow = ncol(predFeats), ncol = (ncol(ligTags)*4)))
@@ -404,6 +415,10 @@ colnames(stats_weighted) = c(paste(colnames(ligTags), 'p', sep = '_'), paste(col
 for (i in 1:ncol(ligTags)){ # for ligand i
   des_w = subset(des, subset = ligTags[,i]) # temporary design object holding all interactions with the ligand of interest
   des_wo = subset(des, subset = !ligTags[,i]) # same as above but WITHOUT the ligand of interest
+  
+
+  #scaled_des_w = subset(scaled_des, subset = ligTags[,i]) # 
+
   for(k in 1:ncol(predFeats)){ # for each feature k
     ligTest = svyranktest(formula = as.formula(paste(colnames(predFeats)[k], ' ~ ', colnames(ligTags)[i], sep = '')), # Wilcoxon–Mann–Whitney test, sample sizes can be small (~5% of 230 clusters ~= 10), no reason to assume distribution is normal as it likely isn't
                            design = des, 
@@ -419,13 +434,20 @@ for (i in 1:ncol(ligTags)){ # for ligand i
     
     stats_weighted[k, grepl('_FC$', colnames(stats_weighted))][i] = svymean(predFeats[ligTags[,i],k], des_w)[1] / svymean(predFeats[!ligTags[,i],k], des_wo)[1] # Fold change in weighted means
     
-    
+    fuc[k] = svymean(scaledFeats[ligTags[,i],k], scaled_des_w)[1]
   }
 
   stats_weighted[,grepl('_adj$', colnames(stats_weighted))][,i] = p.adjust(stats_weighted[grepl('_p$', colnames(stats_weighted))][,i], method = "BH") # Benjamini-Hochberg MHT correction (FDR)
 }
 
 stats_weighted[,grepl('_adj$', colnames(stats_weighted))][stats_weighted[,grepl('_adj$', colnames(stats_weighted))] < 1e-16] <- 1e-16
+
+####################
+fucDists = distance(rbind(fuc,scaledFeats[ligTags$Fuc,]), method = 'euclidean', use.row.names = T)
+
+which.min(fucDists[1,2:423])
+####################
+
 
 
 # Colors to features for plotting
