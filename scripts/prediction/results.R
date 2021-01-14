@@ -7,6 +7,8 @@ library(PRROC)
 library(vioplot)
 library(VennDiagram)
 
+library(umap)
+
 # devtools::install_github("copenhagencenterforglycomics/ggsugar")
 # library(ggsugar)
 
@@ -116,6 +118,12 @@ randDirs = './analysis/training/train_and_validate/nr_CVLOCO_reps/rand/'
 # inTest = inTest[newOrd]
 # inOutcomes = inOutcomes[newOrd]
 # inFeats = inFeats[newOrd]
+
+
+scaledFeats = predFeats
+for(i in 1:ncol(scaledFeats)){
+  scaledFeats[,i] = (scaledFeats[,i] - min(scaledFeats[,i])) / (max(scaledFeats[,i]) - min(scaledFeats[,i]))
+}
 
 ###############
 # Look at lectin specificity
@@ -1545,15 +1553,121 @@ legend(x = 'center',
                   'High Imp RF & Stat Sig'))
 
 
+## Find prototypical binding sites for each of 10 ligands in focus
+row.names(stats) = gsub('^H_bin', 'a-helix_bin', row.names(stats))
+row.names(stats) = gsub('^B_bin', 'b-bridge_bin', row.names(stats))
+row.names(stats) = gsub('^E_bin', 'b-strand_bin', row.names(stats))
+row.names(stats) = gsub('^G_bin', '3/10-helix_bin', row.names(stats))
+row.names(stats) = gsub('^T_bin', 'turn_bin', row.names(stats))
+row.names(stats) = gsub('^S_bin', 'bend_bin', row.names(stats))
+row.names(stats) = gsub('^X._bin', 'loop_bin', row.names(stats))
 
+ligSpefic_feat_means = stats[,grepl('_weightedFeatureMean', colnames(stats))]
+colnames(ligSpefic_feat_means) = gsub('_weightedFeatureMean$', '', colnames(ligSpefic_feat_means))
 
-###
-## Fig 0 barplots
-###
-scaledFeats = predFeats
-for(i in 1:ncol(scaledFeats)){
-  scaledFeats[,i] = (scaledFeats[,i] - min(scaledFeats[,i])) / (max(scaledFeats[,i]) - min(scaledFeats[,i]))
+ligSpefic_feat_means = ligSpefic_feat_means[colnames(allSigFeats),] # Limit to the set of 60 features that are significant and important in at least one of the 10 best performing ligands with RF
+
+top60_scaledFeats = scaledFeats
+colnames(top60_scaledFeats) = row.names(stats) # carry over reformatted feature names
+top60_scaledFeats = top60_scaledFeats[,colnames(allSigFeats)] # Subset of 60 top features scaled from 0,1
+
+for (i in 1:ncol(ligTags)){
+  cat(colnames(ligTags[i]), '\n')
+  boundDat = rbind(ligSpefic_feat_means[,i], top60_scaledFeats[ligTags[,i],])
+  dists = distance(boundDat, method = 'euclidean', use.row.names = T)
+  
+  cat(row.names(boundDat)[which.min(dists[1,2:nrow(boundDat)]) +1],'\t')
+  cat(min(dists[1,2:nrow(boundDat)]),'\n\n')
 }
+
+topLigs = row.names(allSigFeats)
+topLigTag = apply(ligTags[,topLigs], 1, any)
+
+top60.scaledPC = prcomp(x = top60_scaledFeats, scale. = T)
+
+allLigColors = rep("grey40", nrow(predFeats))
+allLigColors[apply(ligTags[,c(1,8,9)], 1, any)] = 'purple2'
+allLigColors[apply(ligTags[,c(3,14)], 1, any)] = 'red1'
+allLigColors[apply(ligTags[,c(2,6,12)], 1, any)] = 'forestgreen'
+allLigColors[apply(ligTags[,c(4,5,7,11,15)], 1, any)] = 'goldenrod2'
+allLigColors[apply(ligTags[,c(10,13)], 1, any)] = 'mediumblue'
+
+
+plot(top60.scaledPC$x, col = allLigColors)
+
+topLigShapes = rep(0, sum(topLigTag))
+topLigShapes[apply(ligTags[topLigTag, c(14, 1, 4, 6, 10)], 1 , any)] = 15
+topLigShapes[apply(ligTags[topLigTag, c(9, 5, 2, 13)], 1 , any)] = 16
+topLigShapes[ligTags[topLigTag, 12]] = 17
+
+plot(top60.scaledPC$x[topLigTag,], col = alpha(allLigColors[topLigTag], 0.6), pch = topLigShapes)
+legend(x = 'center',
+       legend = topLigs,
+       col = c('red1', 
+         'purple2', 'purple2', 
+         'goldenrod2', 'goldenrod2', 
+         'forestgreen', 'forestgreen', 'forestgreen', 
+         'mediumblue', 'mediumblue'),
+       pch = c(15,
+               15, 16,
+               15, 16,
+               15, 16, 17,
+               15, 16)
+       )
+
+topLig_top60.scaledPC = prcomp(x = top60_scaledFeats[topLigTag,], scale. = T)
+
+plot(topLig_top60.scaledPC$x, col = alpha(allLigColors[topLigTag], 0.6), pch = topLigShapes)
+
+
+
+all.umap = umap(top60_scaledFeats)
+plot(all.umap$layout, #xlim = c(-5.5,7), ylim = c(-6.5,6.5),
+     col = allLigColors,
+     xlab = 'UMAP 1', ylab = 'UMAP 2', main = 'UMAP vis for 60 top predictive features - Scaled')
+
+
+plot(all.umap$layout[topLigTag,], #xlim = c(-5.5,7), ylim = c(-6.5,6.5),
+     col = allLigColors[topLigTag], pch = topLigShapes,
+     xlab = 'UMAP 1', ylab = 'UMAP 2', main = 'UMAP vis for 60 top predictive features - Scaled - Top 10 gly subset')
+
+##
+top.umap = umap(top60_scaledFeats[topLigTag,])
+
+plot(top.umap$layout,
+     xlim = c(-11,11), ylim = c(-8,13),
+     col = alpha(allLigColors[topLigTag], 0.6), pch = topLigShapes,
+     xlab = 'UMAP 1', ylab = 'UMAP 2', main = 'UMAP vis for 60 top predictive features - Scaled top 10 gly')
+
+featMeans = predict(top.umap, t(ligSpefic_feat_means[,topLigs]))
+par(new = T)
+plot(featMeans, cex = 3.15,
+     xlab = '', ylab = '', axes = F,
+     xlim = c(-11,11), ylim = c(-8,13),
+     col = 'black',
+     pch = c(15,
+             15, 16,
+             15, 16,
+             15, 16, 17,
+             15, 16))
+par(new = T)
+plot(featMeans, cex = 3,
+     xlab = '', ylab = '', axes = F,
+     xlim = c(-11,11), ylim = c(-8,13),
+     col = alpha(c('red1', 
+                   'purple2', 'purple2', 
+                   'goldenrod2', 'goldenrod2', 
+                   'forestgreen', 'forestgreen', 'forestgreen', 
+                   'mediumblue', 'mediumblue'), 1),
+     pch = c(15,
+             15, 16,
+             15, 16,
+             15, 16, 17,
+             15, 16))
+
+###############################
+## Fig 0 barplots
+###############################
 
 fig0_feats = c('hbonds','numBSresis_bin3', 'E_bin4', 'negCharge_bin4', 'CA', 'pcntSurf_4Ang', 'var_4Ang', 'binnedD2_PC3', 'zern_PC5')
 

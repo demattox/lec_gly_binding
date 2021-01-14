@@ -174,6 +174,12 @@ if __name__ == '__main__':
                 bin2stats = collections.Counter()
                 bin3stats = collections.Counter()
                 bin4stats = collections.Counter()
+                
+                bin1Resis = collections.defaultdict(list) # Save chain and res number of binned residues
+                bin2Resis = collections.defaultdict(list) # Save chain and res number of binned residues
+                bin3Resis = collections.defaultdict(list) # Save chain and res number of binned residues
+                bin4Resis = collections.defaultdict(list) # Save chain and res number of binned residues
+                
                 for res in bs.bs_res:
                     minD = res['min_dist']
                     if minD <= bin1:
@@ -183,7 +189,10 @@ if __name__ == '__main__':
                             bin1stats[res['aa']] += 1 # Record the amino acid identity
                         else:
                             bin1stats['ALT'] += 1 # Count non-standard amino acids as "ALT" for alternate
+                            
                         bin1stats[res['struct']] += 1 # Record secondary structure
+                        bin1Resis[res['reschain']].append(res['resnr'])
+                        
                     elif minD <= bin2:
                         bsResiCnts[1] += 1
                         if res['aa'] in res2group.keys():
@@ -191,7 +200,10 @@ if __name__ == '__main__':
                             bin2stats[res['aa']] += 1 # Record the amino acid identity
                         else:
                             bin2stats['ALT'] += 1 # Count non-standard amino acids as "ALT" for alternate
+                            
                         bin2stats[res['struct']] += 1 # Record secondary structure
+                        bin2Resis[res['reschain']].append(res['resnr'])
+                        
                     elif minD <= bin3:
                         bsResiCnts[2] += 1
                         if res['aa'] in res2group.keys():
@@ -199,7 +211,10 @@ if __name__ == '__main__':
                             bin3stats[res['aa']] += 1 # Record the amino acid identity
                         else:
                             bin3stats['ALT'] += 1 # Count non-standard amino acids as "ALT" for alternate
+                            
                         bin3stats[res['struct']] += 1 # Record secondary structure
+                        bin3Resis[res['reschain']].append(res['resnr'])
+                        
                     elif minD <= bin4: # bin 4
                         bsResiCnts[3] += 1
                         if res['aa'] in res2group.keys():
@@ -207,7 +222,71 @@ if __name__ == '__main__':
                             bin4stats[res['aa']] += 1 # Record the amino acid identity
                         else:
                             bin4stats['ALT'] += 1 # Count non-standard amino acids as "ALT" for alternate
+                            
                         bin4stats[res['struct']] += 1 # Record secondary structure
+                        bin4Resis[res['reschain']].append(res['resnr'])
+        
+                # # Print bsite resiudes in proper format for pymol
+                # # bin 1
+                # out = 'sele '
+                # for chainKey in bin1Resis.keys():
+                #     if out == 'sele ':
+                #         out += '(resi '
+                #     else:
+                #         out += ' or (resi '
+                #     for r in bin1Resis[chainKey]:
+                #         if out[-1] != ' ':
+                #             out += '+'
+                #         out += str(r)
+                #     out += ' and chain ' + chainKey + ')'
+                # print(out)
+                # print('set_name sele, bin1')
+                
+                # # bin 2
+                # out = 'sele '
+                # for chainKey in bin2Resis.keys():
+                #     if out == 'sele ':
+                #         out += '(resi '
+                #     else:
+                #         out += ' or (resi '
+                #     for r in bin2Resis[chainKey]:
+                #         if out[-1] != ' ':
+                #             out += '+'
+                #         out += str(r)
+                #     out += ' and chain ' + chainKey + ')'
+                # print(out)
+                # print('set_name sele, bin2')
+                
+                # # bin 3
+                # out = 'sele '
+                # for chainKey in bin3Resis.keys():
+                #     if out == 'sele ':
+                #         out += '(resi '
+                #     else:
+                #         out += ' or (resi '
+                #     for r in bin3Resis[chainKey]:
+                #         if out[-1] != ' ':
+                #             out += '+'
+                #         out += str(r)
+                #     out += ' and chain ' + chainKey + ')'
+                # print(out)
+                # print('set_name sele, bin3')
+                
+                # # bin 4
+                # out = 'sele '
+                # for chainKey in bin4Resis.keys():
+                #     if out == 'sele ':
+                #         out += '(resi '
+                #     else:
+                #         out += ' or (resi '
+                #     for r in bin4Resis[chainKey]:
+                #         if out[-1] != ' ':
+                #             out += '+'
+                #         out += str(r)
+                #     out += ' and chain ' + chainKey + ')'
+                # print(out)
+                # print('set_name sele, bin4')
+                    
                 
                 bin1out = [ str(bin1stats[c]/bsResiCnts[0]) if bsResiCnts[0] != 0 else '0' for c in dsspCodes + aaGroups + resis] # Percentages of amino acids with each ss and res characteristic in the order provided in the column names
                 bin2out = [ str(bin2stats[c]/bsResiCnts[1]) if bsResiCnts[1] != 0 else '0' for c in dsspCodes + aaGroups + resis] # if/else to avoid divide by 0 error
@@ -219,4 +298,10 @@ if __name__ == '__main__':
                         
                 outFH.write('\t'.join([pdb + '_' + lig] + [pdb] + LigCheck.unilecData[pdb] + [str(len(plipDat.bsites))] + [bs.longname] + [bsSeqs] + bsResiCnts + [str(bs.counts[intType]) for intType in intNames] + bin1out + bin2out + bin3out + bin4out + hetAtmOut) + '\n')
                 
+    
+
+    
+    
+    
+    
     
