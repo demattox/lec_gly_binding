@@ -704,10 +704,10 @@ dev.off()
 #######################
 
 cWidth = 8
-cHeight = 20
+cHeight = 20 
 
 
-## Lignd annotation
+## Ligand annotation
 
 
 # All-feature based correlogram
@@ -769,6 +769,22 @@ pheatmap(allFeatCorrs,
          annotation_colors = annot_cols)
 # grid.text(label = 'Pearson correlations between feature-specific effect sizes across ligands',x = .415, y=0.985, gp=gpar(col="black", cex = 1.5))
 dev.off() 
+
+cor.test(stats_weighted$Gal.b1.4.Glc_effectSize, stats_weighted$Gal.b1.4.GlcNAc_effectSize)
+
+
+cor.test(stats_weighted$Man.a1.2.Man_effectSize, stats_weighted$Glc_effectSize)
+
+cor.test(stats_weighted$Man.a1.2.Man_effectSize, stats_weighted$High_Mannose_effectSize)
+
+
+cor.test(stats_weighted$Sialic_Acid_effectSize, stats_weighted$NeuAc.a2.3.Gal.b1.4.Glc_effectSize)
+
+cor.test(stats_weighted$Sialic_Acid_effectSize, stats_weighted$NeuAc_effectSize)
+cor.test(stats_weighted$NeuAc_effectSize, stats_weighted$NeuAc.a2.3.Gal.b1.4.Glc_effectSize)
+
+
+cor.test(stats_weighted$Man_effectSize, stats_weighted$Fuc_effectSize)
 
 
 # corrmat = cor(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))], stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))], method = 'pearson')
@@ -971,6 +987,8 @@ dev.off()
 #######################
 
 write.table(stats_weighted, file = './analysis/training/weightedWMW_stats.tsv', quote = F, sep = '\t')
+
+save(des, file = './analysis/training/surveyObject.RData')
 
 # Sialic acid features
 siaBindingFeats_pos = list(row.names(stats_weighted)[stats_weighted$Sialic_Acid_adj < 0.01 & stats_weighted$Sialic_Acid_effectSize > 0], row.names(stats_weighted)[stats_weighted$NeuAc_adj < 0.01 & stats_weighted$NeuAc_effectSize > 0], row.names(stats_weighted)[stats_weighted$NeuAc.a2.3.Gal.b1.4.Glc_adj < 0.01 & stats_weighted$NeuAc.a2.3.Gal.b1.4.Glc_effectSize > 0])

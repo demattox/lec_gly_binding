@@ -6,6 +6,7 @@ library(pheatmap)
 library(PRROC)
 library(vioplot)
 library(VennDiagram)
+library(survey)
 
 library(umap)
 
@@ -52,6 +53,8 @@ setwd(homeDir)
 ligTags = read.delim(file = './analysis/training/data_in/ligTags.tsv', sep = '\t', stringsAsFactors = F)
 predFeats = read.delim(file = './analysis/training/data_in/predFeats.csv', sep = ',', stringsAsFactors = F)
 bsResiDat = read.delim(file = './analysis/training/data_in/bsResiDat.tsv', sep = '\t', stringsAsFactors = F)
+
+load('./analysis/training/surveyObject.RData')
 
 ####
 ligNames = colnames(ligTags)
@@ -512,7 +515,7 @@ mycol = colorRampPalette(c("ivory", "cornflowerblue", "navy"))(n = length(breakL
 # cor.test(sampSizes, testMeds$kappa)
 
 #########################
-## Figure 3
+## Figure 2
 #########################
 ## P & R same plot with violin & box plots
 xLim = c(-1,30)
@@ -595,9 +598,186 @@ text(x = seq.int(1,29,2),
      cex = 1.2)
 
 
+###
+###
+# Alt Fig 2 with sample size boxplots dropped out into a separate panel
+###
+
+# Panel A -- P & R same plot with violin & box plots
+xLim = c(0,30)
+yLim = c(0.2,1)
+
+par(mar = c(8.6, 5.1, 5.1, 4.1), # change the margins
+    lwd = 2, # increase the line thickness
+    cex.axis = 1.2 # increase default axis label size
+)
+# par(cex.lab=1.5, mar = c(5, 4, 4, 4) + 0.3)
+plot(0,0,col = 'white', xlab = '',ylab = '',type="n",
+     axes=FALSE,ann=FALSE,
+     xlim = xLim,
+     ylim = yLim)
+for(j in 1:ncol(ligTags)){
+  i = ((j-1) * 2) + 1
+  vioplot(testDat$recall[(testDat$ligand == colnames(ligTags)[j]) & (testDat$mode == 'pred')], at = i, side = 'left',
+          col = ligColors[j],
+          xlim = xLim, ylim = yLim,
+          add = T,
+          plotCentre = "line")
+  par(new = T)
+  boxplot(testDat$recall[(testDat$ligand == colnames(ligTags)[j]) & (testDat$mode == 'rand')], at = i-0.33, notch = T, outline = F,
+          col = alpha(ligColors[j],0.2), border = 'grey50',
+          axes = F, xlab = '', ylab = '', xlim = xLim, ylim = yLim)
+  vioplot(testDat$prec[(testDat$ligand == colnames(ligTags)[j]) & (testDat$mode == 'pred')], at = i, side = 'right',
+          add = T,
+          col = alpha(ligColors[j],0.8),
+          xlim = xLim, ylim = yLim,
+          plotCentre = "line")
+  par(new = T)
+  boxplot(testDat$prec[(testDat$ligand == colnames(ligTags)[j]) & (testDat$mode == 'rand')], at = i+0.33, notch = T, outline = F,
+          col = alpha(ligColors[j],0.2), border = 'grey50',
+          axes = F, xlab = '', ylab = '', xlim = xLim, ylim = yLim)
+}
+
+par(new = T)
+plot(0,0,col = 'white', xlab = '',ylab = '',type="n",
+     axes=FALSE,ann=FALSE,
+     xlim = xLim,
+     ylim = yLim)
+axis(side=1,at=seq.int(1,29,2), labels = F)
+axis(side=2,at=pretty(c(0.2,1)), las = 2)
+axis(side = 4, at = pretty(c(0.2,1)), las = 2)  # Add second axis
+# abline(v=6, lwd = 0.75)
+mtext("Precision", side = 4, line = 3, cex = 2, col = alpha('black',0.85))  # Add second axis label
+title(xlab = "", ylab = "Recall", main = "Random Forest - LO(C)O Validation performance\nPrecision & Recall vs random", cex.main = 1.5, cex.lab = 2)
+text(x = seq.int(1,29,2),
+     y = par("usr")[3] - 0.05,
+     labels = ligNames,
+     col = ligColors,
+     ## Change the clipping region.
+     xpd = NA,
+     ## Rotate the labels by 35 degrees.
+     srt = 35,
+     ## Adjust the labels to almost 100% right-justified.
+     adj = 0.965,
+     ## Increase label size.
+     cex = 1.2)
+
+# copy to clipboard @ 1800x800
+
+# Panel B - Boxplots of number of binding interaction used to train models
+
+plot(0,0, col = 'white', type = 'n',
+     xlim = xLim,
+     ylim = c(1.3, 4),
+     axes = F, xlab = '', ylab = '')
+lines(x = c(1,30), y = c(0,0), lwd = 2)
+for(j in 1:ncol(ligTags)){
+  i = ((j-1) * 2) + 1
+  par(new = T)
+  boxplot(log10(trainDat$sampSizes[trainDat$ligand == colnames(ligTags)[j] & trainDat$mode == 'pred']),
+          at = i,
+          col = ligColors[j], border = ligColors[j],
+          boxwex = 2.5,
+          xlim = xLim,
+          ylim = c(1.3, 4),
+          axes = F, xlab = '', ylab ='')
+}
+logTicks = c(20,50,100,150)
+axis(side=2,at=log10(logTicks), labels = logTicks, las = 2, pos = 0)
+axis(side=3,at=seq.int(1,29,2), labels = F, pos = 2.2)
 
 
+###
+###
+# Alt Fig 2 with sample size boxplots dropped out into a separate panel
+## Vertical labels
+###
 
+# Panel A -- P & R same plot with violin & box plots
+xLim = c(0,30)
+yLim = c(0.2,1)
+
+par(mar = c(14.1, 5.1, 5.1, 4.1), # change the margins
+    lwd = 2, # increase the line thickness
+    cex.axis = 1.2 # increase default axis label size
+)
+# par(cex.lab=1.5, mar = c(5, 4, 4, 4) + 0.3)
+plot(0,0,col = 'white', xlab = '',ylab = '',type="n",
+     axes=FALSE,ann=FALSE,
+     xlim = xLim,
+     ylim = yLim)
+abline(h = c(0.2,0.4,0.6,0.8,1.0), lwd = 0.5, col = 'grey80')
+abline(h = c(0.3,0.5,0.7,0.9), lwd = 0.5, lty = 2, col = 'grey80')
+for(j in 1:ncol(ligTags)){
+  i = ((j-1) * 2) + 1
+  vioplot(testDat$recall[(testDat$ligand == colnames(ligTags)[j]) & (testDat$mode == 'pred')], at = i, side = 'left',
+          col = ligColors[j],
+          xlim = xLim, ylim = yLim,
+          add = T,
+          plotCentre = "line")
+  par(new = T)
+  boxplot(testDat$recall[(testDat$ligand == colnames(ligTags)[j]) & (testDat$mode == 'rand')], at = i-0.33, notch = T, outline = F,
+          col = alpha(ligColors[j],0.2), border = 'grey50',
+          axes = F, xlab = '', ylab = '', xlim = xLim, ylim = yLim)
+  vioplot(testDat$prec[(testDat$ligand == colnames(ligTags)[j]) & (testDat$mode == 'pred')], at = i, side = 'right',
+          add = T,
+          col = alpha(ligColors[j],0.8),
+          xlim = xLim, ylim = yLim,
+          plotCentre = "line")
+  par(new = T)
+  boxplot(testDat$prec[(testDat$ligand == colnames(ligTags)[j]) & (testDat$mode == 'rand')], at = i+0.33, notch = T, outline = F,
+          col = alpha(ligColors[j],0.2), border = 'grey50',
+          axes = F, xlab = '', ylab = '', xlim = xLim, ylim = yLim)
+}
+
+par(new = T)
+plot(0,0,col = 'white', xlab = '',ylab = '',type="n",
+     axes=FALSE,ann=FALSE,
+     xlim = xLim,
+     ylim = yLim)
+axis(side=1,at=seq.int(1,29,2), labels = F)
+axis(side=2,at=pretty(c(0.2,1)), las = 2)
+axis(side = 4, at = pretty(c(0.2,1)), las = 2)  # Add second axis
+# abline(v=6, lwd = 0.75)
+mtext("Precision", side = 4, line = 3, cex = 2, col = alpha('black',0.85))  # Add second axis label
+title(xlab = "", ylab = "Recall", main = "Random Forest - LO(C)O Validation performance\nPrecision & Recall vs random", cex.main = 1.5, cex.lab = 2)
+text(x = seq.int(1,29,2),
+     y = par("usr")[3] - 0.05,
+     labels = ligNames,
+     col = ligColors,
+     ## Change the clipping region.
+     xpd = NA,
+     ## Rotate the labels by 35 degrees.
+     srt = 90,
+     ## Adjust the labels to almost 100% right-justified.
+     #adj = 0.965,
+     adj = 0.92,
+     ## Increase label size.
+     cex = 1.2)
+
+# copy to clipboard @ 1800x800
+
+# Panel B - Boxplots of number of binding interaction used to train models
+
+plot(0,0, col = 'white', type = 'n',
+     xlim = xLim,
+     ylim = c(1.3, 4),
+     axes = F, xlab = '', ylab = '')
+lines(x = c(1,30), y = c(0,0), lwd = 2)
+for(j in 1:ncol(ligTags)){
+  i = ((j-1) * 2) + 1
+  par(new = T)
+  boxplot(log10(trainDat$sampSizes[trainDat$ligand == colnames(ligTags)[j] & trainDat$mode == 'pred']),
+          at = i,
+          col = ligColors[j], border = ligColors[j],
+          boxwex = 2.5,
+          xlim = xLim,
+          ylim = c(1.3, 4),
+          axes = F, xlab = '', ylab ='')
+}
+logTicks = c(20,50,100,150)
+axis(side=2,at=log10(logTicks), labels = logTicks, las = 2, pos = 0)
+axis(side=3,at=seq.int(1,29,2), labels = F, pos = 2.2)
 
 
 #######################
@@ -958,280 +1138,290 @@ for (i in 1:ncol(medFeatPercentiles)){
   abline(h = percentThresh, lty = 2)
 }
 
-# Sialic acid features
-siaBindingFeats_pos = list(row.names(stats)[sigFeats$Sialic_Acid & stats$Sialic_Acid_effectSize > 0 & topImpfeats$Sialic_Acid],
-                           row.names(stats)[sigFeats$NeuAc & stats$NeuAc_effectSize > 0 & topImpfeats$NeuAc],
-                           row.names(stats)[sigFeats$NeuAc.a2.3.Gal.b1.4.Glc & stats$NeuAc.a2.3.Gal.b1.4.Glc_effectSize > 0 & topImpfeats$NeuAc.a2.3.Gal.b1.4.Glc])
-
-siaBindingFeats_neg = list(row.names(stats)[sigFeats$Sialic_Acid & stats$Sialic_Acid_effectSize < 0 & topImpfeats$Sialic_Acid],
-                           row.names(stats)[sigFeats$NeuAc & stats$NeuAc_effectSize < 0 & topImpfeats$NeuAc],
-                           row.names(stats)[sigFeats$NeuAc.a2.3.Gal.b1.4.Glc & stats$NeuAc.a2.3.Gal.b1.4.Glc_effectSize < 0 & topImpfeats$NeuAc.a2.3.Gal.b1.4.Glc])
-
-intersect(intersect(siaBindingFeats_pos[[1]], siaBindingFeats_pos[[2]]), siaBindingFeats_pos[[3]])
-intersect(intersect(siaBindingFeats_neg[[1]], siaBindingFeats_neg[[2]]), siaBindingFeats_neg[[3]])
-
-venn.diagram(
-  x = siaBindingFeats_pos,
-  category.names = c("Sialic acid" , "NeuAc" , "NeuAc(a2-3)Gal(b1-4)Glc"),
-  filename = './manuscript/figures/subplots/neuac_feats_up.png',
-  output=F,
-  imagetype="png" ,
-  height = 480 , 
-  width = 480 , 
-  resolution = 300,
-  compression = "lzw",
-  lwd = 1,
-  col=c("#440154ff", '#21908dff', '#DAA520FF'),
-  fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3), alpha('#DAA520FF',0.3)),
-  cex = 0.5,
-  fontfamily = "sans",
-  cat.cex = 0.3,
-  cat.default.pos = "outer",
-  cat.pos = c(-27, 27, 135),
-  cat.dist = c(0.055, 0.055, 0.085),
-  cat.fontfamily = "sans",
-  cat.col = c("#440154ff", '#21908dff', '#DAA520FF'),
-  rotation = 1
-)
-venn.diagram(
-  x = siaBindingFeats_neg,
-  category.names = c("Sialic acid" , "NeuAc" , "NeuAc(a2-3)Gal(b1-4)Glc"),
-  filename = './manuscript/figures/subplots/neuac_feats_down.png',
-  output=F,
-  imagetype="png" ,
-  height = 480 , 
-  width = 480 , 
-  resolution = 300,
-  compression = "lzw",
-  lwd = 1,
-  col=c("#440154ff", '#21908dff', '#DAA520FF'),
-  fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3), alpha('#DAA520FF',0.3)),
-  cex = 0.5,
-  fontfamily = "sans",
-  cat.cex = 0.3,
-  cat.default.pos = "outer",
-  cat.pos = c(-27, 27, 135),
-  cat.dist = c(0.055, 0.055, 0.085),
-  cat.fontfamily = "sans",
-  cat.col = c("#440154ff", '#21908dff', '#DAA520FF'),
-  rotation = 1
-)
 
 
-# Fucose binding
-fucBindingFeats_pos = list(row.names(stats)[stats$Fuc_effectSize > 0 & sigFeats$Fuc & topImpfeats$Fuc],
-                           row.names(stats)[stats$Terminal_Fucose_effectSize > 0 & sigFeats$Terminal_Fucose & topImpfeats$Terminal_Fucose])
-
-fucBindingFeats_neg = list(row.names(stats)[stats$Fuc_effectSize < 0 & sigFeats$Fuc & topImpfeats$Fuc],
-                           row.names(stats)[stats$Terminal_Fucose_effectSize < 0 & sigFeats$Terminal_Fucose & topImpfeats$Terminal_Fucose])
-
-intersect(fucBindingFeats_pos[[1]], fucBindingFeats_pos[[2]])
-intersect(fucBindingFeats_neg[[1]], fucBindingFeats_neg[[2]])
-
-dev.off()
-draw.pairwise.venn(area1 = length(fucBindingFeats_pos[[1]]),
-                   area2 = length(fucBindingFeats_pos[[2]]),
-                   cross.area = length(intersect(fucBindingFeats_pos[[1]], fucBindingFeats_pos[[2]])),
-                   euler.d = T, scaled = T, ext.text = F, cex = 2,
-                   category = c('Fucose (monosacc.)', 'Terminal fucose'), cat.cex = 2,
-                   cat.pos = c(340,20),
-                   cat.dist = c(0.04, 0.05),
-                   fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3)),
-                   col = c("#440154ff", '#21908dff'),
-                   cat.col = c("#440154ff", '#21908dff'),
-                   cat.fontfamily = "sans",
-                   fontfamily = "sans"
-)
-dev.off()
-draw.pairwise.venn(area1 = length(fucBindingFeats_neg[[1]]),
-                   area2 = length(fucBindingFeats_neg[[2]]),
-                   cross.area = length(intersect(fucBindingFeats_neg[[1]], fucBindingFeats_neg[[2]])),
-                   euler.d = T, scaled = T, ext.text = F, cex = 2,
-                   category = c('Fucose (monosacc.)', 'Terminal fucose'), cat.cex = 2,
-                   cat.pos = c(340,30),
-                   fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3)),
-                   col = c("#440154ff", '#21908dff'),
-                   cat.col = c("#440154ff", '#21908dff'),
-                   cat.fontfamily = "sans",
-                   fontfamily = "sans"
-)
-
-# Mannose binding
-manBindingFeats_pos = list(row.names(stats)[stats$Man_effectSize > 0 & sigFeats$Man & topImpfeats$Man],
-                           row.names(stats)[stats$High_Mannose_effectSize > 0 & sigFeats$High_Mannose & topImpfeats$High_Mannose],
-                           row.names(stats)[stats$Man.a1.2.Man_effectSize > 0 & sigFeats$Man.a1.2.Man & topImpfeats$Man.a1.2.Man])
-
-manBindingFeats_neg = list(row.names(stats)[stats$Man_effectSize < 0 & sigFeats$Man & topImpfeats$Man],
-                           row.names(stats)[stats$High_Mannose_effectSize < 0 & sigFeats$High_Mannose & topImpfeats$High_Mannose],
-                           row.names(stats)[stats$Man.a1.2.Man_effectSize < 0 & sigFeats$Man.a1.2.Man & topImpfeats$Man.a1.2.Man])
-
-intersect(intersect(manBindingFeats_pos[[1]], manBindingFeats_pos[[2]]), manBindingFeats_pos[[3]])
-intersect(intersect(manBindingFeats_neg[[1]], manBindingFeats_neg[[2]]), manBindingFeats_neg[[3]])
-
-dev.off()
-venn.diagram(
-  x = manBindingFeats_pos,
-  category.names = c("Man" , "High_mannose" , "Man(a1-2)Man"),
-  filename = './manuscript/figures/subplots/man_feats_up.png',
-  output=F,
-  imagetype="png" ,
-  height = 480 , 
-  width = 480 , 
-  resolution = 300,
-  compression = "lzw",
-  lwd = 1,
-  col=c("#440154ff", '#21908dff', '#DAA520FF'),
-  fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3), alpha('#DAA520FF',0.3)),
-  cex = 0.5,
-  fontfamily = "sans",
-  cat.cex = 0.3,
-  cat.default.pos = "outer",
-  cat.pos = c(-27, 27, 135),
-  cat.dist = c(0.055, 0.055, 0.085),
-  cat.fontfamily = "sans",
-  cat.col = c("#440154ff", '#21908dff', '#DAA520FF'),
-  rotation = 1
-)
 
 
-venn.diagram(
-  x = manBindingFeats_neg,
-  category.names = c("Man" , "High_mannose" , "Man(a1-2)Man"),
-  filename = './manuscript/figures/subplots/man_feats_down.png',
-  output=F,
-  imagetype="png" ,
-  height = 480 , 
-  width = 480 , 
-  resolution = 300,
-  compression = "lzw",
-  lwd = 1,
-  col=c("#440154ff", '#21908dff', '#DAA520FF'),
-  fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3), alpha('#DAA520FF',0.3)),
-  cex = 0.5,
-  fontfamily = "sans",
-  cat.cex = 0.3,
-  cat.default.pos = "outer",
-  cat.pos = c(-27, 27, 135),
-  cat.dist = c(0.055, 0.055, 0.085),
-  cat.fontfamily = "sans",
-  cat.col = c("#440154ff", '#21908dff', '#DAA520FF'),
-  rotation = 1
-)
-
-# Galactose binding
-galBindingFeats_pos = list(row.names(stats)[stats$Gal.b1.4.Glc_effectSize > 0 & sigFeats$Gal.b1.4.Glc & topImpfeats$Gal.b1.4.Glc],
-                           row.names(stats)[stats$Gal_effectSize > 0 & sigFeats$Gal & topImpfeats$Gal],
-                           row.names(stats)[stats$GalNAc_effectSize > 0 & sigFeats$GalNAc & topImpfeats$GalNAc],
-                           row.names(stats)[stats$Gal.b1.4.GlcNAc_effectSize > 0 & sigFeats$Gal.b1.4.GlcNAc & topImpfeats$Gal.b1.4.GlcNAc])
-
-galBindingFeats_neg = list(row.names(stats)[stats$Gal.b1.4.Glc_effectSize < 0 & sigFeats$Gal.b1.4.Glc & topImpfeats$Gal.b1.4.Glc],
-                           row.names(stats)[stats$Gal_effectSize < 0 & sigFeats$Gal & topImpfeats$Gal],
-                           row.names(stats)[stats$GalNAc_effectSize < 0 & sigFeats$Gal.b1.4.GlcNAc & topImpfeats$Gal.b1.4.GlcNAc],
-                           row.names(stats)[stats$Gal.b1.4.GlcNAc_effectSize < 0 & sigFeats$Gal.b1.4.GlcNAc & topImpfeats$Gal.b1.4.GlcNAc])
 
 
-intersect(intersect(intersect(galBindingFeats_pos[[1]], galBindingFeats_pos[[2]]), galBindingFeats_pos[[3]]), galBindingFeats_pos[[4]])
-intersect(intersect(intersect(galBindingFeats_neg[[1]], galBindingFeats_neg[[2]]), galBindingFeats_neg[[3]]), galBindingFeats_neg[[4]])
+########################
+# Venn Diagrams
+########################
 
-dev.off()
-draw.quad.venn(area1 = length(galBindingFeats_pos[[1]]),
-               area2 = length(galBindingFeats_pos[[2]]),
-               area3 = length(galBindingFeats_pos[[3]]),
-               area4 = length(galBindingFeats_pos[[4]]),
-               
-               n12 = length(intersect(galBindingFeats_pos[[1]], galBindingFeats_pos[[2]])),
-               n13 = length(intersect(galBindingFeats_pos[[1]], galBindingFeats_pos[[3]])),
-               n14 = length(intersect(galBindingFeats_pos[[1]], galBindingFeats_pos[[4]])),
-               n23 = length(intersect(galBindingFeats_pos[[2]], galBindingFeats_pos[[3]])),
-               n24 = length(intersect(galBindingFeats_pos[[2]], galBindingFeats_pos[[4]])),
-               n34 = length(intersect(galBindingFeats_pos[[3]], galBindingFeats_pos[[4]])),
-               
-               n123 = length(intersect(intersect(galBindingFeats_pos[[1]], galBindingFeats_pos[[2]]), galBindingFeats_pos[[3]])),
-               n124 = length(intersect(intersect(galBindingFeats_pos[[1]], galBindingFeats_pos[[2]]), galBindingFeats_pos[[4]])),
-               n134 = length(intersect(intersect(galBindingFeats_pos[[1]], galBindingFeats_pos[[3]]), galBindingFeats_pos[[4]])),
-               n234 = length(intersect(intersect(galBindingFeats_pos[[2]], galBindingFeats_pos[[3]]), galBindingFeats_pos[[4]])),
-               
-               n1234 = length(intersect(intersect(intersect(galBindingFeats_pos[[1]], galBindingFeats_pos[[2]]), galBindingFeats_pos[[3]]), galBindingFeats_pos[[4]])),
-               
-               category = c('Lac', 'Gal', 'GalNAc', 'LacNAc'), cat.cex = 2,
-               cat.fontfamily = "sans",
-               fontfamily = "sans",
-               euler.d = T, scaled = T, ext.text = F, cex = 2,
-               
-               col=c("#440154ff", '#21908dff', '#DAA520FF', 'red3'),
-               fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3), alpha('#DAA520FF',0.3), alpha('red3',0.3)),
-               cat.col = c("#440154ff", '#21908dff', '#DAA520FF', 'red3')
-)
-
-
-dev.off()
-draw.quad.venn(area1 = length(galBindingFeats_neg[[1]]),
-               area2 = length(galBindingFeats_neg[[2]]),
-               area3 = length(galBindingFeats_neg[[3]]),
-               area4 = length(galBindingFeats_neg[[4]]),
-               
-               n12 = length(intersect(galBindingFeats_neg[[1]], galBindingFeats_neg[[2]])),
-               n13 = length(intersect(galBindingFeats_neg[[1]], galBindingFeats_neg[[3]])),
-               n14 = length(intersect(galBindingFeats_neg[[1]], galBindingFeats_neg[[4]])),
-               n23 = length(intersect(galBindingFeats_neg[[2]], galBindingFeats_neg[[3]])),
-               n24 = length(intersect(galBindingFeats_neg[[2]], galBindingFeats_neg[[4]])),
-               n34 = length(intersect(galBindingFeats_neg[[3]], galBindingFeats_neg[[4]])),
-               
-               n123 = length(intersect(intersect(galBindingFeats_neg[[1]], galBindingFeats_neg[[2]]), galBindingFeats_neg[[3]])),
-               n124 = length(intersect(intersect(galBindingFeats_neg[[1]], galBindingFeats_neg[[2]]), galBindingFeats_neg[[4]])),
-               n134 = length(intersect(intersect(galBindingFeats_neg[[1]], galBindingFeats_neg[[3]]), galBindingFeats_neg[[4]])),
-               n234 = length(intersect(intersect(galBindingFeats_neg[[2]], galBindingFeats_neg[[3]]), galBindingFeats_neg[[4]])),
-               
-               n1234 = length(intersect(intersect(intersect(galBindingFeats_neg[[1]], galBindingFeats_neg[[2]]), galBindingFeats_neg[[3]]), galBindingFeats_neg[[4]])),
-               
-               category = c('Lac', 'Gal', 'GalNAc', 'LacNAc'), cat.cex = 2,
-               cat.fontfamily = "sans",
-               fontfamily = "sans",
-               euler.d = T, scaled = T, ext.text = F, cex = 2,
-               
-               col=c("#440154ff", '#21908dff', '#DAA520FF', 'red3'),
-               fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3), alpha('#DAA520FF',0.3), alpha('red3',0.3)),
-               cat.col = c("#440154ff", '#21908dff', '#DAA520FF', 'red3')
-)
-
-
-# Glucose binding
-glcBindingFeats_pos = list(row.names(stats)[stats$Glc_effectSize > 0 & sigFeats$Glc & topImpfeats$Glc],
-                           row.names(stats)[stats$GlcNAc_effectSize > 0 & sigFeats$GlcNAc & topImpfeats$GlcNAc])
-
-glcBindingFeats_neg = list(row.names(stats)[stats$Glc_effectSize < 0 & sigFeats$Glc & topImpfeats$Glc],
-                           row.names(stats)[stats$GlcNAc_effectSize < 0 & sigFeats$GlcNAc & topImpfeats$GlcNAc])
-
-intersect(glcBindingFeats_pos[[1]], glcBindingFeats_pos[[2]])
-intersect(glcBindingFeats_neg[[1]], glcBindingFeats_neg[[2]])
-
-dev.off()
-draw.pairwise.venn(area1 = length(glcBindingFeats_pos[[1]]),
-                   area2 = length(glcBindingFeats_pos[[2]]),
-                   cross.area = length(intersect(glcBindingFeats_pos[[1]], glcBindingFeats_pos[[2]])),
-                   euler.d = T, scaled = T, ext.text = F, cex = 2,
-                   category = c('Glucose', 'GlcNAc'), cat.cex = 2,
-                   cat.pos = c(340,20),
-                   cat.dist = c(0.04, 0.05),
-                   fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3)),
-                   col = c("#440154ff", '#21908dff'),
-                   cat.col = c("#440154ff", '#21908dff'),
-                   cat.fontfamily = "sans",
-                   fontfamily = "sans"
-)
-dev.off()
-draw.pairwise.venn(area1 = length(glcBindingFeats_neg[[1]]),
-                   area2 = length(glcBindingFeats_neg[[2]]),
-                   cross.area = length(intersect(glcBindingFeats_neg[[1]], glcBindingFeats_neg[[2]])),
-                   euler.d = T, scaled = T, ext.text = F, cex = 2,
-                   category = c('Glucose', 'GlcNAc'), cat.cex = 2,
-                   cat.pos = c(340,30),
-                   fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3)),
-                   col = c("#440154ff", '#21908dff'),
-                   cat.col = c("#440154ff", '#21908dff'),
-                   cat.fontfamily = "sans",
-                   fontfamily = "sans"
-)
+# # Sialic acid features
+# siaBindingFeats_pos = list(row.names(stats)[sigFeats$Sialic_Acid & stats$Sialic_Acid_effectSize > 0 & topImpfeats$Sialic_Acid],
+#                            row.names(stats)[sigFeats$NeuAc & stats$NeuAc_effectSize > 0 & topImpfeats$NeuAc],
+#                            row.names(stats)[sigFeats$NeuAc.a2.3.Gal.b1.4.Glc & stats$NeuAc.a2.3.Gal.b1.4.Glc_effectSize > 0 & topImpfeats$NeuAc.a2.3.Gal.b1.4.Glc])
+# 
+# siaBindingFeats_neg = list(row.names(stats)[sigFeats$Sialic_Acid & stats$Sialic_Acid_effectSize < 0 & topImpfeats$Sialic_Acid],
+#                            row.names(stats)[sigFeats$NeuAc & stats$NeuAc_effectSize < 0 & topImpfeats$NeuAc],
+#                            row.names(stats)[sigFeats$NeuAc.a2.3.Gal.b1.4.Glc & stats$NeuAc.a2.3.Gal.b1.4.Glc_effectSize < 0 & topImpfeats$NeuAc.a2.3.Gal.b1.4.Glc])
+# 
+# intersect(intersect(siaBindingFeats_pos[[1]], siaBindingFeats_pos[[2]]), siaBindingFeats_pos[[3]])
+# intersect(intersect(siaBindingFeats_neg[[1]], siaBindingFeats_neg[[2]]), siaBindingFeats_neg[[3]])
+# 
+# venn.diagram(
+#   x = siaBindingFeats_pos,
+#   category.names = c("Sialic acid" , "NeuAc" , "NeuAc(a2-3)Gal(b1-4)Glc"),
+#   filename = './manuscript/figures/subplots/neuac_feats_up.png',
+#   output=F,
+#   imagetype="png" ,
+#   height = 480 , 
+#   width = 480 , 
+#   resolution = 300,
+#   compression = "lzw",
+#   lwd = 1,
+#   col=c("#440154ff", '#21908dff', '#DAA520FF'),
+#   fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3), alpha('#DAA520FF',0.3)),
+#   cex = 0.5,
+#   fontfamily = "sans",
+#   cat.cex = 0.3,
+#   cat.default.pos = "outer",
+#   cat.pos = c(-27, 27, 135),
+#   cat.dist = c(0.055, 0.055, 0.085),
+#   cat.fontfamily = "sans",
+#   cat.col = c("#440154ff", '#21908dff', '#DAA520FF'),
+#   rotation = 1
+# )
+# venn.diagram(
+#   x = siaBindingFeats_neg,
+#   category.names = c("Sialic acid" , "NeuAc" , "NeuAc(a2-3)Gal(b1-4)Glc"),
+#   filename = './manuscript/figures/subplots/neuac_feats_down.png',
+#   output=F,
+#   imagetype="png" ,
+#   height = 480 , 
+#   width = 480 , 
+#   resolution = 300,
+#   compression = "lzw",
+#   lwd = 1,
+#   col=c("#440154ff", '#21908dff', '#DAA520FF'),
+#   fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3), alpha('#DAA520FF',0.3)),
+#   cex = 0.5,
+#   fontfamily = "sans",
+#   cat.cex = 0.3,
+#   cat.default.pos = "outer",
+#   cat.pos = c(-27, 27, 135),
+#   cat.dist = c(0.055, 0.055, 0.085),
+#   cat.fontfamily = "sans",
+#   cat.col = c("#440154ff", '#21908dff', '#DAA520FF'),
+#   rotation = 1
+# )
+# 
+# 
+# # Fucose binding
+# fucBindingFeats_pos = list(row.names(stats)[stats$Fuc_effectSize > 0 & sigFeats$Fuc & topImpfeats$Fuc],
+#                            row.names(stats)[stats$Terminal_Fucose_effectSize > 0 & sigFeats$Terminal_Fucose & topImpfeats$Terminal_Fucose])
+# 
+# fucBindingFeats_neg = list(row.names(stats)[stats$Fuc_effectSize < 0 & sigFeats$Fuc & topImpfeats$Fuc],
+#                            row.names(stats)[stats$Terminal_Fucose_effectSize < 0 & sigFeats$Terminal_Fucose & topImpfeats$Terminal_Fucose])
+# 
+# intersect(fucBindingFeats_pos[[1]], fucBindingFeats_pos[[2]])
+# intersect(fucBindingFeats_neg[[1]], fucBindingFeats_neg[[2]])
+# 
+# dev.off()
+# draw.pairwise.venn(area1 = length(fucBindingFeats_pos[[1]]),
+#                    area2 = length(fucBindingFeats_pos[[2]]),
+#                    cross.area = length(intersect(fucBindingFeats_pos[[1]], fucBindingFeats_pos[[2]])),
+#                    euler.d = T, scaled = T, ext.text = F, cex = 2,
+#                    category = c('Fucose (monosacc.)', 'Terminal fucose'), cat.cex = 2,
+#                    cat.pos = c(340,20),
+#                    cat.dist = c(0.04, 0.05),
+#                    fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3)),
+#                    col = c("#440154ff", '#21908dff'),
+#                    cat.col = c("#440154ff", '#21908dff'),
+#                    cat.fontfamily = "sans",
+#                    fontfamily = "sans"
+# )
+# dev.off()
+# draw.pairwise.venn(area1 = length(fucBindingFeats_neg[[1]]),
+#                    area2 = length(fucBindingFeats_neg[[2]]),
+#                    cross.area = length(intersect(fucBindingFeats_neg[[1]], fucBindingFeats_neg[[2]])),
+#                    euler.d = T, scaled = T, ext.text = F, cex = 2,
+#                    category = c('Fucose (monosacc.)', 'Terminal fucose'), cat.cex = 2,
+#                    cat.pos = c(340,30),
+#                    fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3)),
+#                    col = c("#440154ff", '#21908dff'),
+#                    cat.col = c("#440154ff", '#21908dff'),
+#                    cat.fontfamily = "sans",
+#                    fontfamily = "sans"
+# )
+# 
+# # Mannose binding
+# manBindingFeats_pos = list(row.names(stats)[stats$Man_effectSize > 0 & sigFeats$Man & topImpfeats$Man],
+#                            row.names(stats)[stats$High_Mannose_effectSize > 0 & sigFeats$High_Mannose & topImpfeats$High_Mannose],
+#                            row.names(stats)[stats$Man.a1.2.Man_effectSize > 0 & sigFeats$Man.a1.2.Man & topImpfeats$Man.a1.2.Man])
+# 
+# manBindingFeats_neg = list(row.names(stats)[stats$Man_effectSize < 0 & sigFeats$Man & topImpfeats$Man],
+#                            row.names(stats)[stats$High_Mannose_effectSize < 0 & sigFeats$High_Mannose & topImpfeats$High_Mannose],
+#                            row.names(stats)[stats$Man.a1.2.Man_effectSize < 0 & sigFeats$Man.a1.2.Man & topImpfeats$Man.a1.2.Man])
+# 
+# intersect(intersect(manBindingFeats_pos[[1]], manBindingFeats_pos[[2]]), manBindingFeats_pos[[3]])
+# intersect(intersect(manBindingFeats_neg[[1]], manBindingFeats_neg[[2]]), manBindingFeats_neg[[3]])
+# 
+# dev.off()
+# venn.diagram(
+#   x = manBindingFeats_pos,
+#   category.names = c("Man" , "High_mannose" , "Man(a1-2)Man"),
+#   filename = './manuscript/figures/subplots/man_feats_up.png',
+#   output=F,
+#   imagetype="png" ,
+#   height = 480 , 
+#   width = 480 , 
+#   resolution = 300,
+#   compression = "lzw",
+#   lwd = 1,
+#   col=c("#440154ff", '#21908dff', '#DAA520FF'),
+#   fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3), alpha('#DAA520FF',0.3)),
+#   cex = 0.5,
+#   fontfamily = "sans",
+#   cat.cex = 0.3,
+#   cat.default.pos = "outer",
+#   cat.pos = c(-27, 27, 135),
+#   cat.dist = c(0.055, 0.055, 0.085),
+#   cat.fontfamily = "sans",
+#   cat.col = c("#440154ff", '#21908dff', '#DAA520FF'),
+#   rotation = 1
+# )
+# 
+# 
+# venn.diagram(
+#   x = manBindingFeats_neg,
+#   category.names = c("Man" , "High_mannose" , "Man(a1-2)Man"),
+#   filename = './manuscript/figures/subplots/man_feats_down.png',
+#   output=F,
+#   imagetype="png" ,
+#   height = 480 , 
+#   width = 480 , 
+#   resolution = 300,
+#   compression = "lzw",
+#   lwd = 1,
+#   col=c("#440154ff", '#21908dff', '#DAA520FF'),
+#   fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3), alpha('#DAA520FF',0.3)),
+#   cex = 0.5,
+#   fontfamily = "sans",
+#   cat.cex = 0.3,
+#   cat.default.pos = "outer",
+#   cat.pos = c(-27, 27, 135),
+#   cat.dist = c(0.055, 0.055, 0.085),
+#   cat.fontfamily = "sans",
+#   cat.col = c("#440154ff", '#21908dff', '#DAA520FF'),
+#   rotation = 1
+# )
+# 
+# # Galactose binding
+# galBindingFeats_pos = list(row.names(stats)[stats$Gal.b1.4.Glc_effectSize > 0 & sigFeats$Gal.b1.4.Glc & topImpfeats$Gal.b1.4.Glc],
+#                            row.names(stats)[stats$Gal_effectSize > 0 & sigFeats$Gal & topImpfeats$Gal],
+#                            row.names(stats)[stats$GalNAc_effectSize > 0 & sigFeats$GalNAc & topImpfeats$GalNAc],
+#                            row.names(stats)[stats$Gal.b1.4.GlcNAc_effectSize > 0 & sigFeats$Gal.b1.4.GlcNAc & topImpfeats$Gal.b1.4.GlcNAc])
+# 
+# galBindingFeats_neg = list(row.names(stats)[stats$Gal.b1.4.Glc_effectSize < 0 & sigFeats$Gal.b1.4.Glc & topImpfeats$Gal.b1.4.Glc],
+#                            row.names(stats)[stats$Gal_effectSize < 0 & sigFeats$Gal & topImpfeats$Gal],
+#                            row.names(stats)[stats$GalNAc_effectSize < 0 & sigFeats$Gal.b1.4.GlcNAc & topImpfeats$Gal.b1.4.GlcNAc],
+#                            row.names(stats)[stats$Gal.b1.4.GlcNAc_effectSize < 0 & sigFeats$Gal.b1.4.GlcNAc & topImpfeats$Gal.b1.4.GlcNAc])
+# 
+# 
+# intersect(intersect(intersect(galBindingFeats_pos[[1]], galBindingFeats_pos[[2]]), galBindingFeats_pos[[3]]), galBindingFeats_pos[[4]])
+# intersect(intersect(intersect(galBindingFeats_neg[[1]], galBindingFeats_neg[[2]]), galBindingFeats_neg[[3]]), galBindingFeats_neg[[4]])
+# 
+# dev.off()
+# draw.quad.venn(area1 = length(galBindingFeats_pos[[1]]),
+#                area2 = length(galBindingFeats_pos[[2]]),
+#                area3 = length(galBindingFeats_pos[[3]]),
+#                area4 = length(galBindingFeats_pos[[4]]),
+#                
+#                n12 = length(intersect(galBindingFeats_pos[[1]], galBindingFeats_pos[[2]])),
+#                n13 = length(intersect(galBindingFeats_pos[[1]], galBindingFeats_pos[[3]])),
+#                n14 = length(intersect(galBindingFeats_pos[[1]], galBindingFeats_pos[[4]])),
+#                n23 = length(intersect(galBindingFeats_pos[[2]], galBindingFeats_pos[[3]])),
+#                n24 = length(intersect(galBindingFeats_pos[[2]], galBindingFeats_pos[[4]])),
+#                n34 = length(intersect(galBindingFeats_pos[[3]], galBindingFeats_pos[[4]])),
+#                
+#                n123 = length(intersect(intersect(galBindingFeats_pos[[1]], galBindingFeats_pos[[2]]), galBindingFeats_pos[[3]])),
+#                n124 = length(intersect(intersect(galBindingFeats_pos[[1]], galBindingFeats_pos[[2]]), galBindingFeats_pos[[4]])),
+#                n134 = length(intersect(intersect(galBindingFeats_pos[[1]], galBindingFeats_pos[[3]]), galBindingFeats_pos[[4]])),
+#                n234 = length(intersect(intersect(galBindingFeats_pos[[2]], galBindingFeats_pos[[3]]), galBindingFeats_pos[[4]])),
+#                
+#                n1234 = length(intersect(intersect(intersect(galBindingFeats_pos[[1]], galBindingFeats_pos[[2]]), galBindingFeats_pos[[3]]), galBindingFeats_pos[[4]])),
+#                
+#                category = c('Lac', 'Gal', 'GalNAc', 'LacNAc'), cat.cex = 2,
+#                cat.fontfamily = "sans",
+#                fontfamily = "sans",
+#                euler.d = T, scaled = T, ext.text = F, cex = 2,
+#                
+#                col=c("#440154ff", '#21908dff', '#DAA520FF', 'red3'),
+#                fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3), alpha('#DAA520FF',0.3), alpha('red3',0.3)),
+#                cat.col = c("#440154ff", '#21908dff', '#DAA520FF', 'red3')
+# )
+# 
+# 
+# dev.off()
+# draw.quad.venn(area1 = length(galBindingFeats_neg[[1]]),
+#                area2 = length(galBindingFeats_neg[[2]]),
+#                area3 = length(galBindingFeats_neg[[3]]),
+#                area4 = length(galBindingFeats_neg[[4]]),
+#                
+#                n12 = length(intersect(galBindingFeats_neg[[1]], galBindingFeats_neg[[2]])),
+#                n13 = length(intersect(galBindingFeats_neg[[1]], galBindingFeats_neg[[3]])),
+#                n14 = length(intersect(galBindingFeats_neg[[1]], galBindingFeats_neg[[4]])),
+#                n23 = length(intersect(galBindingFeats_neg[[2]], galBindingFeats_neg[[3]])),
+#                n24 = length(intersect(galBindingFeats_neg[[2]], galBindingFeats_neg[[4]])),
+#                n34 = length(intersect(galBindingFeats_neg[[3]], galBindingFeats_neg[[4]])),
+#                
+#                n123 = length(intersect(intersect(galBindingFeats_neg[[1]], galBindingFeats_neg[[2]]), galBindingFeats_neg[[3]])),
+#                n124 = length(intersect(intersect(galBindingFeats_neg[[1]], galBindingFeats_neg[[2]]), galBindingFeats_neg[[4]])),
+#                n134 = length(intersect(intersect(galBindingFeats_neg[[1]], galBindingFeats_neg[[3]]), galBindingFeats_neg[[4]])),
+#                n234 = length(intersect(intersect(galBindingFeats_neg[[2]], galBindingFeats_neg[[3]]), galBindingFeats_neg[[4]])),
+#                
+#                n1234 = length(intersect(intersect(intersect(galBindingFeats_neg[[1]], galBindingFeats_neg[[2]]), galBindingFeats_neg[[3]]), galBindingFeats_neg[[4]])),
+#                
+#                category = c('Lac', 'Gal', 'GalNAc', 'LacNAc'), cat.cex = 2,
+#                cat.fontfamily = "sans",
+#                fontfamily = "sans",
+#                euler.d = T, scaled = T, ext.text = F, cex = 2,
+#                
+#                col=c("#440154ff", '#21908dff', '#DAA520FF', 'red3'),
+#                fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3), alpha('#DAA520FF',0.3), alpha('red3',0.3)),
+#                cat.col = c("#440154ff", '#21908dff', '#DAA520FF', 'red3')
+# )
+# 
+# 
+# # Glucose binding
+# glcBindingFeats_pos = list(row.names(stats)[stats$Glc_effectSize > 0 & sigFeats$Glc & topImpfeats$Glc],
+#                            row.names(stats)[stats$GlcNAc_effectSize > 0 & sigFeats$GlcNAc & topImpfeats$GlcNAc])
+# 
+# glcBindingFeats_neg = list(row.names(stats)[stats$Glc_effectSize < 0 & sigFeats$Glc & topImpfeats$Glc],
+#                            row.names(stats)[stats$GlcNAc_effectSize < 0 & sigFeats$GlcNAc & topImpfeats$GlcNAc])
+# 
+# intersect(glcBindingFeats_pos[[1]], glcBindingFeats_pos[[2]])
+# intersect(glcBindingFeats_neg[[1]], glcBindingFeats_neg[[2]])
+# 
+# dev.off()
+# draw.pairwise.venn(area1 = length(glcBindingFeats_pos[[1]]),
+#                    area2 = length(glcBindingFeats_pos[[2]]),
+#                    cross.area = length(intersect(glcBindingFeats_pos[[1]], glcBindingFeats_pos[[2]])),
+#                    euler.d = T, scaled = T, ext.text = F, cex = 2,
+#                    category = c('Glucose', 'GlcNAc'), cat.cex = 2,
+#                    cat.pos = c(340,20),
+#                    cat.dist = c(0.04, 0.05),
+#                    fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3)),
+#                    col = c("#440154ff", '#21908dff'),
+#                    cat.col = c("#440154ff", '#21908dff'),
+#                    cat.fontfamily = "sans",
+#                    fontfamily = "sans"
+# )
+# dev.off()
+# draw.pairwise.venn(area1 = length(glcBindingFeats_neg[[1]]),
+#                    area2 = length(glcBindingFeats_neg[[2]]),
+#                    cross.area = length(intersect(glcBindingFeats_neg[[1]], glcBindingFeats_neg[[2]])),
+#                    euler.d = T, scaled = T, ext.text = F, cex = 2,
+#                    category = c('Glucose', 'GlcNAc'), cat.cex = 2,
+#                    cat.pos = c(340,30),
+#                    fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3)),
+#                    col = c("#440154ff", '#21908dff'),
+#                    cat.col = c("#440154ff", '#21908dff'),
+#                    cat.fontfamily = "sans",
+#                    fontfamily = "sans"
+# )
 
 ##################################
 ###### Check across all ligands
@@ -1664,6 +1854,84 @@ plot(featMeans, cex = 3,
              15, 16,
              15, 16, 17,
              15, 16))
+
+
+# Plot weighted distributions of top 60 features for top 10 ligands
+
+allTopFeatCols = rep('', 60)
+
+for (i in 1:length(names(annot_cols$Feature_Type))){
+  feat = names(annot_cols$Feature_Type)[i]
+  allTopFeatCols[annot$Feature_Type == feat] = annot_cols$Feature_Type[i]
+}
+
+for (k in 1:ncol(allSigFeats)){
+  featName = colnames(allSigFeats)[k]
+  
+  feat = featName
+  feat = gsub('^b-strand_', 'E_', feat)
+  feat = gsub('^loop_', 'X._', feat)
+  feat = gsub('^3/10-helix_', 'G_', feat)
+  feat = gsub('^bend_', 'S_', feat)
+  feat = gsub('^turn_', 'T_', feat)
+  feat = gsub('^a-helix_', 'H_', feat)
+  
+  pdf(file = paste('./manuscript/figures/subplots/allSigFeatDists/', 
+                   gsub('/','-',featName),
+                   '.pdf', sep = ''),
+      width = 11,
+      height = 8.5)
+  par(mfrow=c(2,5))
+  for (i in 1:length(topLigs)){
+    weightFlag = F
+    lig = topLigs[i]
+    
+    des_w = subset(des, subset = ligTags[,lig])
+    
+    if (IQR(predFeats[ligTags[,lig], feat]) == 0){
+      x = density(predFeats[ligTags[,lig], feat])
+      yLim = c(0, max(max(density(predFeats[,feat])$y), max(x$y)))
+    } else{
+      x = svysmooth(formula = asOneSidedFormula(feat), design = des_w)
+      yLim = c(0, max(max(density(predFeats[,feat])$y),max(x[[1]][[2]])))
+      weightFlag = T
+    }
+    
+    val = allSigFeats[i,k]
+    
+    if (val > 0){
+      dir = 'enriched'
+    } else{
+      dir = 'depleted'
+    }
+    
+    if (abs(val) == 1){
+      meth = ', RF & WMW'
+    } else if (abs(val) == .3){
+      meth = ', RF | WMW'
+    } else {
+      meth = ', non-significant'
+    }
+    
+    svyhist(formula = asOneSidedFormula(feat), design = des,
+            xlim = range(predFeats[,feat]), ylim  = yLim,
+            xlab = featName,
+            main = paste(lig, '\n', dir, meth, sep = ''),
+            col = allTopFeatCols[k])
+    lines(x,
+          xlim = range(predFeats[,feat]),
+          ylim  = yLim,
+          lwd = 3)
+    if (! weightFlag){
+      note = 'Unweighted\n(IQR == 0)'
+      text(x = mean(range(predFeats[,feat])),
+           y = yLim[2],
+           note)
+    }
+  }
+  dev.off()
+}
+
 
 ###############################
 ## Fig 0 barplots
