@@ -443,7 +443,8 @@ for (i in 1:ncol(ligTags)){ # for ligand i
   stats_weighted[,grepl('_adj$', colnames(stats_weighted))][,i] = p.adjust(stats_weighted[grepl('_p$', colnames(stats_weighted))][,i], method = "BH") # Benjamini-Hochberg MHT correction (FDR)
 }
 
-stats_weighted[,grepl('_adj$', colnames(stats_weighted))][stats_weighted[,grepl('_adj$', colnames(stats_weighted))] < 1e-16] <- 1e-16
+superSigTag = stats_weighted[,grepl('_adj$', colnames(stats_weighted))] < 1e-16
+stats_weighted[,grepl('_adj$', colnames(stats_weighted))][superSigTag] <- 10**(-1*runif(sum(superSigTag), max = -log10(3e-19), min = -log10(1e-16))) # Sample from a log-uniform distribution
 
 ####################
 
@@ -486,10 +487,10 @@ pdf(file = paste('./manuscript/figures/subplots/',
     height = 13)
 par(mfrow=c(3,5))
 xLim = c(-0.5,0.5)
-# yLim = c(0,10)
+yLim = c(0,19)
 for(i in 1:ncol(ligTags)){
   
-  yLim = c(0,max(-log10(0.1), -log10(min(stats_weighted[,grepl('_adj$', colnames(stats_weighted))][,i]))) + 1)
+  # yLim = c(0,max(-log10(0.1), -log10(min(stats_weighted[,grepl('_adj$', colnames(stats_weighted))][,i]))) + 1)
   
   tag = stats_weighted[,grepl('_adj$', colnames(stats_weighted))][,i] < 0.01
   
@@ -506,9 +507,14 @@ for(i in 1:ncol(ligTags)){
   
   plot(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))][,i], -log10(stats_weighted[,grepl('_adj$', colnames(stats_weighted))][,i]), # Plot all points w/ color @ alpha 0.5
        xlab = "Effect size", ylab = "-log10(FDR)", main = '',
-       pch = 19, cex = 2, col = alpha(featColors, 0.5),
+       pch = 19, cex = 2, col = alpha(featColors, 0.33),
        cex.axis = 1.5, cex.lab = 1.5,
        xlim = xLim, ylim = yLim)
+  
+  abline(h= -log10(0.01), lwd = 2, col = 'white')
+  abline(h = -log10(1e-16), lwd = 0.5, lty = 2, col = 'white')
+  abline(v = 0, lty=2, lwd = 2, col = 'white')
+  
   title(main = ligNames[i], col.main = ligColors[i], cex.main = 1.8, font.main  = 2)
   # mtext(ligNames[i], col = ligColors[i],
   #       side=3, adj=0, outer = T,
@@ -521,11 +527,11 @@ for(i in 1:ncol(ligTags)){
        xlim = xLim, ylim = yLim)
   par(new=T)
   plot(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))][tag,i], -log10(stats_weighted[,grepl('_adj$', colnames(stats_weighted))][tag,i]), # Outline stat sig points in black to highlight them
-       col = alpha('black',0.5), cex = 2.05,
+       col = alpha('black',0.2), cex = 2.05,
        xlab = "", ylab = "", axes = F, main = "",
        xlim = xLim, ylim = yLim)
-  abline(h= -log10(0.01), lwd = 2)
-  abline(v = 0, lty=2, lwd = 2)
+  
+
 }
 
 dev.off()
@@ -737,7 +743,7 @@ r_annot$Sugar_Cnt[c(5,6,7,8,10,13,14)] = '1'
 
 r_annot$Sugar_Cnt <- factor(r_annot$Sugar_Cnt, levels = c('1', '2', '3+'))
 
-Sugar_Cnt = colorspace::sequential_hcl(3)
+Sugar_Cnt = colorspace::sequential_hcl(3)[3:1]
 names(Sugar_Cnt) = levels(r_annot$Sugar_Cnt)
 
 
@@ -752,7 +758,7 @@ pdf(file = paste('./manuscript/figures/subplots/',
 breakLst = seq(-1,1,0.05)
 pheatmap(allFeatCorrs,
          color = colorRampPalette(c("firebrick2", "ivory", "dodgerblue3"))(length(breakLst)),
-         border_color = 'black',
+         border_color = 'white',
          cellwidth = cHeight,
          cellheight = cHeight,
          legend_breaks = c(-1, -0.5, 0, 0.5, 1, 0.97),
