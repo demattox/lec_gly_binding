@@ -303,6 +303,17 @@ mtext('Density', side = 2, line = 2, outer = TRUE, cex = 1.25)
 
 dev.off()
 
+#######
+# Only 50% clusters
+#######
+
+hist(upc50,probability = F, breaks = max(upc50), col = mycol[1], main = 'Histogram of number of unique UniProt IDs in each cluster', xlab = 'Number of unique UniProt IDs in a cluster',
+     xlim = xLim, ylim = c(0,200))
+
+
+
+
+
 #clusters per uniprot ID???
 cpu50 = rep(0,length(unique(clustDF$uniprot)))
 for (i in 1:length(cpu50)){cpu50[i] = length(unique(clustDF$clus50[clustDF$uniprot == unique(clustDF$uniprot)[i]]))}
@@ -346,6 +357,8 @@ mtext('Density', side = 2, line = 2, outer = TRUE, cex = 1.25)
 
 dev.off()
 
+length(cpu50)
+sum(cpu50 == 2)
 
 # unique(clustDF$uniprot)[cpu80 == 3]
 # unique(clustDF$uniprot)[cpu90 == 3]
@@ -488,7 +501,7 @@ hist(manCnt)
 
 manTag = manCnt >= 3 & grepl('^Man',ligSort50) # High mannose
 neuTag = grepl('^NeuAc',ligSort50) & !mTag # Has terminal sialic acid and is not a monosacc.
-fucTag = grepl('^Fuc',ligSort50) & !mTag # Has a terminal fucose
+fucTag = grepl('^Fuc',ligSort50) & !mTag # Has a terminal fucose and is not a monosacc.
 
 # ligSort50[mTag]
 # ligSort50[dTag]
@@ -510,10 +523,10 @@ pdf(file = paste('./manuscript/figures/',
     width = 18,
     height = 10)
 plot(0,0,pch='', xlim = c(0.5,230), ylim = c(-1,20), xlab = '', ylab = '')
-title(main="Number of clusters with any binding for each unique ligand (50% id)", col.main="black", cex.main = 2,
+title(main="Number of lectins with any binding for each unique ligand (50% id)", col.main="black", cex.main = 2,
       xlab='Individual ligands (sorted)',
       col.lab='black', cex.lab=1.5)
-title(ylab='Clusters containing ligand (%)',
+title(ylab='Lectins containing ligand (%)',
       col.lab = 'black', cex.lab = 1.5)
 lines(x = sort(rep(1:length(cpl50),3)), y = c(rbind(rep(0,length(cpl50)), cpl50, rep(0,length(cpl50)))), col = mycol[1], lwd = 5)
 points(x=(1:length(mTag))[mTag], y = -0.25* mTag[mTag], pch = 15, col = sacc_col[1])
@@ -534,7 +547,7 @@ legend(x = 'topright', pch = c(rep(15,9),21,23, 24),
                   '',
                   'Branching','No Branching',
                   '',
-                  'High Mannose', 'NeuAc containing', 'Terminal Fucose'),
+                  'High Mannose', 'Terminal NeuAc', 'Terminal Fucose'),
        col = c(sacc_col,
                'white',
                'navy', 'grey85',
@@ -544,6 +557,7 @@ legend(x = 'topright', pch = c(rep(15,9),21,23, 24),
               'forestgreen', 'darkorchid', 'firebrick1'),
        pt.cex =1.8)
 abline(h = 5, lty = 2)
+abline(v = 12.5, lty = 2)
 dev.off()
 
 topLigOccurences$High_Mannose[1] = 0
@@ -695,8 +709,14 @@ ggplot(melt_ligOccur, aes(fill = Clust_ID, x = Ligand, alpha = Ligand, y = Clust
 dev.off()
 
 topLigOccurences = topLigOccurences[,c(1,3,2,4:16)]
+
+colnames(topLigOccurences)[2] = 'Terminal NeuAc'
+colnames(topLigOccurences)[3] = 'High Mannose'
+colnames(topLigOccurences)[4] = 'Terminal Fucose'
+
 melt_ligOccur = melt(data =topLigOccurences[1,], id.vars = 'id_cutoff')
 colnames(melt_ligOccur) = c('Clust_ID', 'Ligand', 'Cluster_Percent_w_ligand')
+
 
 pdf(file = paste('./manuscript/figures/', 
                  'clust50_pcts_w_TopLigands',
@@ -710,7 +730,7 @@ ggplot(melt_ligOccur, aes(fill = Clust_ID, x = Ligand, alpha = Ligand, y = Clust
   geom_hline(yintercept = c(5)) +
   geom_vline(xintercept = c(3.5), lty = 2) +
   theme_linedraw(base_size = 22) +
-  labs(title = "Well-represented ligands in lectin clusters", x = "IUPAC Ligands", y = "Percent of clusters with ligand") +
+  labs(title = "Well-represented ligands", x = "IUPAC Glycan Ligands", y = "Percent of lectins with ligand") +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
 dev.off()
 

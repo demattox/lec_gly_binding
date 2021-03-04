@@ -505,15 +505,16 @@ for(i in 1:ncol(ligTags)){
   # abline(h = c(0.5,1.5,2.5,3.5,4.5,5.5,6.5), lwd = 3, col = fg)
   par(new=T)
   
+  abline(v = 0, lty=2, lwd = 4, col = 'white')
+  
   plot(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))][,i], -log10(stats_weighted[,grepl('_adj$', colnames(stats_weighted))][,i]), # Plot all points w/ color @ alpha 0.5
        xlab = "Effect size", ylab = "-log10(FDR)", main = '',
        pch = 19, cex = 2, col = alpha(featColors, 0.33),
        cex.axis = 1.5, cex.lab = 1.5,
        xlim = xLim, ylim = yLim)
   
-  abline(h= -log10(0.01), lwd = 2, col = 'white')
-  abline(h = -log10(1e-16), lwd = 0.5, lty = 2, col = 'white')
-  abline(v = 0, lty=2, lwd = 2, col = 'white')
+  abline(h= -log10(0.01), lwd = 4, col = 'white')
+  abline(h = -log10(1e-16), lwd = 1.5, lty = 2, col = 'white')
   
   title(main = ligNames[i], col.main = ligColors[i], cex.main = 1.8, font.main  = 2)
   # mtext(ligNames[i], col = ligColors[i],
@@ -829,7 +830,8 @@ pheatmap(t(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))]),
          color = colorRampPalette(c("royalblue1", "grey90", "gold1"))(length(breakLst)),
          clustering_distance_rows = 'correlation',
          # clustering_distance_cols = 'correlation',
-         # display_numbers = ifelse(t(stats_weighted[,grepl('_adj$', colnames(stats_weighted))]) < 0.01, "*", ""), fontsize_number = 18,
+         display_numbers = ifelse(t(stats_weighted[,grepl('_adj$', colnames(stats_weighted))]) < 0.01, "*", ""), fontsize_number = 18,
+         border_color = 'white',
          labels_row = ligNames,
          annotation_col = annot, annotation_colors = anno_colors,
          main = '',

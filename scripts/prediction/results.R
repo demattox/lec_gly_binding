@@ -7,11 +7,13 @@ library(PRROC)
 library(vioplot)
 library(VennDiagram)
 library(survey)
+library(Cairo)
 
 library(umap)
 
 # devtools::install_github("copenhagencenterforglycomics/ggsugar")
 # library(ggsugar)
+# library(V8)
 
 
 ###############
@@ -428,7 +430,7 @@ for(i in 2:ncol(ligTags)){
 abline(h=0, lty = 2)
 axis(side=1,at=1:15, labels = F)
 axis(side=2,at=seq.int(-1,1,0.5))
-title(xlab = "", ylab = "Kappa", main = "5x CV + LOCO\nKappa compared to random classifiers")
+title(xlab = "", ylab = "Kappa", main = "5x CV + LOCO\nValidation Kappa compared to random classifiers")
 text(x = 1:15,
      y = par("usr")[3] - 0.08,
      labels = ligNames,
@@ -463,12 +465,111 @@ text(x = 110, y = -0.8, labels = 'Pearson corr: 0.53 (p<0.001)', cex = 1.3)
 
 CVperf_melt = melt(trainDat[trainDat$mode == 'pred',], id.vars = c("ligand", "sampSizes", "kappa", "f2"))
 
+# CVperf_melt = CVperf_melt[sample(x = (1:nrow(CVperf_melt)), size = nrow(CVperf_melt), replace = F),]
 
-p = ggplot(data = CVperf_melt, aes(x = sampSizes, y = kappa, col = ligand))
+CVperf_ligMeans = as.data.frame(matrix(0, nrow = 15, ncol = 4))
+colnames(CVperf_ligMeans) = colnames(CVperf_melt)[1:4]
 
-p + geom_point() + scale_color_manual(values = alpha(ligColors, 0.3))
+CVperf_ligMeans$ligand = unique(CVperf_melt$ligand)
+for(i in 1:nrow(CVperf_ligMeans)){
+  gly = CVperf_ligMeans$ligand[i]
+  CVperf_ligMeans$sampSizes[i] = mean(CVperf_melt$sampSizes[CVperf_melt$ligand == gly])
+  CVperf_ligMeans$kappa[i] = mean(CVperf_melt$kappa[CVperf_melt$ligand == gly])
+  CVperf_ligMeans$f2[i] = mean(CVperf_melt$f2[CVperf_melt$ligand == gly])
+}
 
-# p + geom_sugar(sugar='galnac')
+
+
+
+CVperf_melt$ligand = factor(CVperf_melt$ligand)
+
+levels(CVperf_melt$ligand)
+
+meltLigCols = rep('', ncol(ligTags))
+meltLigCols[14] = 'purple2' # Sialic Acid
+meltLigCols[12] = 'darkviolet' # NeuAc monosacc.
+meltLigCols[13] = 'purple2' # 3' Sialyllactose
+
+meltLigCols[9] = 'forestgreen' # High mannose
+meltLigCols[10] = 'darkgreen' # Mannose monosacc.
+meltLigCols[11] = 'forestgreen' # 2alpha mannobiose
+
+meltLigCols[15] = 'red1' # Terminal Fuc
+meltLigCols[1] = 'firebrick3' # Fuc monosacc.
+
+meltLigCols[4] = 'goldenrod2' # Lactose
+meltLigCols[2] = 'darkgoldenrod3' # Gal monosacc.
+meltLigCols[6] = 'darkgoldenrod3' # GalNAc (Tn antigen)
+meltLigCols[5] = 'goldenrod2' # N-Acetyllactosamine (LacNAc)
+meltLigCols[3] = 'goldenrod2' # TF antigen
+
+meltLigCols[7] = 'mediumblue' # Glc monosacc.
+meltLigCols[8] = 'royalblue2' # GlcNAc
+
+p = ggplot(data = CVperf_melt, aes(x = sampSizes, y = f2, col = ligand))
+
+p = p +
+  geom_point(size = 7) +
+  theme_linedraw(base_size = 22) +
+  scale_color_manual(values = alpha(meltLigCols, 0.3), guide = F) +
+  labs(x = "Number of interactions for training", y = "Training F2 score") +
+  xlim(0, 150) + ylim(0,1)
+
+p
+
+
+
+CVperf_ligMeans$ligand = factor(CVperf_ligMeans$ligand, levels(CVperf_melt$ligand))
+levels(CVperf_ligMeans$ligand)
+row.names(CVperf_ligMeans) = CVperf_ligMeans$ligand
+CVperf_ligMeans = CVperf_ligMeans[levels(CVperf_ligMeans$ligand),]
+
+# mapping = rep(0,15)
+# for (i in 1:15){
+#   gly = levels(CVperf_ligMeans$ligand)[i]
+#   gly = paste0('^', gly, '$')
+#   mapping[i] = grep(gly, CVperf_ligMeans$ligand)
+# }
+# 
+# meltLigCols = meltLigCols[c()]
+
+p + geom_label(data = CVperf_ligMeans, aes(x=sampSizes, y = f2, label = ligand), colour = meltLigCols)
+
+p + 
+  geom_text(data = CVperf_ligMeans, aes(x=sampSizes, y = f2, label = ligand), colour = meltLigCols, size = 8.02, family = "mono", fontface = 'bold') +
+  geom_text(data = CVperf_ligMeans, aes(x=sampSizes, y = f2, label = ligand), colour = 'black', size = 7.98, family = "mono") +
+  annotate("text", label = 'Pearson corr: 0.53 (p<0.001)', x = 100, y = 0.2, size = 6, colour = "black")
+  
+
+# p + geom_sugar(data = CVperf_ligMeans, aes(x=sampSizes, y = f2),
+#                sugar = rep('n-linked-sialyl-biantennary', 15),
+#                # sugar=c('fuc',
+#                #         'gal',
+#                #         # 'gal(b1-3)galnac',
+#                #         'gal',
+#                #
+#                #         # 'gal(b1-4)glc',
+#                #         'gal',
+#                #
+#                #         # 'gal(b1-4)glcnac',
+#                #         'gal',
+#                #
+#                #         'galnac',
+#                #         'glc',
+#                #         'glcnac',
+#                #         'high_man',
+#                #         'man',
+#                #         # 'man(a1-2)man',
+#                #         'man',
+#                #
+#                #         'neuac',
+#                #         # 'neuac(a2-3)gal(b1-4)glc',
+#                #         'neuac',
+#                #
+#                #         'n-linked-sialyl-biantennary',
+#                #         'fuc'),
+#                size = 4)
+
 
 
 # ggplot(data = mTest, aes(x = metric, y = value, col = ligand, fill = metric)) +
@@ -481,6 +582,12 @@ p + geom_point() + scale_color_manual(values = alpha(ligColors, 0.3))
 #   theme_light(base_size = 22) +
 #   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
 
+
+
+p <- ggplot(data.frame(x=(1:3),y=rep(1,3),sugar=c('o-fuc','STn','n-linked-sialyl-biantennary'))) + 
+  geom_sugar(aes(x,y,sugar=sugar),size=10,align="centre") + 
+  theme_minimal()
+p
 
 
 breakLst = seq(0,1,0.01)
@@ -697,7 +804,7 @@ axis(side=3,at=seq.int(1,29,2), labels = F, pos = 2.2)
 xLim = c(0,30)
 yLim = c(0.2,1)
 
-par(mar = c(14.1, 5.1, 5.1, 4.1), # change the margins
+par(mar = c(16.1, 5.1, 5.1, 4.1), # change the margins
     lwd = 2, # increase the line thickness
     cex.axis = 1.2 # increase default axis label size
 )
@@ -706,8 +813,8 @@ plot(0,0,col = 'white', xlab = '',ylab = '',type="n",
      axes=FALSE,ann=FALSE,
      xlim = xLim,
      ylim = yLim)
-abline(h = c(0.2,0.4,0.6,0.8,1.0), lwd = 0.5, col = 'grey80')
-abline(h = c(0.3,0.5,0.7,0.9), lwd = 0.5, lty = 2, col = 'grey80')
+abline(h = c(0.2,0.4,0.6,0.8,1.0), lwd = 1, col = 'grey80')
+abline(h = c(0.3,0.5,0.7,0.9), lwd = 1, lty = 2, col = 'grey80')
 for(j in 1:ncol(ligTags)){
   i = ((j-1) * 2) + 1
   vioplot(testDat$recall[(testDat$ligand == colnames(ligTags)[j]) & (testDat$mode == 'pred')], at = i, side = 'left',
@@ -740,7 +847,7 @@ axis(side=2,at=pretty(c(0.2,1)), las = 2)
 axis(side = 4, at = pretty(c(0.2,1)), las = 2)  # Add second axis
 # abline(v=6, lwd = 0.75)
 mtext("Precision", side = 4, line = 3, cex = 2, col = alpha('black',0.85))  # Add second axis label
-title(xlab = "", ylab = "Recall", main = "Random Forest - LO(C)O Validation performance\nPrecision & Recall vs random", cex.main = 1.5, cex.lab = 2)
+title(xlab = "", ylab = "Recall", main = "Random Forest Validation - Precision & Recall (Violin plots) \n Versus Random Classifier (Boxplots)", cex.main = 1.5, cex.lab = 2)
 text(x = seq.int(1,29,2),
      y = par("usr")[3] - 0.05,
      labels = ligNames,
@@ -748,10 +855,10 @@ text(x = seq.int(1,29,2),
      ## Change the clipping region.
      xpd = NA,
      ## Rotate the labels by 35 degrees.
-     srt = 90,
+     srt = 270,
      ## Adjust the labels to almost 100% right-justified.
      #adj = 0.965,
-     adj = 0.92,
+     adj = 0.04,
      ## Increase label size.
      cex = 1.2)
 
@@ -764,6 +871,13 @@ plot(0,0, col = 'white', type = 'n',
      ylim = c(1.3, 4),
      axes = F, xlab = '', ylab = '')
 lines(x = c(1,30), y = c(0,0), lwd = 2)
+logTicks = c(20,50,100,150)
+
+for (i in 1:length(logTicks)){
+  segments(x0=0.25,y0= log10(logTicks)[i], x1 = 30, y1 = log10(logTicks)[i], lwd = 1, col = 'grey80')
+}
+
+
 for(j in 1:ncol(ligTags)){
   i = ((j-1) * 2) + 1
   par(new = T)
@@ -775,9 +889,8 @@ for(j in 1:ncol(ligTags)){
           ylim = c(1.3, 4),
           axes = F, xlab = '', ylab ='')
 }
-logTicks = c(20,50,100,150)
 axis(side=2,at=log10(logTicks), labels = logTicks, las = 2, pos = 0)
-axis(side=3,at=seq.int(1,29,2), labels = F, pos = 2.2)
+axis(side=3,at=seq.int(1,29,2), labels = F, pos = 2.25)
 
 
 #######################
@@ -1139,8 +1252,270 @@ for (i in 1:ncol(medFeatPercentiles)){
 }
 
 
+##############################################
+### Figure 3 panels B-D
+##############################################
+
+cWidth = 10
+cHeight = 20 
 
 
+breakLst = seq(-0.5,0.5,0.01)
+
+annot <- data.frame(Feature_Type = rep("", nrow(stats)))
+row.names(annot) = row.names(stats)
+
+annot$Feature_Type[featColors == 'forestgreen'] <- 'PLIP interaction counts'
+
+annot$Feature_Type[grep('^vol_4Ang$', row.names(stats)) : grep('^leftskew_10Ang$', row.names(stats))] <- 'D2 distribution features'
+annot$Feature_Type[grepl('^vol_', row.names(stats)) | grepl('^pcntSurf_', row.names(stats))] = 'Pocket descriptors' # General pocket descriptors
+annot$Feature_Type[grepl('^binnedD2', row.names(stats))] <- 'D2 Principal Components'
+annot$Feature_Type[grepl('^zern', row.names(stats))] <- '3DZD Principal Components'
+
+annot$Feature_Type[grepl('^numBSresis', row.names(stats))] <- 'Residue counts/bin'
+annot$Feature_Type[gsub('_bin\\d{1}', '', row.names(stats)) %in% c('H', 'B', 'E', 'G', 'T', 'S', 'X.')] <- 'Residue sec struct.'
+annot$Feature_Type[gsub('_bin\\d{1}', '', row.names(stats)) %in% c('nonpolar', 'polar', 'posCharge', 'negCharge', 'aromatic')] <- 'Amino acid property counts'
+annot$Feature_Type[grepl('^[[:upper:]]{3}_', row.names(stats)) | grepl('^CA$', row.names(stats))] <- 'Residue identities'
+
+annot$Feature_Type <- factor(annot$Feature_Type, levels = unique(annot$Feature_Type))
+
+
+
+Feature_Type <- unique(featColors)
+names(Feature_Type) <- levels(annot$Feature_Type)
+anno_colors <- list(Feature_Type = Feature_Type)
+
+pheatmap(t(stats[,grepl('_effectSize$', colnames(stats))]),
+         color = colorRampPalette(c("royalblue1", "grey90", "gold1"))(length(breakLst)),
+         clustering_distance_rows = 'correlation',
+         # clustering_distance_cols = 'correlation',
+         display_numbers = ifelse(t(topImpfeats & sigFeats), "+", ""), fontsize_number = 18,
+         border_color = 'white',
+         labels_row = ligNames,
+         annotation_col = annot, annotation_colors = anno_colors,
+         main = '',
+         breaks = breakLst,
+         show_colnames = F)
+
+# pdf(file = paste('./manuscript/figures/subplots/', 
+#                  'featLegend',
+#                  '.pdf', sep = ''),
+#     width = 24,
+#     height = 7)
+# pheatmap(t(stats[1:10,grepl('_effectSize$', colnames(stats))]),
+#          color = colorRampPalette(c("royalblue1", "grey90", "gold1"))(length(breakLst)),
+#          clustering_distance_rows = 'correlation',
+#          # clustering_distance_cols = 'correlation',
+#          #display_numbers = ifelse(t(stats[,grepl('_adj$', colnames(stats))]) < 0.01, "*", ""), fontsize_number = 18,
+#          cellwidth = 3,
+#          border_color = 'white',
+#          labels_row = ligNames,
+#          annotation_col = annot, annotation_colors = anno_colors,
+#          main = '',
+#          breaks = breakLst,
+#          show_colnames = F)
+# dev.off()
+
+# Set-up for panel A from descriptive.R
+
+allFeatCorrs = cor(stats[,grepl('_effectSize$', colnames(stats))], stats[,grepl('_effectSize$', colnames(stats))], method = 'pearson')
+row.names(allFeatCorrs)  = gsub('_effectSize$', '', row.names(allFeatCorrs))
+
+r_annot = data.frame(Terminal_Sugar = rep("", nrow(allFeatCorrs)))
+row.names(r_annot) = row.names(allFeatCorrs)
+
+r_annot$Terminal_Sugar[ligColors %in% c('purple2', 'darkviolet')] = 'NeuAc'
+r_annot$Terminal_Sugar[ligColors %in% c('forestgreen', 'darkgreen')] = 'Man'
+r_annot$Terminal_Sugar[ligColors %in% c('red1', 'firebrick3')] = 'Fuc'
+r_annot$Terminal_Sugar[ligColors %in% c('goldenrod2', 'darkgoldenrod3')] = 'Gal'
+r_annot$Terminal_Sugar[ligColors %in% c('mediumblue', 'royalblue2')] = 'Glc'
+
+r_annot$Terminal_Sugar = factor(r_annot$Terminal_Sugar, levels = unique(r_annot$Terminal_Sugar))
+
+Terminal_Sugar = c('purple2', 'forestgreen', 'red1', 'goldenrod2', 'mediumblue')
+names(Terminal_Sugar) = levels(r_annot$Terminal_Sugar)
+
+
+r_annot$Sugar_Cnt = rep("", nrow(allFeatCorrs))
+r_annot$Sugar_Cnt[c(1:3, 9)] = '3+'
+r_annot$Sugar_Cnt[c(4,11,12,15)] = '2'
+r_annot$Sugar_Cnt[c(5,6,7,8,10,13,14)] = '1'
+
+r_annot$Sugar_Cnt <- factor(r_annot$Sugar_Cnt, levels = c('1', '2', '3+'))
+
+Sugar_Cnt = colorspace::sequential_hcl(3)[3:1]
+names(Sugar_Cnt) = levels(r_annot$Sugar_Cnt)
+
+
+annot_cols = list(Terminal_Sugar = Terminal_Sugar, Sugar_Cnt = Sugar_Cnt)
+
+####
+# PANEL D - adjusted from descriptive.R
+## Residue features only
+####
+
+resiAnnot = data.frame(Feature_Type = rep("", sum(resiFeatTag)))
+row.names(resiAnnot) = row.names(stats)[resiFeatTag]
+
+row.names(resiAnnot) = gsub('^H_bin', 'a-helix_bin', row.names(resiAnnot))
+row.names(resiAnnot) = gsub('^B_bin', 'b-bridge_bin', row.names(resiAnnot))
+row.names(resiAnnot) = gsub('^E_bin', 'b-strand_bin', row.names(resiAnnot))
+row.names(resiAnnot) = gsub('^G_bin', '3/10-helix_bin', row.names(resiAnnot))
+row.names(resiAnnot) = gsub('^T_bin', 'turn_bin', row.names(resiAnnot))
+row.names(resiAnnot) = gsub('^S_bin', 'bend_bin', row.names(resiAnnot))
+row.names(resiAnnot) = gsub('^X._bin', 'loop_bin', row.names(resiAnnot))
+
+row.names(resiAnnot) = gsub('^CA$', 'Ca2+', row.names(resiAnnot))
+
+
+resiAnnot$Feature_Type = as.character(annot$Feature_Type[resiFeatTag])
+resiAnnot$Feature_Type <- factor(resiAnnot$Feature_Type, levels = unique(resiAnnot$Feature_Type))
+
+resiAnnot$Bin = rep("", sum(resiFeatTag))
+resiAnnot$Bin[grepl('_bin1$', row.names(resiAnnot))] = 'Bin 1'
+resiAnnot$Bin[grepl('_bin2$', row.names(resiAnnot))] = 'Bin 2'
+resiAnnot$Bin[grepl('_bin3$', row.names(resiAnnot))] = 'Bin 3'
+resiAnnot$Bin[grepl('_bin4$', row.names(resiAnnot))] = 'Bin 4'
+resiAnnot$Bin[grepl('^Ca2\\+$', row.names(resiAnnot))] = 'Bin 1'
+resiAnnot$Bin <- factor(resiAnnot$Bin, levels = unique(resiAnnot$Bin))
+
+resiFeat_stats = stats
+row.names(resiFeat_stats)[resiFeatTag] = row.names(resiAnnot)
+
+Feature_Type <- unique(featColors[resiFeatTag])
+names(Feature_Type) <- levels(resiAnnot$Feature_Type)
+
+Bin <- c('firebrick3', 'darkorange2', 'darkgoldenrod2', 'gold2')
+names(Bin) <- levels(resiAnnot$Bin)
+
+resiAnnot_cols <- list(Feature_Type = Feature_Type, Bin = Bin, Terminal_Sugar = Terminal_Sugar, Sugar_Cnt = Sugar_Cnt)
+
+resiFeat_stats = t(resiFeat_stats[resiFeatTag,grepl('_effectSize$', colnames(resiFeat_stats))])
+row.names(resiFeat_stats) = gsub('_effectSize$', '', row.names(resiFeat_stats))
+
+# pdf(file = paste('./manuscript/figures/subplots/', 
+#                  'resiFeats_MWM_heatmap',
+#                  '.pdf', sep = ''),
+#     width = 28,
+#     height = 7)
+CairoPDF(file = paste('./manuscript/figures/subplots/', 
+                      'resiFeats_MWM_heatmap',
+                      '.pdf', sep = ''),
+         width = 28,
+         height = 7)
+pheatmap(resiFeat_stats,
+         color = colorRampPalette(c("royalblue1", "ivory", "gold1"))(length(breakLst)),
+         border_color = 'white',
+         cellwidth = cWidth,
+         cellheight = cHeight,
+         clustering_distance_rows = 'correlation',
+         display_numbers = ifelse(t(topImpfeats & sigFeats)[,resiFeatTag] , "\u2022", ""),
+         fontsize_number = 20, number_color = 'black',
+         labels_row = ligNames,
+         annotation_col = resiAnnot,
+         annotation_row = r_annot,
+         annotation_colors = resiAnnot_cols,
+         # legend_breaks = c(1,5),
+         cutree_rows = 4,
+         main = '',
+         breaks = breakLst,
+         show_colnames = T,
+         fontsize_col = 7,
+         angle_col = 45)
+dev.off()
+
+
+####
+# PANEL B - adjusted from descriptive.R
+## Pocket features only
+####
+
+pockAnnot = data.frame(Feature_Type = rep("", sum(pocketFeatTag)))
+row.names(pockAnnot) = row.names(stats)[pocketFeatTag]
+
+pockAnnot$Feature_Type = as.character(annot$Feature_Type[pocketFeatTag])
+pockAnnot$Feature_Type <- factor(pockAnnot$Feature_Type, levels = unique(pockAnnot$Feature_Type))
+
+pockAnnot$Threshold = rep("", sum(pocketFeatTag))
+pockAnnot$Threshold[grepl('_4Ang$', row.names(pockAnnot))] = '4 Ang thresh'
+pockAnnot$Threshold[grepl('_6Ang$', row.names(pockAnnot))] = '6 Ang thresh'
+pockAnnot$Threshold[grepl('_8Ang$', row.names(pockAnnot))] = '8 Ang thresh'
+pockAnnot$Threshold[grepl('_10Ang$', row.names(pockAnnot))] = '10 Ang thresh'
+pockAnnot$Threshold[pockAnnot$Threshold == ""] = 'NA'
+pockAnnot$Threshold <- factor(pockAnnot$Threshold, levels = unique(pockAnnot$Threshold))
+
+
+
+Feature_Type <- unique(featColors[pocketFeatTag])
+names(Feature_Type) <- levels(pockAnnot$Feature_Type)
+
+Threshold <- c('firebrick3', 'darkorange2', 'darkgoldenrod2', 'gold2', 'grey75')
+names(Threshold) <- levels(pockAnnot$Threshold)
+
+pockAnnot_cols <- list(Feature_Type = Feature_Type, Threshold = Threshold, Terminal_Sugar = Terminal_Sugar, Sugar_Cnt = Sugar_Cnt)
+
+
+pocketFeat_stats = t(stats[pocketFeatTag,grepl('_effectSize$', colnames(stats))])
+row.names(pocketFeat_stats) = gsub('_effectSize$', '', row.names(pocketFeat_stats))
+
+CairoPDF(file = paste('./manuscript/figures/subplots/', 
+                 'pocketFeats_MWM_heatmap',
+                 '.pdf', sep = ''),
+    width = 24,
+    height = 7)
+pheatmap(pocketFeat_stats,
+         color = colorRampPalette(c("royalblue1", "ivory", "gold1"))(length(breakLst)),
+         border_color = 'ivory',
+         cellwidth = cWidth+3,
+         cellheight = cHeight,
+         clustering_distance_rows = 'correlation',
+         display_numbers = ifelse(t(topImpfeats & sigFeats)[,pocketFeatTag] , "\u2022", ""), fontsize_number = 20, number_color = 'black',
+         labels_row = ligNames,
+         annotation_col = pockAnnot,
+         annotation_row = r_annot,
+         annotation_colors = pockAnnot_cols,
+         main = '',
+         cutree_rows = 4,
+         breaks = breakLst,
+         show_colnames = T,
+         fontsize_col = 9,
+         angle_col = 45)
+dev.off()
+
+
+####
+# PANEL C - adjusted from descriptive.R
+## PLIP interaction counts
+####
+
+annot_cols = list(Terminal_Sugar = Terminal_Sugar, Sugar_Cnt = Sugar_Cnt)
+
+plipFeat_stats = t(stats[1:11,grepl('_effectSize$', colnames(stats))])
+row.names(plipFeat_stats) = gsub('_effectSize$', '', row.names(plipFeat_stats))
+
+
+CairoPDF(file = paste('./manuscript/figures/subplots/', 
+                 'plipFeats_MWM_heatmap',
+                 '.pdf', sep = ''),
+    width = 24,
+    height = 7)
+pheatmap(plipFeat_stats,
+         color = colorRampPalette(c("royalblue1", "ivory", "gold1"))(length(breakLst)),
+         border_color = 'ivory',
+         cellwidth = cWidth+3,
+         cellheight = cHeight,
+         clustering_distance_rows = 'correlation',
+         display_numbers = ifelse(t(topImpfeats & sigFeats)[,1:11] , "\u2022", ""), fontsize_number = 20, number_color = 'black',
+         labels_row = ligNames,
+         annotation_row = r_annot,
+         annotation_colors = annot_cols,
+         main = '',
+         cutree_rows = 4,
+         breaks = breakLst,
+         show_colnames = T,
+         fontsize_col = 9,
+         angle_col = 45)
+dev.off()
 
 
 
@@ -1697,7 +2072,7 @@ names(Gly_Type) = levels(r_annot$Gly_Type)
 annot_cols <- list(Feature_Type = Feature_Type, Bin = Bin, Gly_Type = Gly_Type)
 
 ###
-# FIGURE 4
+# previous FIGURE 4
 ###
 pdf(file = paste('./manuscript/figures/subplots/', 
                  'important_feats',
@@ -1707,7 +2082,7 @@ pdf(file = paste('./manuscript/figures/subplots/',
 pheatmap(allSigFeats, cluster_rows = F, cluster_cols = F, # Drop empty columns after pruning rows
          color = cols,
          breaks = breakLst,
-         border_color = 'black',
+         border_color = 'white',
          cellwidth = 14,
          cellheight = 20,
          gaps_row = c(1,3,5,8),
