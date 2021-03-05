@@ -503,9 +503,10 @@ for(i in 1:ncol(ligTags)){
   # abline(v = c(-1.25,-.75,-.25,.25,.75,1.25), lwd = 3, col = fg)
   # abline(h = c(0,1,2,3,4,5,6), lwd = 6, col = fg)
   # abline(h = c(0.5,1.5,2.5,3.5,4.5,5.5,6.5), lwd = 3, col = fg)
-  par(new=T)
   
   abline(v = 0, lty=2, lwd = 4, col = 'white')
+  
+  par(new=T)
   
   plot(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))][,i], -log10(stats_weighted[,grepl('_adj$', colnames(stats_weighted))][,i]), # Plot all points w/ color @ alpha 0.5
        xlab = "Effect size", ylab = "-log10(FDR)", main = '',
