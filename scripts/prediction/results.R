@@ -2231,17 +2231,20 @@ plot(featMeans, cex = 3,
              15, 16))
 
 
-# Plot weighted distributions of top 60 features for top 10 ligands
+# Plot weighted distributions of all 221 features for all 15 ligands
 
-allTopFeatCols = rep('', 60)
 
-for (i in 1:length(names(annot_cols$Feature_Type))){
-  feat = names(annot_cols$Feature_Type)[i]
-  allTopFeatCols[annot$Feature_Type == feat] = annot_cols$Feature_Type[i]
-}
+# allTopFeatCols = rep('', 60)
+# 
+# for (i in 1:length(names(annot_cols$Feature_Type))){
+#   feat = names(annot_cols$Feature_Type)[i]
+#   allTopFeatCols[annot$Feature_Type == feat] = annot_cols$Feature_Type[i]
+# }
 
-for (k in 1:ncol(allSigFeats)){
-  featName = colnames(allSigFeats)[k]
+allTopFeatCols = featColors
+
+for (k in 1:nrow(stats)){
+  featName = row.names(stats)[k]
   
   feat = featName
   feat = gsub('^b-strand_', 'E_', feat)
@@ -2250,16 +2253,19 @@ for (k in 1:ncol(allSigFeats)){
   feat = gsub('^bend_', 'S_', feat)
   feat = gsub('^turn_', 'T_', feat)
   feat = gsub('^a-helix_', 'H_', feat)
+  feat = gsub('^b-bridge_', 'B_', feat)
+  
   
   pdf(file = paste('./manuscript/figures/subplots/allSigFeatDists/', 
                    gsub('/','-',featName),
                    '.pdf', sep = ''),
       width = 11,
       height = 8.5)
-  par(mfrow=c(2,5))
-  for (i in 1:length(topLigs)){
+  par(mfrow=c(3,5))
+  for (i in 1:ncol(ligTags)){
     weightFlag = F
-    lig = topLigs[i]
+    lig = colnames(ligTags)[i]
+    ligPattern = paste0('^', lig)
     
     des_w = subset(des, subset = ligTags[,lig])
     
@@ -2272,7 +2278,7 @@ for (k in 1:ncol(allSigFeats)){
       weightFlag = T
     }
     
-    val = allSigFeats[i,k]
+    val = stats[featName,grepl(paste0(ligPattern, '_effectSize$'), colnames(stats))]
     
     if (val > 0){
       dir = 'enriched'
@@ -2280,10 +2286,14 @@ for (k in 1:ncol(allSigFeats)){
       dir = 'depleted'
     }
     
-    if (abs(val) == 1){
+    if (sigFeats[feat,i] & topImpfeats[feat,i]){ #ith lig
       meth = ', RF & WMW'
-    } else if (abs(val) == .3){
-      meth = ', RF | WMW'
+    } else if (sigFeats[feat,i] | topImpfeats[feat,i]){
+      if (sigFeats[feat,i]){
+        meth = ', WMW only'
+      } else{
+        meth = ', RF only' 
+      }
     } else {
       meth = ', non-significant'
     }
@@ -2300,7 +2310,7 @@ for (k in 1:ncol(allSigFeats)){
     if (! weightFlag){
       note = 'Unweighted\n(IQR == 0)'
       text(x = mean(range(predFeats[,feat])),
-           y = yLim[2],
+           y = yLim[2]*.9,
            note)
     }
   }

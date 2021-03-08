@@ -793,6 +793,8 @@ cor.test(stats_weighted$NeuAc_effectSize, stats_weighted$NeuAc.a2.3.Gal.b1.4.Glc
 
 
 cor.test(stats_weighted$Man_effectSize, stats_weighted$Fuc_effectSize)
+cor.test(stats_weighted$Man_effectSize, stats_weighted$Man.a1.2.Man_effectSize)
+cor.test(stats_weighted$Man_effectSize, stats_weighted$Glc_effectSize)
 
 
 # corrmat = cor(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))], stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))], method = 'pearson')
