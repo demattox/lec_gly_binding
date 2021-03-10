@@ -2127,14 +2127,14 @@ row.names(stats) = gsub('^T_bin', 'turn_bin', row.names(stats))
 row.names(stats) = gsub('^S_bin', 'bend_bin', row.names(stats))
 row.names(stats) = gsub('^X._bin', 'loop_bin', row.names(stats))
 
-ligSpefic_feat_means = stats[,grepl('_weightedFeatureMean', colnames(stats))]
-colnames(ligSpefic_feat_means) = gsub('_weightedFeatureMean$', '', colnames(ligSpefic_feat_means))
+ligSpefic_feat_means = stats[,grepl('_weightedFeatureMean', colnames(stats))] # Weighted means of scaled features
+colnames(ligSpefic_feat_means) = gsub('_weightedFeatureMean$', '', colnames(ligSpefic_feat_means)) 
 
-ligSpefic_feat_means = ligSpefic_feat_means[colnames(allSigFeats),] # Limit to the set of 60 features that are significant and important in at least one of the 10 best performing ligands with RF
+# ligSpefic_feat_means = ligSpefic_feat_means[colnames(allSigFeats),] # Limit to the set of 60 features that are significant and important in at least one of the 10 best performing ligands with RF
 
 top60_scaledFeats = scaledFeats
 colnames(top60_scaledFeats) = row.names(stats) # carry over reformatted feature names
-top60_scaledFeats = top60_scaledFeats[,colnames(allSigFeats)] # Subset of 60 top features scaled from 0,1
+# top60_scaledFeats = top60_scaledFeats[,colnames(allSigFeats)] # Subset of 60 top features scaled from 0,1
 
 for (i in 1:ncol(ligTags)){
   cat(colnames(ligTags[i]), '\n')
@@ -2144,6 +2144,116 @@ for (i in 1:ncol(ligTags)){
   cat(row.names(boundDat)[which.min(dists[1,2:nrow(boundDat)]) +1],'\t')
   cat(min(dists[1,2:nrow(boundDat)]),'\n\n')
 }
+
+
+
+
+
+vols = predFeats[,grepl('^vol_',colnames(predFeats))]
+
+vols$meanChng = (vols[,4]-vols[,3]) + (vols[,3]-vols[,2]) + (vols[,2]-vols[,1])
+
+plot(density(vols$meanChng))
+
+
+cor.test(vols$meanChng, predFeats$skew_4Ang)
+cor.test(vols$meanChng, predFeats$skew_6Ang)
+cor.test(vols$meanChng, predFeats$skew_8Ang)
+cor.test(vols$meanChng, predFeats$skew_10Ang)
+
+
+plot(vols$meanChng, predFeats$zern_PC4)
+cor.test(vols$meanChng, predFeats$zern_PC4) # Moderate correlation
+
+vols$pcntChng = (((vols[,4]-vols[,3])/vols[,3]) + ((vols[,3]-vols[,2])/vols[,2]) + ((vols[,2]-vols[,1])/vols[,1]))/3
+vols$pcntChng[vols$vol_4Ang == 0] = 0 # Set NAs (where volume = 0) to 0
+sum(is.na(vols$pcntChng))
+
+plot(density(vols$pcntChng))
+
+
+
+plot(vols$pcntChng, predFeats$zern_PC4)
+cor.test(vols$pcntChng, predFeats$zern_PC4) # moderate correlation
+
+vols$adjPcnt = vols$pcntChng / apply(vols[,1:4], 1, mean)
+vols$adjPcnt[vols$pcntChng == 0] = 0 # Set NAs to 0
+sum(is.na(vols$adjPcnt))
+
+plot(density(vols$adjPcnt))
+
+
+cor.test(vols$adjPcnt, predFeats$zern_PC4) # No correlation
+plot(vols$adjPcnt, predFeats$zern_PC4)
+
+
+
+
+# Binned D2 PC2
+par(mfrow=c(1,3))
+cor.test(vols$meanChng, predFeats$binnedD2_PC2) # No correlation
+summary(lm(predFeats$binnedD2_PC2 ~ vols$meanChng))
+plot(vols$meanChng, predFeats$binnedD2_PC2, xlab = 'Mean volume change across thresholds', ylab = 'Binned D2 PC2', main = 'Mean vol. change')
+abline(a = 0.6696200, b = -0.0015655)
+mtext('R = -0.15, p < 0.001', line = -2)
+
+cor.test(vols$pcntChng, predFeats$binnedD2_PC2) # Very weak correlation
+summary(lm(predFeats$binnedD2_PC2 ~ vols$pcntChng))
+plot(vols$pcntChng, predFeats$binnedD2_PC2, xlab = 'Mean percent change across thresholds', ylab = 'Binned D2 PC2', main = 'Mean percent change')
+abline(a = -1.0384, b = 4.3277)
+mtext('R = 0.10, p < 0.001', line = -2)
+
+cor.test(vols$adjPcnt, predFeats$binnedD2_PC2) # Moderate correlation
+summary(lm(predFeats$binnedD2_PC2 ~ vols$adjPcnt))
+plot(vols$adjPcnt, predFeats$binnedD2_PC2, xlab = 'Adjusted percent change across thresholds', ylab = 'Binned D2 PC2', main = 'Volume-adjusted percent change')
+abline(a = -1.90697, b = 3927.39694)
+mtext('R = 0.39, p < 0.001', line = -2)
+
+# copied @ 900 x 550
+
+
+# Zern PC4
+par(mfrow=c(1,3))
+cor.test(vols$meanChng, predFeats$zern_PC4) # Moderate correlation
+summary(lm(predFeats$zern_PC4 ~ vols$meanChng))
+plot(vols$meanChng, predFeats$zern_PC4, xlab = 'Mean volume change across thresholds', ylab = 'Zern PC4', main = 'Mean vol. change')
+abline(a = -0.6966667, b = 0.0016288)
+mtext('R = 0.24, p < 0.001', line = -2)
+
+cor.test(vols$pcntChng, predFeats$zern_PC4) # Moderate correlation
+summary(lm(predFeats$zern_PC4 ~ vols$pcntChng))
+plot(vols$pcntChng, predFeats$zern_PC4, xlab = 'Mean percent change across thresholds', ylab = 'Zern PC4', main = 'Mean percent change')
+abline(a = -1.5127, b = 6.3040)
+mtext('R = 0.22, p < 0.001', line = -2)
+
+cor.test(vols$adjPcnt, predFeats$zern_PC4) # No correlation
+summary(lm(predFeats$zern_PC4 ~ vols$adjPcnt))
+plot(vols$adjPcnt, predFeats$zern_PC4, xlab = 'Adjusted percent change across thresholds', ylab = 'Zern PC4', main = 'Volume-adjusted percent change')
+abline(a = 0.16525, b = -340.33114)
+mtext('R = -0.05, p < 0.01', line = -2)
+# 900 x 550
+
+
+
+# Zern PC7 - up in Glc + GalNAc, down in Gal + GlcNAc
+plot(density(predFeats$zern_PC7))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#####################
+
+#####################
 
 topLigs = row.names(allSigFeats)
 topLigTag = apply(ligTags[,topLigs], 1, any)
