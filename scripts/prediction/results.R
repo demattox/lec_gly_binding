@@ -1350,7 +1350,7 @@ names(Sugar_Cnt) = levels(r_annot$Sugar_Cnt)
 annot_cols = list(Terminal_Sugar = Terminal_Sugar, Sugar_Cnt = Sugar_Cnt)
 
 ####
-# PANEL D - adjusted from descriptive.R
+# PANEL B - adjusted from descriptive.R
 ## Residue features only
 ####
 
@@ -1426,7 +1426,7 @@ dev.off()
 
 
 ####
-# PANEL B - adjusted from descriptive.R
+# PANEL C - adjusted from descriptive.R
 ## Pocket features only
 ####
 
@@ -1484,7 +1484,7 @@ dev.off()
 
 
 ####
-# PANEL C - adjusted from descriptive.R
+# PANEL D - adjusted from descriptive.R
 ## PLIP interaction counts
 ####
 
@@ -2234,24 +2234,103 @@ mtext('R = -0.05, p < 0.01', line = -2)
 # 900 x 550
 
 
+ligSpefic_feat_means['vol_4Ang', 1]
+ligSpefic_feat_means['vol_6Ang', 1]
+ligSpefic_feat_means['vol_8Ang', 1]
+ligSpefic_feat_means['vol_10Ang', 1]
 
-# Zern PC7 - up in Glc + GalNAc, down in Gal + GlcNAc
-plot(density(predFeats$zern_PC7))
+ligSpefic_feat_means['vol_4Ang', 2]
+ligSpefic_feat_means['vol_6Ang', 2]
+ligSpefic_feat_means['vol_8Ang', 2]
+ligSpefic_feat_means['vol_10Ang', 2]
+
+ligSpefic_feat_means['vol_4Ang', 8]
+ligSpefic_feat_means['vol_6Ang', 8]
+ligSpefic_feat_means['vol_8Ang', 8]
+ligSpefic_feat_means['vol_10Ang', 8]
+
+
+vols$six8 = vols$vol_8Ang - vols$vol_6Ang
+vols$six8_pcnt = vols$six8 / vols$vol_6Ang
+vols$six8_pcnt[vols$vol_6Ang == 0] = 0
+sum(is.na(vols$six8_pcnt))
+
+plot(density(vols$six8_pcnt))
+
+
+
+########################
+## FIG 4 distributions
+########################
+
+d2Dists = read.delim('./analysis/d2_binnedMeasures.csv', header = T, sep =',', stringsAsFactors = F)
+colnames(d2Dists) = gsub('^X','',colnames(d2Dists))
+
+d2Dists_fig4 = d2Dists[c('1SID_BGC:I:1',
+                         '1HGH_MNA:A:349',
+                         '1CVN_MAN:E:1'),]
 
 
 
 
+###################
+pdf(file = paste('./manuscript/figures/subplots/', 
+                 'sia_neuac_hiMan_d2plots',
+                 '.pdf', sep = ''),
+    #width = 14.25, height = 12)
+    width = 9.5, height = 8)
+par(mfrow = c(3,1),
+    cex.lab = 1.5,
+    cex.axis = 1.2,
+    cex.main = 2)
+xmax = 54 # plot values from first 54 bins (xlim of 27)
+ymax = 70000
+scale = 10000
+threshStrings = c('_4Ang$', '_6Ang$', '_8Ang$', '_10Ang$')
+mainTitles = c('Sialic Acid', 'NeuAc', 'High Mannose')
+tCols = c('magenta', "firebrick3", 'darkorange', 'gold2')
 
-
-
-
-
-
-
-
-
-
+for (i in 1:nrow(d2Dists_fig4)){
+  for (t in 4:1){
+    x = colnames(d2Dists_fig4)[grepl(threshStrings[t], colnames(d2Dists_fig4))]
+    x = gsub(threshStrings[t], '', x)
+    x = as.numeric(x)
+    x = c(0, x[1:xmax])
+    if (t ==4){
+      barplot(height = c(0,as.numeric(d2Dists_fig4[i,grepl(threshStrings[t], colnames(d2Dists_fig4))])[1:xmax])/scale,
+              width = 1, space = 0,
+              ylab = '', xlab = 'Distances between pairs of surface points (\uc5)', main = mainTitles[i],
+              ylim = c(0, ymax/scale),
+              axes = F,
+              names.arg = x,
+              col = alpha(tCols[t],0.9))
+      axis(side = 1, at = c(0:xmax), labels = FALSE)
+      axis(side = 2, at = c(0:7), labels = c(0:7), line = -0.5)
+      mtext('Counts (10k)', side = 2, line = 2, cex = 1, col = alpha('black',1))  # Add y axis label
+    } else{
+      barplot(height = c(0,as.numeric(d2Dists_fig4[i,grepl(threshStrings[t], colnames(d2Dists_fig4))])[1:xmax])/scale, 
+              width = 1, space = 0,
+              ylim = c(0, ymax/scale),
+              axes = F, ylab = '', xlab ='', main = '',
+              col = alpha(tCols[t],0.9))
+    }
+    if (t != 1){par(new=T)}
+  }
+  volText = ''
+  for (t in 4:1){
+    med = predFeats[row.names(d2Dists_fig4)[i], grepl(paste0('^med',threshStrings[t]), colnames(predFeats))]
+    abline(v = med*2, col = 'black', lwd = 5)
+    abline(v = med*2, col = tCols[t], lwd = 2.5)
+    volText = paste(volText, as.character())
+  }
+}
+dev.off()
 #####################
+
+
+
+
+
 
 #####################
 

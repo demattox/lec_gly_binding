@@ -251,8 +251,10 @@ if __name__ == '__main__':
                         outFH.write(',' + ','.join([ str(0) for d in range(NUM_SCALED_BINS) ]) )
                 outFH.write('\n')
     
+    # # Save out all binned D2 measures as a pickle
     # with open("binnedAllDists.p", "wb")as pickleFH:
     #     dill.dump(binnedAllDists, pickleFH)
+    
     
     topAll = 0
     for pdb in binnedAllDists.keys():
