@@ -861,6 +861,7 @@ boxplot(testResults$acc[testResults$mode == 'pred'], testResults$acc[testResults
         main = 'Validation accuracy'
 )
 
+dev.off()
 # Training
 ## P & R same plot with violin & box plots
 xLim = c(0.5,1.5)
@@ -1119,7 +1120,7 @@ pheatmap(resiFeat_stats,
          cellheight = cHeight,
          cluster_rows = F,
          # clustering_distance_rows = 'correlation',
-         display_numbers = ifelse((hImpFeats & hSigFeats)[,resiFeatTag] , "\u2022", ""),
+         display_numbers = ifelse((hSigFeats)[,resiFeatTag] , "\u2022", ""),
          fontsize_number = 20, number_color = 'black',
          labels_row = c('Lac vs all', 'LacNAc vs all', 'Lac vs LacNAc', 'LacNAc vs Lac'),
          annotation_col = resiAnnot,
@@ -1177,7 +1178,7 @@ pheatmap(pocketFeat_stats,
          cellheight = cHeight,
          cluster_rows = F,
          # clustering_distance_rows = 'correlation',
-         display_numbers = ifelse((hImpFeats & hSigFeats)[,pocketFeatTag] , "\u2022", ""),
+         display_numbers = ifelse((hSigFeats)[,pocketFeatTag] , "\u2022", ""),
          fontsize_number = 20, number_color = 'black',
          labels_row = c('Lac vs all', 'LacNAc vs all', 'Lac vs LacNAc', 'LacNAc vs Lac'),
          annotation_col = pockAnnot,
@@ -1211,7 +1212,7 @@ pheatmap(plipFeat_stats,
          cellwidth = cWidth+3,
          cellheight = cHeight, 
          cluster_rows = F,
-         display_numbers = ifelse((hImpFeats & hSigFeats)[,1:11] , "\u2022", ""),
+         display_numbers = ifelse((hSigFeats)[,1:11] , "\u2022", ""),
          fontsize_number = 20, number_color = 'black',
          labels_row = c('Lac vs all', 'LacNAc vs all', 'Lac vs LacNAc', 'LacNAc vs Lac'),
          main = '',
