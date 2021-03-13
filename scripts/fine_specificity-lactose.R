@@ -193,6 +193,16 @@ bsResiDat = read.delim(file = './analysis/training/data_in/bsResiDat.tsv', sep =
 
 stats = read.delim(file = './analysis/training/weightedWMW_stats.tsv', sep = '\t', stringsAsFactors = F)
 
+# sum(stats[grepl('_bin1', row.names(stats)),grepl('_adj', colnames(stats))] < 0.01)
+# sum(stats[grepl('_bin2', row.names(stats)),grepl('_adj', colnames(stats))] < 0.01)
+# sum(stats[grepl('_bin3', row.names(stats)),grepl('_adj', colnames(stats))] < 0.01)
+# sum(stats[grepl('_bin4', row.names(stats)),grepl('_adj', colnames(stats))] < 0.01)
+# 
+# boxplot(unlist(abs(stats[grepl('_bin1', row.names(stats)),grepl('_effectSize', colnames(stats))])),
+#   unlist(abs(stats[grepl('_bin2', row.names(stats)),grepl('_effectSize', colnames(stats))])),
+#   unlist(abs(stats[grepl('_bin3', row.names(stats)),grepl('_effectSize', colnames(stats))])),
+#   unlist(abs(stats[grepl('_bin4', row.names(stats)),grepl('_effectSize', colnames(stats))])),
+#   notch = T, col = c('firebrick3', 'darkorange2', 'darkgoldenrod2', 'gold2'))
 
 # Colors to features for plotting
 featColors = rep('', ncol(predFeats))
@@ -215,99 +225,7 @@ resiFeatTag = featColors %in% resiFeats
 pocketFeatTag = featColors %in% pocketFeats
 
 ########################
-## Sialic acid glys
-########################
-
-uniLigs = unique(bsResiDat$iupac)
-
-cpl50 = rep(0, length(uniLigs))
-for (i in 1:length(uniLigs)){
-  cpl50[i] = length(unique(bsResiDat$seqClust50[bsResiDat$iupac == uniLigs[i]]))
-}
-
-ligSort50 = uniLigs[order(cpl50, decreasing = T)]
-cpl50 = cpl50[order(cpl50, decreasing = T)]
-
-
-parenCnt = bracCnt = manCnt = neuCnt = bracCnt = rep(0,length(ligSort50))
-for (i in 1:length(ligSort50)){
-  lig = ligSort50[i]
-  parenCnt[i] = lengths(regmatches(lig, gregexpr("\\(", lig)))
-  bracCnt[i] = lengths(regmatches(lig, gregexpr("\\[", lig)))
-  manCnt[i] = lengths(regmatches(lig, gregexpr("Man", lig)))
-  neuCnt[i] = lengths(regmatches(lig, gregexpr("NeuAc", lig)))
-}
-
-mTag = parenCnt == 0 & bracCnt == 0 # Monosaccharides
-dTag = parenCnt == 1 & bracCnt == 0 # Disaccharides
-tTag = (parenCnt == 2 & bracCnt == 0) | (parenCnt == 2 & bracCnt == 1) # Trisaccharides
-qTag = (parenCnt == 3 & bracCnt == 0) | (parenCnt == 3 & bracCnt == 1) | (parenCnt == 1 & bracCnt == 2) # Tetrasaccharides
-pTag = !(mTag | dTag | tTag | qTag) # 5+ sugars
-bTag = bracCnt >= 1 # Branched glycans
-
-manTag = manCnt >= 3 & grepl('^Man',ligSort50) # High mannose
-neuTag = grepl('^NeuAc',ligSort50) & !mTag # Has terminal sialic acid and is not a monosacc.
-fucTag = grepl('^Fuc',ligSort50) & !mTag # Has a terminal fucose and is not a monosacc.
-
-ligSort50[mTag]
-ligSort50[dTag]
-ligSort50[tTag]
-ligSort50[qTag]
-ligSort50[pTag]
- 
-ligSort50[bTag]
-
-ligSort50[manTag]
-for(i in 1:length(ligSort50[manTag])){
-  cat(ligSort50[manTag][i], '\n')
-}
-ligSort50[neuTag]
-for(i in 1:length(ligSort50[neuTag])){
-  cat(ligSort50[neuTag][i], '\n')
-}
-ligSort50[fucTag]
-for(i in 1:length(ligSort50[fucTag])){
-  cat(ligSort50[fucTag][i], '\n')
-}
-
-ligSort50[grepl('Kdo',ligSort50)]
-ligSort50[grepl('Kdn',ligSort50)]
-
-
-# NeuGc-containing glycans
-ngnaTag = grepl('NeuGc',ligSort50) # Has terminal sialic acid and is not a monosacc.
-ligSort50[ngnaTag]
-cpl50[ngnaTag]
-
-gcTags = as.data.frame(matrix(F, nrow = nrow(bsResiDat), ncol = sum(ngnaTag)))
-row.names(gcTags) = row.names(bsResiDat)
-colnames(gcTags) = ligSort50[ngnaTag]
-
-for(i in 1:length(ligSort50[ngnaTag])){
-  tag = bsResiDat$iupac == ligSort50[ngnaTag][i]
-  gcTags[,i] = tag
-  cat(ligSort50[ngnaTag][i], '\t')
-  cat(sum(tag), '\t')
-  gcClusts = unique(bsResiDat$seqClust50[tag])
-  cat(gcClusts, '\n')
-  
-  neugly = gsub('NeuGc', 'NeuAc', ligSort50[ngnaTag][i])
-  cat(neugly, '\t', sum(bsResiDat$iupac == neugly), '\t', length(unique(bsResiDat$seqClust50[bsResiDat$iupac == neugly])), '\t', unique(bsResiDat$seqClust50[bsResiDat$iupac == neugly])[order(unique(bsResiDat$seqClust50[bsResiDat$iupac == neugly]))])
-  cat('\n\n')
-}
-
-# a2-3 vs a2-6 matched glycans
-neu23Tag = grepl('^NeuAc\\(a2-3\\)',ligSort50)
-ligSort50[neu23Tag]
-neu26Tag = grepl('^NeuAc\\(a2-6\\)',ligSort50)
-ligSort50[neu26Tag]
-
-sum(gsub('^NeuAc\\(a2-3\\)', 'NeuAc(a2-6)', ligSort50[neu23Tag]) %in% ligSort50[neu26Tag])
-ligSort50[neu23Tag][gsub('^NeuAc\\(a2-3\\)', 'NeuAc(a2-6)', ligSort50[neu23Tag]) %in% ligSort50[neu26Tag]]
-
-
-########################
-## NeuAc/Gc Monosaccharides - Descriptive
+## Lac/LacNAc - Descriptive
 ########################
 
 ###
@@ -330,220 +248,96 @@ for (i in 1:length(unique(bsResiDat$seqClust50))){
 round(sum(cWeights),5) == nrow(bsResiDat) # Sum of weights is equal to number of binding sites
 round(sum(cuWeights),5) == nrow(bsResiDat) # Sum of weights is equal to number of binding sites
 
-# wmwFeats = cbind(predFeats,ligTags)
-# 
-# des <- svydesign(ids = ~1, data = wmwFeats, weights = 1/cuWeights)
+wmwFeats = cbind(predFeats,ligTags)
+
+des <- svydesign(ids = ~1, data = wmwFeats, weights = 1/cuWeights)
 ###
 
 
-ligNames = c('Terminal NeuAc', 'Terminal NeuGc')
-ligColors = c('darkviolet', 'deepskyblue ')
+ligNames = c('Lactose', 'N-Acetyllactosamine')
+ligColors = c('goldenrod2', 'goldenrod2')
 
-neuTags = cbind(gcTags, ligTags[,8], bsResiDat$iupac == 'NeuAc(a2-3)Gal(b1-3)GalNAc', ligTags[,9], bsResiDat$iupac == 'NeuAc(a2-3)Gal(b1-3)GlcNAc')
-colnames(neuTags)[5:8] = c('NeuAc',
-                           'NeuAc(a2-3)Gal(b1-3)GalNAc',
-                           'NeuAc(a2-3)Gal(b1-3)Glc',
-                           'NeuAc(a2-3)Gal(b1-3)GlcNAc')
+lacTags = ligTags[,c(4,11)]
 
 ###
 # Ligand stats
-all(row.names(neuTags) == row.names(bsResiDat))
+all(row.names(lacTags) == row.names(bsResiDat))
 
 # how many clusters are the ligands found in
-length(unique(bsResiDat$seqClust50[apply(neuTags[,1:4], 1, any)]))
-length(unique(bsResiDat$seqClust50[apply(neuTags[,1:4], 1, any)])) / length(unique(bsResiDat$seqClust50))
-
-length(unique(bsResiDat$seqClust50[apply(neuTags[,5:8], 1, any)]))
-length(unique(bsResiDat$seqClust50[apply(neuTags[,5:8], 1, any)])) / length(unique(bsResiDat$seqClust50))
+length(unique(bsResiDat$seqClust50[lacTags[,1]]))
+length(unique(bsResiDat$seqClust50[lacTags[,1]])) / length(unique(bsResiDat$seqClust50))
+length(unique(bsResiDat$seqClust50[lacTags[,2]]))
+length(unique(bsResiDat$seqClust50[lacTags[,2]])) / length(unique(bsResiDat$seqClust50))
 
 # number of interactions
-apply(neuTags, 2, sum)
-sum(apply(neuTags, 2, sum)[1:4])
-sum(apply(neuTags, 2, sum)[5:8])
+sum(lacTags[,1]) 
+sum(lacTags[,2])
 
 # cumulative weight of interactions
-for (i in 1:ncol(neuTags)){
-  cat(colnames(neuTags)[i], '\t')
-  cat(sum(cuWeights[neuTags[,i]]), '\n')
-}
-sum(cuWeights[apply(neuTags[,1:4], 1, any)])
-sum(cuWeights[apply(neuTags[,5:8], 1, any)])
-
+sum(cuWeights[lacTags[,1]])
+sum(cuWeights[lacTags[,2]])
 
 # shared clusters?
-sum(unique(bsResiDat$seqClust50[apply(neuTags[,1:4], 1, any)]) %in% unique(bsResiDat$seqClust50[apply(neuTags[,5:8], 1, any)]))
+sum(unique(bsResiDat$seqClust50[lacTags[,2]]) %in% unique(bsResiDat$seqClust50[lacTags[,1]]))
+###
 
-#################
-# # Weighted WMW - NeuAc vs NeuGc monosaccharides
-# #################
-# 
-# wmwFeats = cbind(predFeats,neuTags)
-# des <- svydesign(ids = ~1, data = wmwFeats, weights = 1/cuWeights) # Build survey object with 
-# 
-# neuTags = neuTags[,c(1,5)]
-# 
-# neuStats = as.data.frame(matrix(0, nrow = ncol(predFeats), ncol = (2*4)))
-# row.names(neuStats) = colnames(predFeats)
-# colnames(neuStats) = c(paste(colnames(neuTags), 'p', sep = '_'), paste(colnames(neuTags), 'FC', sep = '_'), paste(colnames(neuTags), 'effectSize', sep = '_'), paste(colnames(neuTags), 'adj', sep = '_'))
-# 
-# des_allNEU= subset(des, subset = (apply(neuTags, 1, any)))
-# 
-# 
-# for (i in 1:ncol(neuTags)){
-#   
-#   des_w = subset(des, subset = neuTags[,i]) # temporary design object holding all interactions with the ligand of interest
-#   des_wo = subset(des, subset = neuTags[,-i]) # same as above but OTHER the ligands of interest
-#   # scaled_des_w = subset(scaled_des, subset = ligTags[,i]) # 
-#   
-#   for(k in 1:ncol(predFeats)){ # for each feature k
-#     ligTest = svyranktest(formula = as.formula(paste(colnames(predFeats)[k], ' ~ ', colnames(neuTags)[i], sep = '')), # Wilcoxon–Mann–Whitney test, sample sizes can be small (~5% of 230 clusters ~= 10), no reason to assume distribution is normal as it likely isn't
-#                           design = des_allNEU, 
-#                           test = 'wilcoxon') 
-#     
-#     if (ligTest$p.value != 0){
-#       neuStats[k, grepl('_p$', colnames(neuStats))][i] = ligTest$p.value # Raw p-value
-#     } else{
-#       neuStats[k, grepl('_p$', colnames(neuStats))][i] = 5e-324 # If p-value is too small and R rounds to 0, reset as the smallest positive double as referenced by "?.Machine"
-#     }
-#     
-#     neuStats[k, grepl('_effectSize$', colnames(neuStats))][i] = ligTest$estimate # common language effect size (0.5 transformed to 0)
-#     
-#     neuStats[k, grepl('_FC$', colnames(neuStats))][i] = svymean(predFeats[neuTags[,i],k], des_w)[1] / svymean(predFeats[neuTags[,-i],k], des_wo)[1] # Fold change in weighted means
-#     
-#     # ligSpefic_feat_means[k,i] = svymean(scaledFeats[neuTags[,i],k], scaled_des_w)[1] # Get the weighted mean for each feature in interactions with each glycan of interest
-#   }
-#   
-#   neuStats[,grepl('_adj$', colnames(neuStats))][,i] = p.adjust(neuStats[grepl('_p$', colnames(neuStats))][,i], method = "BH") # Benjamini-Hochberg MHT correction (FDR)
-# }
-# 
-# all(round(neuStats$NeuAc_adj,3) == round(neuStats$NeuGc_adj,3))
-# 
-# # superSigTag = neuStats[,grepl('_adj$', colnames(neuStats))] < 1e-16
-# # neuStats[,grepl('_adj$', colnames(neuStats))][superSigTag] <- 10**(-1*runif(sum(superSigTag), max = -log10(3e-19), min = -log10(1e-16))) # Sample from a log-uniform distribution
-# 
-# 
-# #####
-# ## Volcano plots
-# #####
-# 
-# par(mfrow=c(1,2))
-# 
-# xLim = c(-0.5,0.5)
-# yLim = c(0,(-log10(min(neuStats[,grepl('_adj$', colnames(neuStats))])) + 1))
-# for(i in 1:ncol(neuTags)){
-#   
-#   # yLim = c(0,max(-log10(0.1), -log10(min(neuStats[,grepl('_adj$', colnames(neuStats))][,i]))) + 1)
-#   
-#   tag = neuStats[,grepl('_adj$', colnames(neuStats))][,i] < 0.01
-#   
-#   # dev.off()
-#   plot(0,0,axes = F, main = '', xlab = '', ylab = '', pch = NA)
-#   bg = "seashell2"
-#   fg = "ivory"
-#   rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = bg)
-#   # abline(v = c(-1,-.5,0,.5,1), lwd = 6, col = fg)
-#   # abline(v = c(-1.25,-.75,-.25,.25,.75,1.25), lwd = 3, col = fg)
-#   # abline(h = c(0,1,2,3,4,5,6), lwd = 6, col = fg)
-#   # abline(h = c(0.5,1.5,2.5,3.5,4.5,5.5,6.5), lwd = 3, col = fg)
-#   
-#   abline(v = 0, lty=2, lwd = 4, col = 'white')
-#   
-#   par(new=T)
-#   
-#   plot(neuStats[,grepl('_effectSize$', colnames(neuStats))][,i], -log10(neuStats[,grepl('_adj$', colnames(neuStats))][,i]), # Plot all points w/ color @ alpha 0.5
-#        xlab = "Effect size", ylab = "-log10(FDR)", main = '',
-#        pch = 19, cex = 2, col = alpha(featColors, 0.33),
-#        cex.axis = 1.5, cex.lab = 1.5,
-#        xlim = xLim, ylim = yLim)
-#   
-#   abline(h= -log10(0.01), lwd = 4, col = 'white')
-#   abline(h = -log10(1e-16), lwd = 1.5, lty = 2, col = 'white')
-#   
-#   title(main = ligNames[i], col.main = ligColors[i], cex.main = 1.8, font.main  = 2)
-#   # mtext(ligNames[i], col = ligColors[i],
-#   #       side=3, adj=0, outer = T,
-#   #       line=1.2, cex=1, font=2)
-#   
-#   par(new=T)
-#   plot(neuStats[,grepl('_effectSize$', colnames(neuStats))][tag,i], -log10(neuStats[,grepl('_adj$', colnames(neuStats))][tag,i]), # Plot stat sig points again with alpha 1
-#        pch = 19, col = featColors[tag], cex = 2,
-#        axes = F, xlab = "", ylab = "", main = "",
-#        xlim = xLim, ylim = yLim)
-#   par(new=T)
-#   plot(neuStats[,grepl('_effectSize$', colnames(neuStats))][tag,i], -log10(neuStats[,grepl('_adj$', colnames(neuStats))][tag,i]), # Outline stat sig points in black to highlight them
-#        col = alpha('black',0.2), cex = 2.05,
-#        xlab = "", ylab = "", axes = F, main = "",
-#        xlim = xLim, ylim = yLim)
-# }
+####
+## Limit to shared clusters
+####
 
-#compare to global trends
+sharedClusts = unique(bsResiDat$seqClust50[lacTags[,2]])[unique(bsResiDat$seqClust50[lacTags[,2]]) %in% unique(bsResiDat$seqClust50[lacTags[,1]])]
 
-plot(stats$NeuAc_effectSize, neuStats$NeuAc_effectSize,
-     col = featColors, pch =19,
-     main = 'NeuAc',
-     xlab = 'Effect Size vs background', ylab = 'Effect Size vs NeuGc')
-abline(v=0, h=0)
-par(new=T)
-plot(stats$NeuAc_effectSize[neuStats$NeuAc_adj <= 0.01], neuStats$NeuAc_effectSize[neuStats$NeuAc_adj <= 0.01],
-     col = 'black', pch =19,
-     cex = 1.7,
-     main = '', xlab = '', ylab = '', axes = F)
-par(new=T)
-plot(stats$NeuAc_effectSize[neuStats$NeuAc_adj <= 0.01], neuStats$NeuAc_effectSize[neuStats$NeuAc_adj <= 0.01],
-     col = featColors[neuStats$NeuAc_adj <= 0.01], pch =19,
-     cex = 1.5,
-     main = '', xlab = '', ylab = '', axes = F)
-cor.test(stats$NeuAc_effectSize, neuStats$NeuAc_effectSize,)
+# number of interactions
+sum(lacTags[,1] & bsResiDat$seqClust50 %in% sharedClusts) 
+sum(lacTags[,2] & bsResiDat$seqClust50 %in% sharedClusts) 
 
-#################
-# Weighted WMW - NeuAc vs NeuGc groups
-#################
+# cumulative weight of interactions
+sum(cuWeights[lacTags[,1] & bsResiDat$seqClust50 %in% sharedClusts])
+sum(cuWeights[lacTags[,2] & bsResiDat$seqClust50 %in% sharedClusts])
 
-neuTags$Term_NeuGc = apply(neuTags[1:4],1, any)
-neuTags$Term_NeuAc = apply(neuTags[5:8],1, any)
-neuTags = neuTags[,c(10,9)]
-
-wmwFeats = cbind(predFeats,neuTags)
-des <- svydesign(ids = ~1, data = wmwFeats, weights = 1/cuWeights) # Build survey object with binding indicators for glycans of interest
-
-neuStats = as.data.frame(matrix(0, nrow = ncol(predFeats), ncol = (2*4)))
-row.names(neuStats) = colnames(predFeats)
-colnames(neuStats) = c(paste(colnames(neuTags), 'p', sep = '_'), paste(colnames(neuTags), 'FC', sep = '_'), paste(colnames(neuTags), 'effectSize', sep = '_'), paste(colnames(neuTags), 'adj', sep = '_'))
-
-des_allNEU= subset(des, subset = (apply(neuTags, 1, any)))
+lacTags[,1] = lacTags[,1] & bsResiDat$seqClust50 %in% sharedClusts
+lacTags[,2] = lacTags[,2] & bsResiDat$seqClust50 %in% sharedClusts
 
 
-for (i in 1:ncol(neuTags)){
+lacStats = as.data.frame(matrix(0, nrow = ncol(predFeats), ncol = (2*4)))
+row.names(lacStats) = colnames(predFeats)
+colnames(lacStats) = c(paste(colnames(lacTags), 'p', sep = '_'), paste(colnames(lacTags), '_FC', sep = '_'), paste(colnames(lacTags), 'effectSize', sep = '_'), paste(colnames(lacTags), 'adj', sep = '_'))
+
+des_allLAC = subset(des, subset = (apply(lacTags, 1, any)))
+
+
+for (i in 1:ncol(lacTags)){
   
-  des_w = subset(des, subset = neuTags[,i]) # temporary design object holding all interactions with the ligand of interest
-  des_wo = subset(des, subset = neuTags[,-i]) # same as above but OTHER the ligands of interest
+  des_w = subset(des, subset = lacTags[,i]) # temporary design object holding all interactions with the ligand of interest
+  des_wo = subset(des, subset = lacTags[,-i]) # same as above but OTHER the ligands of interest
   # scaled_des_w = subset(scaled_des, subset = ligTags[,i]) # 
   
   for(k in 1:ncol(predFeats)){ # for each feature k
-    ligTest = svyranktest(formula = as.formula(paste(colnames(predFeats)[k], ' ~ ', colnames(neuTags)[i], sep = '')), # Wilcoxon–Mann–Whitney test, sample sizes can be small (~5% of 230 clusters ~= 10), no reason to assume distribution is normal as it likely isn't
-                          design = des_allNEU, 
+    ligTest = svyranktest(formula = as.formula(paste(colnames(predFeats)[k], ' ~ ', colnames(lacTags)[i], sep = '')), # Wilcoxon–Mann–Whitney test, sample sizes can be small (~5% of 230 clusters ~= 10), no reason to assume distribution is normal as it likely isn't
+                          design = des_allLAC, 
                           test = 'wilcoxon') 
     
     if (ligTest$p.value != 0){
-      neuStats[k, grepl('_p$', colnames(neuStats))][i] = ligTest$p.value # Raw p-value
+      lacStats[k, grepl('_p$', colnames(lacStats))][i] = ligTest$p.value # Raw p-value
     } else{
-      neuStats[k, grepl('_p$', colnames(neuStats))][i] = 5e-324 # If p-value is too small and R rounds to 0, reset as the smallest positive double as referenced by "?.Machine"
+      lacStats[k, grepl('_p$', colnames(lacStats))][i] = 5e-324 # If p-value is too small and R rounds to 0, reset as the smallest positive double as referenced by "?.Machine"
     }
     
-    neuStats[k, grepl('_effectSize$', colnames(neuStats))][i] = ligTest$estimate # common language effect size (0.5 transformed to 0)
+    lacStats[k, grepl('_effectSize$', colnames(lacStats))][i] = ligTest$estimate # common language effect size (0.5 transformed to 0)
     
-    neuStats[k, grepl('_FC$', colnames(neuStats))][i] = svymean(predFeats[neuTags[,i],k], des_w)[1] / svymean(predFeats[neuTags[,-i],k], des_wo)[1] # Fold change in weighted means
+    lacStats[k, grepl('_FC$', colnames(lacStats))][i] = svymean(predFeats[lacTags[,i],k], des_w)[1] / svymean(predFeats[lacTags[,-i],k], des_wo)[1] # Fold change in weighted means
     
-    # ligSpefic_feat_means[k,i] = svymean(scaledFeats[neuTags[,i],k], scaled_des_w)[1] # Get the weighted mean for each feature in interactions with each glycan of interest
+    # ligSpefic_feat_means[k,i] = svymean(scaledFeats[lacTags[,i],k], scaled_des_w)[1] # Get the weighted mean for each feature in interactions with each glycan of interest
   }
   
-  neuStats[,grepl('_adj$', colnames(neuStats))][,i] = p.adjust(neuStats[grepl('_p$', colnames(neuStats))][,i], method = "BH") # Benjamini-Hochberg MHT correction (FDR)
+  lacStats[,grepl('_adj$', colnames(lacStats))][,i] = p.adjust(lacStats[grepl('_p$', colnames(lacStats))][,i], method = "BH") # Benjamini-Hochberg MHT correction (FDR)
 }
 
-all(round(neuStats$Term_NeuAc_adj,3) == round(neuStats$Term_NeuGc_adj,3))
+all(round(lacStats$Gal.b1.4.Glc_adj,3) == round(lacStats$Gal.b1.4.GlcNAc_adj,3))
 
-superSigTag = neuStats[,grepl('_adj$', colnames(neuStats))] < 1e-16
-neuStats[,grepl('_adj$', colnames(neuStats))][superSigTag] <- 10**(-1*runif(sum(superSigTag), max = -log10(3e-19), min = -log10(1e-16))) # Sample from a log-uniform distribution
+sum(lacStats[,grepl('_adj$', colnames(lacStats))] < 1e-16)
+# superSigTag = lacStats[,grepl('_adj$', colnames(lacStats))] < 1e-16
+# lacStats[,grepl('_adj$', colnames(lacStats))][superSigTag] <- 10**(-1*runif(sum(superSigTag), max = -log10(3e-19), min = -log10(1e-16))) # Sample from a log-uniform distribution
 
 
 #####
@@ -553,12 +347,12 @@ neuStats[,grepl('_adj$', colnames(neuStats))][superSigTag] <- 10**(-1*runif(sum(
 par(mfrow=c(1,2))
 
 xLim = c(-0.5,0.5)
-yLim = c(0,(-log10(min(neuStats[,grepl('_adj$', colnames(neuStats))])) + 1))
-for(i in 1:ncol(neuTags)){
+yLim = c(0,11)
+for(i in 1:ncol(lacTags)){
   
-  # yLim = c(0,max(-log10(0.1), -log10(min(neuStats[,grepl('_adj$', colnames(neuStats))][,i]))) + 1)
+  # yLim = c(0,max(-log10(0.1), -log10(min(lacStats[,grepl('_adj$', colnames(lacStats))][,i]))) + 1)
   
-  tag = neuStats[,grepl('_adj$', colnames(neuStats))][,i] < 0.01
+  tag = lacStats[,grepl('_adj$', colnames(lacStats))][,i] < 0.01
   
   # dev.off()
   plot(0,0,axes = F, main = '', xlab = '', ylab = '', pch = NA)
@@ -574,7 +368,7 @@ for(i in 1:ncol(neuTags)){
   
   par(new=T)
   
-  plot(neuStats[,grepl('_effectSize$', colnames(neuStats))][,i], -log10(neuStats[,grepl('_adj$', colnames(neuStats))][,i]), # Plot all points w/ color @ alpha 0.5
+  plot(lacStats[,grepl('_effectSize$', colnames(lacStats))][,i], -log10(lacStats[,grepl('_adj$', colnames(lacStats))][,i]), # Plot all points w/ color @ alpha 0.5
        xlab = "Effect size", ylab = "-log10(FDR)", main = '',
        pch = 19, cex = 2, col = alpha(featColors, 0.33),
        cex.axis = 1.5, cex.lab = 1.5,
@@ -589,20 +383,59 @@ for(i in 1:ncol(neuTags)){
   #       line=1.2, cex=1, font=2)
   
   par(new=T)
-  plot(neuStats[,grepl('_effectSize$', colnames(neuStats))][tag,i], -log10(neuStats[,grepl('_adj$', colnames(neuStats))][tag,i]), # Plot stat sig points again with alpha 1
+  plot(lacStats[,grepl('_effectSize$', colnames(lacStats))][tag,i], -log10(lacStats[,grepl('_adj$', colnames(lacStats))][tag,i]), # Plot stat sig points again with alpha 1
        pch = 19, col = featColors[tag], cex = 2,
        axes = F, xlab = "", ylab = "", main = "",
        xlim = xLim, ylim = yLim)
   par(new=T)
-  plot(neuStats[,grepl('_effectSize$', colnames(neuStats))][tag,i], -log10(neuStats[,grepl('_adj$', colnames(neuStats))][tag,i]), # Outline stat sig points in black to highlight them
+  plot(lacStats[,grepl('_effectSize$', colnames(lacStats))][tag,i], -log10(lacStats[,grepl('_adj$', colnames(lacStats))][tag,i]), # Outline stat sig points in black to highlight them
        col = alpha('black',0.2), cex = 2.05,
        xlab = "", ylab = "", axes = F, main = "",
        xlim = xLim, ylim = yLim)
 }
 
+#comapre to global trends
+
+plot(stats$Gal.b1.4.Glc_effectSize, lacStats$Gal.b1.4.Glc_effectSize,
+     col = featColors, pch =19,
+     main = 'Lactose',
+     xlab = 'Effect Size vs background', ylab = 'Effect size vs LacNAc')
+abline(v=0, h=0)
+par(new=T)
+plot(stats$Gal.b1.4.Glc_effectSize[lacStats$Gal.b1.4.Glc_adj <= 0.01], lacStats$Gal.b1.4.Glc_effectSize[lacStats$Gal.b1.4.Glc_adj <= 0.01],
+     col = 'black', pch =19,
+     cex = 1.7,
+     main = '', xlab = '', ylab = '', axes = F)
+par(new=T)
+plot(stats$Gal.b1.4.Glc_effectSize[lacStats$Gal.b1.4.Glc_adj <= 0.01], lacStats$Gal.b1.4.Glc_effectSize[lacStats$Gal.b1.4.Glc_adj <= 0.01],
+     col = featColors[lacStats$Gal.b1.4.GlcNAc_adj <= 0.01], pch =19,
+     cex = 1.5,
+     main = '', xlab = '', ylab = '', axes = F)
+cor.test(stats$Gal.b1.4.Glc_effectSize, lacStats$Gal.b1.4.Glc_effectSize)
+
+
+
+
+plot(stats$Gal.b1.4.GlcNAc_effectSize, lacStats$Gal.b1.4.GlcNAc_effectSize,
+     col = alpha(featColors, 0.7), pch =19,
+     main = 'N-Acetyllactosamine',
+     xlab = 'Effect Size vs background', ylab = 'Effect size vs Lac')
+abline(v=0, h=0)
+par(new=T)
+plot(stats$Gal.b1.4.GlcNAc_effectSize[lacStats$Gal.b1.4.GlcNAc_adj <= 0.01], lacStats$Gal.b1.4.GlcNAc_effectSize[lacStats$Gal.b1.4.GlcNAc_adj <= 0.01],
+     col = 'black', pch =19,
+     cex = 1.7,
+     main = '', xlab = '', ylab = '', axes = F)
+par(new=T)
+plot(stats$Gal.b1.4.GlcNAc_effectSize[lacStats$Gal.b1.4.GlcNAc_adj <= 0.01], lacStats$Gal.b1.4.GlcNAc_effectSize[lacStats$Gal.b1.4.GlcNAc_adj <= 0.01],
+     col = featColors[lacStats$Gal.b1.4.GlcNAc_adj <= 0.01], pch =19,
+     cex = 1.5,
+     main = '', xlab = '', ylab = '', axes = F)
+cor.test(stats$Gal.b1.4.GlcNAc_effectSize, lacStats$Gal.b1.4.GlcNAc_effectSize)
+
 
 ########################
-## NeuAc/NeuGc - Classification
+## Lac/LacNAc - Classification
 ########################
 
 ###
@@ -617,13 +450,13 @@ bwBSiteDists = distance(scaledFeats)
 medPairwiseDist = median(bwBSiteDists[upper.tri(bwBSiteDists)])
 
 all(row.names(bsResiDat) == row.names(predFeats))
-all(row.names(bsResiDat) == row.names(neuTags))
+all(row.names(bsResiDat) == row.names(lacTags))
 
-neu = apply(neuTags, 1, any)
+lac = apply(lacTags, 1, any)
 
-predFeats = predFeats[neu,] # limit to only interactions with either NeuAc or NeuGc
-bsResiDat = bsResiDat[neu,]
-neuTags = neuTags[neu,]
+predFeats = predFeats[lac,] # limit to only interactions with either Lac or LacNAc
+bsResiDat = bsResiDat[lac,]
+lacTags = lacTags[lac,]
 
 
 folds = 5
@@ -635,9 +468,9 @@ LOCO_reps = 10
 default_mtry = round(sqrt(ncol(predFeats)), 0)
 default_ntree = 2000
 
-tune.grid = expand.grid(.mtry=default_mtry)
-# half_mtry = round(0.5*default_mtry,0)
-# tune.grid <- expand.grid(.mtry= c(-half_mtry:half_mtry) + default_mtry)
+# tune.grid = expand.grid(.mtry=default_mtry)
+half_mtry = round(0.5*default_mtry,0)
+tune.grid <- expand.grid(.mtry= c(-half_mtry:half_mtry) + default_mtry)
 
 
 clusLst = unique(bsResiDat$seqClust50) # List of unique clusters with any binding for any of the ligands of interest
@@ -645,12 +478,12 @@ clusLst = unique(bsResiDat$seqClust50) # List of unique clusters with any bindin
 set.seed(27)
 
 ####################
-# Run predictive RF - NeuGc
+# Run predictive RF - LacNAc
 ####################
 # rm(trainResults, testResults, feats)
 
 
-lig = neuTags[,2]
+lig = lacTags[,2]
 
 
 for (z in 1:LOCO_reps){
@@ -689,6 +522,8 @@ for (z in 1:LOCO_reps){
     trainingClusts = clusLst[! clusLst == outClust]
     trainingClustBinding = clusBinding[! clusLst == outClust]
     
+    foldClusIDs = createFolds(y = trainingClustBinding, k = folds)
+    
     trainDat = sampleDiverseSitesByLig(clusterIDs = bsResiDat$seqClust50, 
                                        testClust = outClust,
                                        featureSet = predFeats, 
@@ -696,15 +531,19 @@ for (z in 1:LOCO_reps){
                                        distThresh = medPairwiseDist, 
                                        scaledFeatureSet = scaledFeats)
     
-    trainDat$clus <- NULL
-    
     cat(sum(trainDat$bound == 'TRUE'), 'positve cases in training ( out of', nrow(trainDat), ')\n')
     
+    for(n in 1:folds){
+      foldClusIDs[[n]] = (1:nrow(trainDat))[trainDat$clus %in% trainingClusts[foldClusIDs[[n]]]]
+    }
+    
+    trainDat$clus <- NULL
+    
     train.control = trainControl(index = foldClusIDs,
-                                 method = "none",
-                                 # number = folds,
-                                 sampling = 'down')
-                                 # summaryFunction = f2)
+                                 method = 'cv', 
+                                 number = folds,
+                                 sampling = 'down',
+                                 summaryFunction = f2)
     
     rfFit <- train(bound ~ .,
                    data = trainDat, 
@@ -714,7 +553,8 @@ for (z in 1:LOCO_reps){
                    maximize = TRUE,
                    verbose = TRUE,
                    importance = TRUE, 
-                   ntree = default_ntree)
+                   ntree = default_ntree,
+                   metric = "F2")
     
     trainKappa = Kappa(rfFit$finalModel$confusion[1:2,1:2])$Unweighted[1]
     trainRecall = 1 - rfFit$finalModel$confusion[2,3]
@@ -823,17 +663,17 @@ for (z in 1:LOCO_reps){
   }
 }
 
-save(feats, testResults, trainResults, file = 'analysis/fine_specificity/sia/train_test_featImp.Rdata')
+# save(feats, testResults, trainResults, file = 'analysis/fine_specificity/lactose/train_test_featImp.Rdata')
 
 
 ####################
-# Run random classifier 
+# Run random RF - LacNAc
 ####################
 
 for (z in 1:LOCO_reps){
   
   # Shuffle binding labels
-  lig = lig[sample(x = 1:nrow(neuTags), size = nrow(neuTags), replace = F)] # Shuffle the labels of the training data
+  lig = lig[sample(x = 1:nrow(lacTags), size = nrow(lacTags), replace = F)] # Shuffle the labels of the training data
   
   # Define dataframes to hold model results
   trainOut = as.data.frame(matrix(0, nrow = length(clusLst), ncol = 7))
@@ -878,6 +718,8 @@ for (z in 1:LOCO_reps){
                                        ligandTag = lig, 
                                        distThresh = medPairwiseDist, 
                                        scaledFeatureSet = scaledFeats)
+    
+    cat(sum(trainDat$bound == 'TRUE'), 'positve cases in training ( out of', nrow(trainDat), ')\n')
     
     for(n in 1:folds){
       foldClusIDs[[n]] = (1:nrow(trainDat))[trainDat$clus %in% trainingClusts[foldClusIDs[[n]]]]
@@ -1034,35 +876,35 @@ abline(h = c(0.3,0.5,0.7,0.9), lwd = 1, lty = 2, col = 'grey80')
 j=1
 i = ((j-1) * 2) + 1
 vioplot(trainResults$recall[trainResults$mode == 'pred'], at = i, side = 'left',
-        col = ligColors[2],
+        col = ligColors[j],
         xlim = xLim, ylim = yLim,
         add = T,
         plotCentre = "line")
 par(new = T)
 boxplot(trainResults$recall[trainResults$mode == 'rand'], at = i-0.33, notch = T, outline = F,
-        col = alpha(ligColors[2],0.2), border = 'grey50',
+        col = alpha(ligColors[j],0.2), border = 'grey50',
         axes = F, xlab = '', ylab = '', xlim = xLim, ylim = yLim)
 vioplot(trainResults$prec[trainResults$mode == 'pred'], at = i, side = 'right',
         add = T,
-        col = alpha(ligColors[2],0.8),
+        col = alpha(ligColors[j],0.8),
         xlim = xLim, ylim = yLim,
         plotCentre = "line")
 par(new = T)
 boxplot(trainResults$prec[trainResults$mode == 'rand'], at = i+0.33, notch = T, outline = F,
-        col = alpha(ligColors[2],0.2), border = 'grey50',
+        col = alpha(ligColors[j],0.2), border = 'grey50',
         axes = F, xlab = '', ylab = '', xlim = xLim, ylim = yLim)
 
 axis(side=1,at=1, labels = F)
 axis(side=2,at=pretty(c(0,1)))
 axis(side = 4, at = pretty(c(0,1)))  # Add second axis
 mtext("Precision", side = 4, line = 3, cex = 2.5, col = alpha('black',0.85))  # Add second axis label
-title(main = "Terminal NeuGc Classifier \n Training Precision & Recall vs random", xlab = "", ylab = "Recall", cex.lab = 2.5, cex.main = 2)
+title(main = "N-Acetyllactosamine Classifier \n Training Precision & Recall vs random", xlab = "", ylab = "Recall", cex.lab = 2.5, cex.main = 2)
 # labs(title = , x = "Ligands", y = "Recall") +
 #   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
 text(x = seq.int(1),                   
      y = par("usr")[3] - 0.05,
      labels = ligNames[2],
-     col = ligColors[2],
+     col = ligColors,
      ## Change the clipping region.
      xpd = NA,
      ## Rotate the labels by 35 degrees.
@@ -1088,35 +930,35 @@ abline(h = c(0.3,0.5,0.7,0.9), lwd = 1, lty = 2, col = 'grey80')
 j=1
 i = ((j-1) * 2) + 1
 vioplot(testResults$recall[trainResults$mode == 'pred'], at = i, side = 'left',
-        col = ligColors[2],
+        col = ligColors[j],
         xlim = xLim, ylim = yLim,
         add = T,
         plotCentre = "line")
 par(new = T)
 boxplot(testResults$recall[testResults$mode == 'rand'], at = i-0.33, notch = T, outline = F,
-        col = alpha(ligColors[2],0.2), border = 'grey50',
+        col = alpha(ligColors[j],0.2), border = 'grey50',
         axes = F, xlab = '', ylab = '', xlim = xLim, ylim = yLim)
 vioplot(testResults$prec[testResults$mode == 'pred'], at = i, side = 'right',
         add = T,
-        col = alpha(ligColors[2],0.8),
+        col = alpha(ligColors[j],0.8),
         xlim = xLim, ylim = yLim,
         plotCentre = "line")
 par(new = T)
 boxplot(testResults$prec[testResults$mode == 'rand'], at = i+0.33, notch = T, outline = F,
-        col = alpha(ligColors[2],0.2), border = 'grey50',
+        col = alpha(ligColors[j],0.2), border = 'grey50',
         axes = F, xlab = '', ylab = '', xlim = xLim, ylim = yLim)
 
 axis(side=1,at=1, labels = F)
 axis(side=2,at=pretty(c(0,1)))
 axis(side = 4, at = pretty(c(0,1)))  # Add second axis
 mtext("Precision", side = 4, line = 3, cex = 2.5, col = alpha('black',0.85))  # Add second axis label
-title(main = "Terminal NeuGc Classifier \n Validation Precision & Recall vs random", xlab = "", ylab = "Recall", cex.lab = 2.5, cex.main = 2)
+title(main = "N-Acetyllactosamine Classifier \n Validation Precision & Recall vs random", xlab = "", ylab = "Recall", cex.lab = 2.5, cex.main = 2)
 # labs(title = , x = "Ligands", y = "Recall") +
 #   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
 text(x = seq.int(1),                   
      y = par("usr")[3] - 0.05,
      labels = ligNames[2],
-     col = ligColors[2],
+     col = ligColors,
      ## Change the clipping region.
      xpd = NA,
      ## Rotate the labels by 35 degrees.
@@ -1156,17 +998,17 @@ all(names(stratAllFeatsImp) == row.names(stats))
 
 topImpfeats = stratAllFeatsImp >= percentThresh # Logical vector, indicates if feature passes threshold for stratified median feature importance percentiles
 
-sigFeats = neuStats[,'Term_NeuGc_adj'] < 0.01 # Logical vector, indicates if feature passes threshold for significance from WMW test, FDR of 1%
+sigFeats = lacStats[,'Gal.b1.4.GlcNAc_adj'] < 0.01 # Logical vector, indicates if feature passes threshold for significance from WMW test, FDR of 1%
 
 i=2
-plot(abs(neuStats[,'Term_NeuGc_effectSize']), stratAllFeatsImp,
+plot(abs(lacStats[,'Gal.b1.4.GlcNAc_effectSize']), stratAllFeatsImp,
      xlab = '|Effect size|', ylab = 'Stratified feat imp percentile', main = paste(ligNames[i], 'vs', ligNames[1]), col.main = ligColors[i],
      col = alpha(featColors, 0.4),
      xlim = c(0,0.4),
      ylim = c(0,1),
      pch = 19)
 par(new=T)
-plot(abs(neuStats[topImpfeats & sigFeats,'Term_NeuGc_effectSize']), stratAllFeatsImp[topImpfeats & sigFeats],
+plot(abs(lacStats[topImpfeats & sigFeats,'Gal.b1.4.GlcNAc_effectSize']), stratAllFeatsImp[topImpfeats & sigFeats],
      xlab = '', ylab = '', main = '', axes = F,
      xlim = c(0,0.4),
      ylim = c(0,1),
@@ -1175,7 +1017,7 @@ plot(abs(neuStats[topImpfeats & sigFeats,'Term_NeuGc_effectSize']), stratAllFeat
      cex = 1.5)
 text(x = 0.35,
      y=0.05,
-     labels = paste('R=', as.character(round(cor(abs(neuStats[,'Term_NeuGc_effectSize']), stratAllFeatsImp), 3)), sep = ''),
+     labels = paste('R=', as.character(round(cor(abs(lacStats[,'Gal.b1.4.GlcNAc_effectSize']), stratAllFeatsImp), 3)), sep = ''),
      cex = 1.4)
 abline(h = percentThresh, lty = 2)
 
@@ -1185,13 +1027,14 @@ abline(h = percentThresh, lty = 2)
 
 # Set-up for 3A (altered from descriptive.R)
 
-stats = stats[,(grepl('NeuAc', colnames(stats)) | grepl('Sialic', colnames(stats)))]
+stats = stats[,colnames(lacStats)]
 
+colnames(lacStats) = gsub('Gal.b1.4.Glc', 'Lac', colnames(lacStats))
 
-stats = cbind(stats, neuStats)
+stats = cbind(stats, lacStats)
 
-hImpFeats = rbind(rep(F,length(topImpfeats)),rep(F,length(topImpfeats)),rep(F,length(topImpfeats)),topImpfeats,topImpfeats)
-hSigFeats = rbind(rep(F,length(sigFeats)),rep(F,length(sigFeats)),rep(F,length(topImpfeats)),sigFeats,sigFeats)
+hImpFeats = rbind(rep(F,length(topImpfeats)),rep(F,length(topImpfeats)),topImpfeats,topImpfeats)
+hSigFeats = rbind(rep(F,length(sigFeats)),rep(F,length(sigFeats)),sigFeats,sigFeats)
 
 allFeatCorrs = cor(stats[,grepl('_effectSize$', colnames(stats))], stats[,grepl('_effectSize$', colnames(stats))], method = 'pearson')
 row.names(allFeatCorrs)  = gsub('_effectSize$', '', row.names(allFeatCorrs))
@@ -1278,7 +1121,7 @@ pheatmap(resiFeat_stats,
          # clustering_distance_rows = 'correlation',
          display_numbers = ifelse((hImpFeats & hSigFeats)[,resiFeatTag] , "\u2022", ""),
          fontsize_number = 20, number_color = 'black',
-         # labels_row = c('Lac vs all', 'LacNAc vs all', 'Lac vs LacNAc', 'LacNAc vs Lac'),
+         labels_row = c('Lac vs all', 'LacNAc vs all', 'Lac vs LacNAc', 'LacNAc vs Lac'),
          annotation_col = resiAnnot,
          annotation_colors = resiAnnot_cols,
          # legend_breaks = c(1,5),
