@@ -14,121 +14,121 @@ library(Cairo)
 #######################
 # Functions
 #######################
+# 
+# pullDiverseCases <- function(scaledData, startInds, thresh, prevSampled = NA){
+#   
+#   if (any(is.na(prevSampled))) {
+#     # if no inds being passed in that were sampled from the positive class
+#     if (length(startInds) == 1) {
+#       out = startInds
+#     } else if (length(startInds) == 2) {
+#       if (suppressMessages(distance(scaledFeats[startInds,])) >= thresh) {
+#         out = startInds # Two binding sites are greater than the threshold distance from each other, keep both
+#       } else{
+#         out = sample(startInds, size = 1) # Two binding sites are within the threshold distance from each other, pick one at random
+#       }
+#       
+#     } else {
+#       cnter = 1
+#       out = rep(0, length(startInds)) # Hold the set of diverse indices
+#     }
+#   } else{
+#     # if inds are passed in from the positive class
+#     
+#     out = c(prevSampled, rep(0, length(startInds)))
+#     cnter = length(prevSampled) + 1
+#     
+#     if (length(startInds) == 1) {
+#       # One new neg site to compare to previously smapled positive sites
+#       
+#       distMat = suppressMessages(distance(x = rbind(scaledData[out[out != 0], ], scaledData[startInds, ]))) # Find all pairwise distances b/w binding sites in cluster
+#       if (is.matrix(distMat)){ # if more than one previously sampled binding site
+#         distMat = distMat[1:sum(out != 0), -1 * (1:sum(out != 0))] # Get the top n rows of the distance matrix dropping the first n columns, where n = the number of indices already sampled
+#       }
+#       if (!any(distMat < thresh)) {
+#         out[cnter] = startInds
+#       }
+#     }
+#   }
+#   
+#   
+#   if (any(out == 0)){
+#     while( length(startInds) >= 2 ){
+#       
+#       out[cnter] = sample(startInds, size = 1) # Sample an index randomly
+#       cnter = cnter + 1 # increase the sample count
+#       
+#       startInds = startInds[! startInds %in% out] # Drop sampled indices from vector of remaining indices
+#       
+#       distMat = suppressMessages(distance(x = rbind(scaledData[out[out != 0],], scaledData[startInds,]))) # Find all pairwise distances b/w binding sites in cluster
+#       distMat = distMat[1:sum(out != 0),-1*(1:sum(out != 0))] # Get the top n rows of the distance matrix dropping the first n columns, where n = the number of indices already sampled
+#       
+#       if (is.matrix(distMat)){
+#         distMat = apply(X = distMat, MARGIN = 2, FUN = min) # For each of the remaining binding sites, take the minimum pairwise distance to any sampled binding site
+#       }
+#       
+#       dropInds = startInds[distMat < thresh ]
+#       startInds = startInds[! startInds %in% dropInds]
+#       
+#       if(length(startInds) == 1){
+#         out[cnter] = startInds
+#       }
+#       
+#     }
+#   }
+#   
+#   out = out[out != 0]
+#   return(out)
+# }
+# 
+# sampleDiverseSitesByLig <- function(clusterIDs, testClust, featureSet, ligandTag, distThresh, scaledFeatureSet = featureSet){
+#   # Sample diverse binding sites with ligand and without ligand [ligandTag] for each cluster in clusterIDs, except the cluster held out for LO(C)O validation indicated by testClust
+#   # Samples binding sites from the specified feature set, calculates Euclidean distance b/w binding sites from scaledFeatureSet
+#   # Binding sites sampled randomly if Euc. distance to any previously sampled binding sites is greater than distThresh (median pariwise distance between all binding sites)
+#   
+#   # Drop the excluded cluster
+#   uniClusts = unique(clusterIDs)
+#   uniClusts = uniClusts[ ! uniClusts %in% testClust]
+#   
+#   dat = as.data.frame(matrix(0, nrow = nrow(featureSet), ncol = ncol(featureSet)))
+#   colnames(dat) = colnames(predFeats)
+#   dat$bound = F
+#   dat$clus = 0
+#   
+#   j = 1 # index for writing to returned dataframe (dat)
+#   
+#   for (i in 1:length(uniClusts)) {
+#     inds =  (1:nrow(featureSet))[clusterIDs == uniClusts[i]] # all the row indices matching a specific cluster 
+#     negInds = inds[! ligandTag[inds]] # Indices of binding sites w/o ligand
+#     posInds = inds[ligandTag[inds]] # Indices of binding sites w/ ligand
+#     
+#     if (length(posInds) > 0){
+#       outInds = pullDiverseCases(scaledData = scaledFeatureSet, startInds = posInds, thresh = distThresh)
+#     } else {
+#       outInds = NA
+#     }
+#     if (length(negInds > 0)){
+#       outInds = pullDiverseCases(scaledData = scaledFeatureSet, startInds = negInds, thresh = distThresh, prevSampled = outInds)
+#     }
+#     
+#     dat[(j:(j+length(outInds) - 1)), (1:ncol(predFeats))] = predFeats[outInds, ] # set feature values for representative binding sites
+#     dat$bound[(j:(j+length(outInds) - 1))] = ligandTag[outInds] # Set bound variable
+#     dat$clus[(j:(j+length(outInds) - 1))] = uniClusts[i] # Set cluster ID
+#     
+#     j = j + length(outInds)
+#   }
+#   dat = dat[-1*(j:nrow(dat)), ]
+#   dat$bound = as.factor(dat$bound)
+#   return(dat)
+# }
 
-pullDiverseCases <- function(scaledData, startInds, thresh, prevSampled = NA){
-  
-  if (any(is.na(prevSampled))) {
-    # if no inds being passed in that were sampled from the positive class
-    if (length(startInds) == 1) {
-      out = startInds
-    } else if (length(startInds) == 2) {
-      if (suppressMessages(distance(scaledFeats[startInds,])) >= thresh) {
-        out = startInds # Two binding sites are greater than the threshold distance from each other, keep both
-      } else{
-        out = sample(startInds, size = 1) # Two binding sites are within the threshold distance from each other, pick one at random
-      }
-      
-    } else {
-      cnter = 1
-      out = rep(0, length(startInds)) # Hold the set of diverse indices
-    }
-  } else{
-    # if inds are passed in from the positive class
-    
-    out = c(prevSampled, rep(0, length(startInds)))
-    cnter = length(prevSampled) + 1
-    
-    if (length(startInds) == 1) {
-      # One new neg site to compare to previously smapled positive sites
-      
-      distMat = suppressMessages(distance(x = rbind(scaledData[out[out != 0], ], scaledData[startInds, ]))) # Find all pairwise distances b/w binding sites in cluster
-      if (is.matrix(distMat)){ # if more than one previously sampled binding site
-        distMat = distMat[1:sum(out != 0), -1 * (1:sum(out != 0))] # Get the top n rows of the distance matrix dropping the first n columns, where n = the number of indices already sampled
-      }
-      if (!any(distMat < thresh)) {
-        out[cnter] = startInds
-      }
-    }
-  }
-  
-  
-  if (any(out == 0)){
-    while( length(startInds) >= 2 ){
-      
-      out[cnter] = sample(startInds, size = 1) # Sample an index randomly
-      cnter = cnter + 1 # increase the sample count
-      
-      startInds = startInds[! startInds %in% out] # Drop sampled indices from vector of remaining indices
-      
-      distMat = suppressMessages(distance(x = rbind(scaledData[out[out != 0],], scaledData[startInds,]))) # Find all pairwise distances b/w binding sites in cluster
-      distMat = distMat[1:sum(out != 0),-1*(1:sum(out != 0))] # Get the top n rows of the distance matrix dropping the first n columns, where n = the number of indices already sampled
-      
-      if (is.matrix(distMat)){
-        distMat = apply(X = distMat, MARGIN = 2, FUN = min) # For each of the remaining binding sites, take the minimum pairwise distance to any sampled binding site
-      }
-      
-      dropInds = startInds[distMat < thresh ]
-      startInds = startInds[! startInds %in% dropInds]
-      
-      if(length(startInds) == 1){
-        out[cnter] = startInds
-      }
-      
-    }
-  }
-  
-  out = out[out != 0]
-  return(out)
-}
-
-sampleDiverseSitesByLig <- function(clusterIDs, testClust, featureSet, ligandTag, distThresh, scaledFeatureSet = featureSet){
-  # Sample diverse binding sites with ligand and without ligand [ligandTag] for each cluster in clusterIDs, except the cluster held out for LO(C)O validation indicated by testClust
-  # Samples binding sites from the specified feature set, calculates Euclidean distance b/w binding sites from scaledFeatureSet
-  # Binding sites sampled randomly if Euc. distance to any previously sampled binding sites is greater than distThresh (median pariwise distance between all binding sites)
-  
-  # Drop the excluded cluster
-  uniClusts = unique(clusterIDs)
-  uniClusts = uniClusts[ ! uniClusts %in% testClust]
-  
-  dat = as.data.frame(matrix(0, nrow = nrow(featureSet), ncol = ncol(featureSet)))
-  colnames(dat) = colnames(predFeats)
-  dat$bound = F
-  dat$clus = 0
-  
-  j = 1 # index for writing to returned dataframe (dat)
-  
-  for (i in 1:length(uniClusts)) {
-    inds =  (1:nrow(featureSet))[clusterIDs == uniClusts[i]] # all the row indices matching a specific cluster 
-    negInds = inds[! ligandTag[inds]] # Indices of binding sites w/o ligand
-    posInds = inds[ligandTag[inds]] # Indices of binding sites w/ ligand
-    
-    if (length(posInds) > 0){
-      outInds = pullDiverseCases(scaledData = scaledFeatureSet, startInds = posInds, thresh = distThresh)
-    } else {
-      outInds = NA
-    }
-    if (length(negInds > 0)){
-      outInds = pullDiverseCases(scaledData = scaledFeatureSet, startInds = negInds, thresh = distThresh, prevSampled = outInds)
-    }
-    
-    dat[(j:(j+length(outInds) - 1)), (1:ncol(predFeats))] = predFeats[outInds, ] # set feature values for representative binding sites
-    dat$bound[(j:(j+length(outInds) - 1))] = ligandTag[outInds] # Set bound variable
-    dat$clus[(j:(j+length(outInds) - 1))] = uniClusts[i] # Set cluster ID
-    
-    j = j + length(outInds)
-  }
-  dat = dat[-1*(j:nrow(dat)), ]
-  dat$bound = as.factor(dat$bound)
-  return(dat)
-}
-
-f2 <- function (data, lev = NULL, model = NULL, beta = 2) {
-  precision <- posPredValue(data$pred, data$obs, positive = "TRUE")
-  recall  <- sensitivity(data$pred, data$obs, postive = "TRUE")
-  f2_val <- ((1 + beta^2) * precision * recall) / (beta^2 * precision + recall)
-  names(f2_val) <- c("F2")
-  f2_val
-}
+# f2 <- function (data, lev = NULL, model = NULL, beta = 2) {
+#   precision <- posPredValue(data$pred, data$obs, positive = "TRUE")
+#   recall  <- sensitivity(data$pred, data$obs, postive = "TRUE")
+#   f2_val <- ((1 + beta^2) * precision * recall) / (beta^2 * precision + recall)
+#   names(f2_val) <- c("F2")
+#   f2_val
+# }
 
 # f3 <- function (data, lev = NULL, model = NULL, beta = 3) {
 #   precision <- posPredValue(data$pred, data$obs, positive = "TRUE")
@@ -142,29 +142,29 @@ pCnt <- function(x){
   return(x/sum(x))
 }
 
-getKPRFb <- function(conMatDF){
-  # conMatDF has rows of different confusion matrices, with the columns ordered as TP, TN, FP, FN
-  # sums each column and finds performance metrics
-  f2TestCon = apply(X = conMatDF, MARGIN = 2, FUN = sum)
-  
-  TP = f2TestCon[[1]]
-  TN = f2TestCon[[2]]
-  FP = f2TestCon[[3]]
-  FN = f2TestCon[[4]]
-  
-  f2_validationRecall = TP / ( TP + FN)
-  f2_validationPrec = TP / (TP + FP)
-  f2_validationF2 = ((1+(2^2)) * f2_validationPrec * f2_validationRecall) / (2^2 * f2_validationPrec + f2_validationRecall)
-  # f3score = ((1+(3^2)) * f2_validationPrec * f2_validationRecall) / (3^2 * f2_validationPrec + f2_validationRecall)
-  # f4score = ((1+(4^2)) * f2_validationPrec * f2_validationRecall) / (4^2 * f2_validationPrec + f2_validationRecall)
-  randAcc = ((TN+FP)*(TN+FN) + (FN+TP)*(FP+TP)) / sum(c(TP + TN + FP + FN))^2
-  testAcc = (TP+TN)/(TP+TN+FP+FN)
-  f2_validationKappa = (testAcc - randAcc) / (1 - randAcc)
-  return(list(kappa = f2_validationKappa,
-              recall = f2_validationRecall,
-              F2 = f2_validationF2,
-              precision = f2_validationPrec))
-}
+# getKPRFb <- function(conMatDF){
+#   # conMatDF has rows of different confusion matrices, with the columns ordered as TP, TN, FP, FN
+#   # sums each column and finds performance metrics
+#   f2TestCon = apply(X = conMatDF, MARGIN = 2, FUN = sum)
+#   
+#   TP = f2TestCon[[1]]
+#   TN = f2TestCon[[2]]
+#   FP = f2TestCon[[3]]
+#   FN = f2TestCon[[4]]
+#   
+#   f2_validationRecall = TP / ( TP + FN)
+#   f2_validationPrec = TP / (TP + FP)
+#   f2_validationF2 = ((1+(2^2)) * f2_validationPrec * f2_validationRecall) / (2^2 * f2_validationPrec + f2_validationRecall)
+#   # f3score = ((1+(3^2)) * f2_validationPrec * f2_validationRecall) / (3^2 * f2_validationPrec + f2_validationRecall)
+#   # f4score = ((1+(4^2)) * f2_validationPrec * f2_validationRecall) / (4^2 * f2_validationPrec + f2_validationRecall)
+#   randAcc = ((TN+FP)*(TN+FN) + (FN+TP)*(FP+TP)) / sum(c(TP + TN + FP + FN))^2
+#   testAcc = (TP+TN)/(TP+TN+FP+FN)
+#   f2_validationKappa = (testAcc - randAcc) / (1 - randAcc)
+#   return(list(kappa = f2_validationKappa,
+#               recall = f2_validationRecall,
+#               F2 = f2_validationF2,
+#               precision = f2_validationPrec))
+# }
 
 addSlash = function(string) {
   # Adds a trailing forward slash to the end of a string (ex path to a driectory) if it is not present
@@ -178,7 +178,7 @@ addSlash = function(string) {
 
 colfunc = colorRampPalette(c("red","goldenrod","forestgreen","royalblue","darkviolet"))
 
-perc.rank <- function(x) trunc(rank(x))/length(x)
+# perc.rank <- function(x) trunc(rank(x))/length(x)
 
 ###########################
 
@@ -303,8 +303,35 @@ neu26Tag = grepl('^NeuAc\\(a2-6\\)',ligSort50)
 ligSort50[neu26Tag]
 
 sum(gsub('^NeuAc\\(a2-3\\)', 'NeuAc(a2-6)', ligSort50[neu23Tag]) %in% ligSort50[neu26Tag])
-ligSort50[neu23Tag][gsub('^NeuAc\\(a2-3\\)', 'NeuAc(a2-6)', ligSort50[neu23Tag]) %in% ligSort50[neu26Tag]]
 
+matched23 = ligSort50[neu23Tag][gsub('^NeuAc\\(a2-3\\)', 'NeuAc(a2-6)', ligSort50[neu23Tag]) %in% ligSort50[neu26Tag]]
+matched26 = ligSort50[neu26Tag][gsub('^NeuAc\\(a2-6\\)', 'NeuAc(a2-3)', ligSort50[neu26Tag]) %in% ligSort50[neu23Tag]]
+
+for (i in 1:3){
+  cat(matched23[i], '\n\t')
+  cat(cpl50[ligSort50 == matched23[i]], '\t')
+  cat(sum(bsResiDat$iupac == matched23[i]),'\n\n')
+}
+for(i in 1:3){
+  cat(matched26[i], '\n\t')
+  cat(cpl50[ligSort50 == matched26[i]], '\t')
+  cat(sum(bsResiDat$iupac == matched26[i]),'\n\n')
+}
+
+matched26 = matched26[c(1,3,2)]
+
+for (i in 1:3){
+  cat(matched23[i],'\t')
+  cat(sum(unique(bsResiDat$seqClust50[bsResiDat$iupac == matched23[i]]) %in% unique(bsResiDat$seqClust50[bsResiDat$iupac == matched26[i]])), '\n2-3: ')
+  cat(unique(bsResiDat$seqClust50[bsResiDat$iupac == matched23[i]])[order(unique(bsResiDat$seqClust50[bsResiDat$iupac == matched23[i]]))], '\n2-6: ')
+  cat(unique(bsResiDat$seqClust50[bsResiDat$iupac == matched26[i]])[order(unique(bsResiDat$seqClust50[bsResiDat$iupac == matched26[i]]))], '\n\n')
+}
+
+length(unique(bsResiDat$seqClust50[bsResiDat$iupac %in% matched23]))
+
+length(unique(bsResiDat$seqClust50[bsResiDat$iupac %in% matched26]))
+
+sum(unique(bsResiDat$seqClust50[bsResiDat$iupac %in% matched23]) %in% unique(bsResiDat$seqClust50[bsResiDat$iupac %in% matched26]))
 
 ########################
 ## NeuAc/Gc Monosaccharides - Descriptive
@@ -336,191 +363,107 @@ round(sum(cuWeights),5) == nrow(bsResiDat) # Sum of weights is equal to number o
 ###
 
 
-ligNames = c('Terminal NeuAc', 'Terminal NeuGc')
-ligColors = c('darkviolet', 'deepskyblue ')
+ligNames = c('Terminal NeuGc', 'Terminal NeuAc')
+ligColors = c('deepskyblue', 'darkviolet')
 
-neuTags = cbind(gcTags, ligTags[,8], bsResiDat$iupac == 'NeuAc(a2-3)Gal(b1-3)GalNAc', ligTags[,9], bsResiDat$iupac == 'NeuAc(a2-3)Gal(b1-3)GlcNAc')
-colnames(neuTags)[5:8] = c('NeuAc',
-                           'NeuAc(a2-3)Gal(b1-3)GalNAc',
-                           'NeuAc(a2-3)Gal(b1-3)Glc',
-                           'NeuAc(a2-3)Gal(b1-3)GlcNAc')
+acTags = cbind(ligTags[,8], bsResiDat$iupac == 'NeuAc(a2-3)Gal(b1-3)GalNAc', ligTags[,9], bsResiDat$iupac == 'NeuAc(a2-3)Gal(b1-3)GlcNAc')
+colnames(acTags) = c('NeuAc',
+                     'NeuAc(a2-3)Gal(b1-3)GalNAc',
+                     'NeuAc(a2-3)Gal(b1-3)Glc',
+                     'NeuAc(a2-3)Gal(b1-3)GlcNAc')
 
 ###
 # Ligand stats
-all(row.names(neuTags) == row.names(bsResiDat))
+all(row.names(acTags) == row.names(bsResiDat))
+all(row.names(gcTags) == row.names(bsResiDat))
 
 # how many clusters are the ligands found in
-length(unique(bsResiDat$seqClust50[apply(neuTags[,1:4], 1, any)]))
-length(unique(bsResiDat$seqClust50[apply(neuTags[,1:4], 1, any)])) / length(unique(bsResiDat$seqClust50))
+length(unique(bsResiDat$seqClust50[apply(gcTags, 1, any)]))
+length(unique(bsResiDat$seqClust50[apply(gcTags, 1, any)])) / length(unique(bsResiDat$seqClust50))
 
-length(unique(bsResiDat$seqClust50[apply(neuTags[,5:8], 1, any)]))
-length(unique(bsResiDat$seqClust50[apply(neuTags[,5:8], 1, any)])) / length(unique(bsResiDat$seqClust50))
+length(unique(bsResiDat$seqClust50[apply(acTags, 1, any)]))
+length(unique(bsResiDat$seqClust50[apply(acTags, 1, any)])) / length(unique(bsResiDat$seqClust50))
 
 # number of interactions
-apply(neuTags, 2, sum)
-sum(apply(neuTags, 2, sum)[1:4])
-sum(apply(neuTags, 2, sum)[5:8])
+apply(acTags, 2, sum)
+apply(gcTags, 2, sum)
+sum(apply(acTags, 2, sum))
+sum(apply(gcTags, 2, sum))
 
 # cumulative weight of interactions
 for (i in 1:ncol(neuTags)){
   cat(colnames(neuTags)[i], '\t')
   cat(sum(cuWeights[neuTags[,i]]), '\n')
 }
-sum(cuWeights[apply(neuTags[,1:4], 1, any)])
-sum(cuWeights[apply(neuTags[,5:8], 1, any)])
+sum(cuWeights[apply(gcTags, 1, any)])
+sum(cuWeights[apply(acTags, 1, any)])
 
 
 # shared clusters?
-sum(unique(bsResiDat$seqClust50[apply(neuTags[,1:4], 1, any)]) %in% unique(bsResiDat$seqClust50[apply(neuTags[,5:8], 1, any)]))
+sum(unique(bsResiDat$seqClust50[apply(gcTags, 1, any)]) %in% unique(bsResiDat$seqClust50[apply(acTags, 1, any)]))
+
+
+####
+## Limit to shared clusters
+####
+
+for(i in 1:ncol(gcTags)){
+  cat(colnames(gcTags)[i],'\n')
+  
+  sharedClusts = unique(bsResiDat$seqClust50[acTags[,i]])[unique(bsResiDat$seqClust50[acTags[,i]]) %in% unique(bsResiDat$seqClust50[gcTags[,i]])]
+  
+  # number of interactions
+  cat('gc - ', sum(gcTags[,i] & bsResiDat$seqClust50 %in% sharedClusts), '\n')
+  cat('ac - ', sum(acTags[,i] & bsResiDat$seqClust50 %in% sharedClusts) , '\n')
+  
+  # cumulative weight of interactions
+  cat('gc - ', sum(cuWeights[gcTags[,i] & bsResiDat$seqClust50 %in% sharedClusts]), '\n')
+  cat('ac - ', sum(cuWeights[acTags[,i] & bsResiDat$seqClust50 %in% sharedClusts]), '\n')
+  
+  # Limit tags to only interactions in shared clusters for each pair
+  gcTags[,i] = gcTags[,i] & bsResiDat$seqClust50 %in% sharedClusts
+  acTags[,i] = acTags[,i] & bsResiDat$seqClust50 %in% sharedClusts
+}
+
+# Drop ligands without any interactions in shared clusters
+gcTags = gcTags[,apply(gcTags, 2, any)] 
+acTags = acTags[,apply(acTags, 2, any)] 
+
+neuTags = cbind(gcTags, acTags)
 
 #################
-# # Weighted WMW - NeuAc vs NeuGc monosaccharides
-# #################
-# 
-# wmwFeats = cbind(predFeats,neuTags)
-# des <- svydesign(ids = ~1, data = wmwFeats, weights = 1/cuWeights) # Build survey object with 
-# 
-# neuTags = neuTags[,c(1,5)]
-# 
-# neuStats = as.data.frame(matrix(0, nrow = ncol(predFeats), ncol = (2*4)))
-# row.names(neuStats) = colnames(predFeats)
-# colnames(neuStats) = c(paste(colnames(neuTags), 'p', sep = '_'), paste(colnames(neuTags), 'FC', sep = '_'), paste(colnames(neuTags), 'effectSize', sep = '_'), paste(colnames(neuTags), 'adj', sep = '_'))
-# 
-# des_allNEU= subset(des, subset = (apply(neuTags, 1, any)))
-# 
-# 
-# for (i in 1:ncol(neuTags)){
-#   
-#   des_w = subset(des, subset = neuTags[,i]) # temporary design object holding all interactions with the ligand of interest
-#   des_wo = subset(des, subset = neuTags[,-i]) # same as above but OTHER the ligands of interest
-#   # scaled_des_w = subset(scaled_des, subset = ligTags[,i]) # 
-#   
-#   for(k in 1:ncol(predFeats)){ # for each feature k
-#     ligTest = svyranktest(formula = as.formula(paste(colnames(predFeats)[k], ' ~ ', colnames(neuTags)[i], sep = '')), # Wilcoxon–Mann–Whitney test, sample sizes can be small (~5% of 230 clusters ~= 10), no reason to assume distribution is normal as it likely isn't
-#                           design = des_allNEU, 
-#                           test = 'wilcoxon') 
-#     
-#     if (ligTest$p.value != 0){
-#       neuStats[k, grepl('_p$', colnames(neuStats))][i] = ligTest$p.value # Raw p-value
-#     } else{
-#       neuStats[k, grepl('_p$', colnames(neuStats))][i] = 5e-324 # If p-value is too small and R rounds to 0, reset as the smallest positive double as referenced by "?.Machine"
-#     }
-#     
-#     neuStats[k, grepl('_effectSize$', colnames(neuStats))][i] = ligTest$estimate # common language effect size (0.5 transformed to 0)
-#     
-#     neuStats[k, grepl('_FC$', colnames(neuStats))][i] = svymean(predFeats[neuTags[,i],k], des_w)[1] / svymean(predFeats[neuTags[,-i],k], des_wo)[1] # Fold change in weighted means
-#     
-#     # ligSpefic_feat_means[k,i] = svymean(scaledFeats[neuTags[,i],k], scaled_des_w)[1] # Get the weighted mean for each feature in interactions with each glycan of interest
-#   }
-#   
-#   neuStats[,grepl('_adj$', colnames(neuStats))][,i] = p.adjust(neuStats[grepl('_p$', colnames(neuStats))][,i], method = "BH") # Benjamini-Hochberg MHT correction (FDR)
-# }
-# 
-# all(round(neuStats$NeuAc_adj,3) == round(neuStats$NeuGc_adj,3))
-# 
-# # superSigTag = neuStats[,grepl('_adj$', colnames(neuStats))] < 1e-16
-# # neuStats[,grepl('_adj$', colnames(neuStats))][superSigTag] <- 10**(-1*runif(sum(superSigTag), max = -log10(3e-19), min = -log10(1e-16))) # Sample from a log-uniform distribution
-# 
-# 
-# #####
-# ## Volcano plots
-# #####
-# 
-# par(mfrow=c(1,2))
-# 
-# xLim = c(-0.5,0.5)
-# yLim = c(0,(-log10(min(neuStats[,grepl('_adj$', colnames(neuStats))])) + 1))
-# for(i in 1:ncol(neuTags)){
-#   
-#   # yLim = c(0,max(-log10(0.1), -log10(min(neuStats[,grepl('_adj$', colnames(neuStats))][,i]))) + 1)
-#   
-#   tag = neuStats[,grepl('_adj$', colnames(neuStats))][,i] < 0.01
-#   
-#   # dev.off()
-#   plot(0,0,axes = F, main = '', xlab = '', ylab = '', pch = NA)
-#   bg = "seashell2"
-#   fg = "ivory"
-#   rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = bg)
-#   # abline(v = c(-1,-.5,0,.5,1), lwd = 6, col = fg)
-#   # abline(v = c(-1.25,-.75,-.25,.25,.75,1.25), lwd = 3, col = fg)
-#   # abline(h = c(0,1,2,3,4,5,6), lwd = 6, col = fg)
-#   # abline(h = c(0.5,1.5,2.5,3.5,4.5,5.5,6.5), lwd = 3, col = fg)
-#   
-#   abline(v = 0, lty=2, lwd = 4, col = 'white')
-#   
-#   par(new=T)
-#   
-#   plot(neuStats[,grepl('_effectSize$', colnames(neuStats))][,i], -log10(neuStats[,grepl('_adj$', colnames(neuStats))][,i]), # Plot all points w/ color @ alpha 0.5
-#        xlab = "Effect size", ylab = "-log10(FDR)", main = '',
-#        pch = 19, cex = 2, col = alpha(featColors, 0.33),
-#        cex.axis = 1.5, cex.lab = 1.5,
-#        xlim = xLim, ylim = yLim)
-#   
-#   abline(h= -log10(0.01), lwd = 4, col = 'white')
-#   abline(h = -log10(1e-16), lwd = 1.5, lty = 2, col = 'white')
-#   
-#   title(main = ligNames[i], col.main = ligColors[i], cex.main = 1.8, font.main  = 2)
-#   # mtext(ligNames[i], col = ligColors[i],
-#   #       side=3, adj=0, outer = T,
-#   #       line=1.2, cex=1, font=2)
-#   
-#   par(new=T)
-#   plot(neuStats[,grepl('_effectSize$', colnames(neuStats))][tag,i], -log10(neuStats[,grepl('_adj$', colnames(neuStats))][tag,i]), # Plot stat sig points again with alpha 1
-#        pch = 19, col = featColors[tag], cex = 2,
-#        axes = F, xlab = "", ylab = "", main = "",
-#        xlim = xLim, ylim = yLim)
-#   par(new=T)
-#   plot(neuStats[,grepl('_effectSize$', colnames(neuStats))][tag,i], -log10(neuStats[,grepl('_adj$', colnames(neuStats))][tag,i]), # Outline stat sig points in black to highlight them
-#        col = alpha('black',0.2), cex = 2.05,
-#        xlab = "", ylab = "", axes = F, main = "",
-#        xlim = xLim, ylim = yLim)
-# }
-
-#compare to global trends
-
-plot(stats$NeuAc_effectSize, neuStats$NeuAc_effectSize,
-     col = featColors, pch =19,
-     main = 'NeuAc',
-     xlab = 'Effect Size vs background', ylab = 'Effect Size vs NeuGc')
-abline(v=0, h=0)
-par(new=T)
-plot(stats$NeuAc_effectSize[neuStats$NeuAc_adj <= 0.01], neuStats$NeuAc_effectSize[neuStats$NeuAc_adj <= 0.01],
-     col = 'black', pch =19,
-     cex = 1.7,
-     main = '', xlab = '', ylab = '', axes = F)
-par(new=T)
-plot(stats$NeuAc_effectSize[neuStats$NeuAc_adj <= 0.01], neuStats$NeuAc_effectSize[neuStats$NeuAc_adj <= 0.01],
-     col = featColors[neuStats$NeuAc_adj <= 0.01], pch =19,
-     cex = 1.5,
-     main = '', xlab = '', ylab = '', axes = F)
-cor.test(stats$NeuAc_effectSize, neuStats$NeuAc_effectSize,)
-
-#################
-# Weighted WMW - NeuAc vs NeuGc groups
+# Weighted WMW - Matched NeuAc/Gc pairs one v one (shared clusters)
 #################
 
-neuTags$Term_NeuGc = apply(neuTags[1:4],1, any)
-neuTags$Term_NeuAc = apply(neuTags[5:8],1, any)
-neuTags = neuTags[,c(10,9)]
+ligNames = colnames(neuTags)
+ligColors = c(rep('deepskyblue', ncol(gcTags)), rep('darkviolet', ncol(gcTags)))
+
+# Reformat lignames to be formula-friendly
+colnames(neuTags) = gsub('\\(', '.', colnames(neuTags))
+colnames(neuTags) = gsub('\\)', '.', colnames(neuTags))
+colnames(neuTags) = gsub('\\)', '.', colnames(neuTags))
+colnames(neuTags) = gsub('-', '', colnames(neuTags))
+
+colnames(gcTags) = colnames(neuTags)[1:3]
+colnames(acTags) = colnames(neuTags)[4:6]
+
+neuStats = as.data.frame(matrix(0, nrow = ncol(predFeats), ncol = (ncol(gcTags)*4)))
+row.names(neuStats) = colnames(predFeats)
+colnames(neuStats) = c(paste(colnames(gcTags), 'p', sep = '_'), paste(colnames(gcTags), 'FC', sep = '_'), paste(colnames(gcTags), 'effectSize', sep = '_'), paste(colnames(gcTags), 'adj', sep = '_'))
+
 
 wmwFeats = cbind(predFeats,neuTags)
 des <- svydesign(ids = ~1, data = wmwFeats, weights = 1/cuWeights) # Build survey object with binding indicators for glycans of interest
 
-neuStats = as.data.frame(matrix(0, nrow = ncol(predFeats), ncol = (2*4)))
-row.names(neuStats) = colnames(predFeats)
-colnames(neuStats) = c(paste(colnames(neuTags), 'p', sep = '_'), paste(colnames(neuTags), 'FC', sep = '_'), paste(colnames(neuTags), 'effectSize', sep = '_'), paste(colnames(neuTags), 'adj', sep = '_'))
+for(i in 1:ncol(gcTags)){
+  des_allNEU= subset(des, subset = (apply(cbind(gcTags[,i], acTags[,i]), 1, any))) # limit to interactions with current NeuGc glycan or matched NeuAc counter-part
 
-des_allNEU= subset(des, subset = (apply(neuTags, 1, any)))
-
-
-for (i in 1:ncol(neuTags)){
-  
-  des_w = subset(des, subset = neuTags[,i]) # temporary design object holding all interactions with the ligand of interest
-  des_wo = subset(des, subset = neuTags[,-i]) # same as above but OTHER the ligands of interest
+  des_w = subset(des, subset = gcTags[,i]) # temporary design object holding all interactions with the ligand of interest
+  des_wo = subset(des, subset = acTags[,i]) # same as above but OTHER the ligands of interest
   # scaled_des_w = subset(scaled_des, subset = ligTags[,i]) # 
   
   for(k in 1:ncol(predFeats)){ # for each feature k
-    ligTest = svyranktest(formula = as.formula(paste(colnames(predFeats)[k], ' ~ ', colnames(neuTags)[i], sep = '')), # Wilcoxon–Mann–Whitney test, sample sizes can be small (~5% of 230 clusters ~= 10), no reason to assume distribution is normal as it likely isn't
+    ligTest = svyranktest(formula = as.formula(paste(colnames(predFeats)[k], ' ~ ', colnames(gcTags)[i], sep = '')), # Wilcoxon–Mann–Whitney test, sample sizes can be small (~5% of 230 clusters ~= 10), no reason to assume distribution is normal as it likely isn't
                           design = des_allNEU, 
                           test = 'wilcoxon') 
     
@@ -532,7 +475,7 @@ for (i in 1:ncol(neuTags)){
     
     neuStats[k, grepl('_effectSize$', colnames(neuStats))][i] = ligTest$estimate # common language effect size (0.5 transformed to 0)
     
-    neuStats[k, grepl('_FC$', colnames(neuStats))][i] = svymean(predFeats[neuTags[,i],k], des_w)[1] / svymean(predFeats[neuTags[,-i],k], des_wo)[1] # Fold change in weighted means
+    neuStats[k, grepl('_FC$', colnames(neuStats))][i] = svymean(predFeats[gcTags[,i],k], des_w)[1] / svymean(predFeats[acTags[,i],k], des_wo)[1] # Fold change in weighted means
     
     # ligSpefic_feat_means[k,i] = svymean(scaledFeats[neuTags[,i],k], scaled_des_w)[1] # Get the weighted mean for each feature in interactions with each glycan of interest
   }
@@ -540,7 +483,7 @@ for (i in 1:ncol(neuTags)){
   neuStats[,grepl('_adj$', colnames(neuStats))][,i] = p.adjust(neuStats[grepl('_p$', colnames(neuStats))][,i], method = "BH") # Benjamini-Hochberg MHT correction (FDR)
 }
 
-all(round(neuStats$Term_NeuAc_adj,3) == round(neuStats$Term_NeuGc_adj,3))
+sum(neuStats[,grepl('_adj$', colnames(neuStats))] < 1e-16)
 
 superSigTag = neuStats[,grepl('_adj$', colnames(neuStats))] < 1e-16
 neuStats[,grepl('_adj$', colnames(neuStats))][superSigTag] <- 10**(-1*runif(sum(superSigTag), max = -log10(3e-19), min = -log10(1e-16))) # Sample from a log-uniform distribution
@@ -550,11 +493,11 @@ neuStats[,grepl('_adj$', colnames(neuStats))][superSigTag] <- 10**(-1*runif(sum(
 ## Volcano plots
 #####
 
-par(mfrow=c(1,2))
+par(mfrow=c(1,3))
 
 xLim = c(-0.5,0.5)
 yLim = c(0,(-log10(min(neuStats[,grepl('_adj$', colnames(neuStats))])) + 1))
-for(i in 1:ncol(neuTags)){
+for(i in 1:ncol(gcTags)){
   
   # yLim = c(0,max(-log10(0.1), -log10(min(neuStats[,grepl('_adj$', colnames(neuStats))][,i]))) + 1)
   
@@ -599,6 +542,12 @@ for(i in 1:ncol(neuTags)){
        xlab = "", ylab = "", axes = F, main = "",
        xlim = xLim, ylim = yLim)
 }
+
+row.names(neuStats)[neuStats$NeuGc.a23.Gal.b14.Glc_adj < 0.01]
+row.names(neuStats)[neuStats$NeuGc.a23.Gal.b14.GlcNAc_adj < 0.01 & neuStats$NeuGc.a23.Gal.b14.GlcNAc_effectSize > 0]
+row.names(neuStats)[neuStats$NeuGc.a23.Gal.b14.GlcNAc_adj < 0.01 & neuStats$NeuGc.a23.Gal.b14.GlcNAc_effectSize < 0]
+
+cor(neuStats[,grepl('_effectSize$', colnames(neuStats))], method = 'spearman')
 
 ##########################
 # Heatmaps
