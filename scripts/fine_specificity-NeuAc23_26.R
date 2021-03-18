@@ -305,9 +305,12 @@ length(unique(bsResiDat$seqClust50[bsResiDat$iupac %in% matched26]))
 
 sum(unique(bsResiDat$seqClust50[bsResiDat$iupac %in% matched23]) %in% unique(bsResiDat$seqClust50[bsResiDat$iupac %in% matched26]))
 
+
 ########################
 ## Neua2-3/a2-6 - Descriptive
 ########################
+
+
 
 ###
 # Weights
@@ -407,12 +410,84 @@ for(i in 1:ncol(tag23)){
   tag26[,i] = tag26[,i] & bsResiDat$seqClust50 %in% sharedClusts
 }
 
-# Drop ligands with <=1 interactions in shared clusters?
-apply(tag23, 2, sum)
-apply(tag26, 2, sum)
-tag23 = tag23[,apply(tag23, 2, sum) > 1]
-tag26 = tag26[,apply(tag26, 2, sum) > 1]
-# tag26 = tag26[,apply(tag26, 2, any)] 
+###
+#re-weight within shared clusters
+sharedClusts = unique(bsResiDat$seqClust50[apply(tag23,1,any)])[unique(bsResiDat$seqClust50[apply(tag23,1,any)]) %in% unique(bsResiDat$seqClust50[apply(tag26,1,any)])]
+
+tag = bsResiDat$seqClust50 %in% sharedClusts & (apply(tag23, 1, any) | apply(tag26, 1, any))
+
+bsResiDat = bsResiDat[tag,]
+predFeats = predFeats[tag,]
+tag23 = tag23[tag, ]
+tag26 = tag26[tag, ]
+
+
+clusWeight = nrow(bsResiDat)/length(unique(bsResiDat$seqClust50)) # The proportion of the total weight allotted to each cluster
+cWeights = rep(0, nrow(bsResiDat)) # weights based on cluster membership only (all binding sites with each cluster receives the same weight)
+cuWeights = rep(0,nrow(bsResiDat)) # weights based on cluster membership and UniProt ID (all clusters get the same weight, and all unique lectins within each cluster also receive the same weight)
+
+for (i in 1:length(unique(bsResiDat$seqClust50))){
+  clus = unique(bsResiDat$seqClust50)[i]
+  tag = bsResiDat$seqClust50 == clus
+  cWeights[tag] = clusWeight/sum(tag) # Equally divide allotted weight between all binding sites within a given cluster
+  
+  lectinWeight = clusWeight / length(unique(bsResiDat$uniparc[tag])) # Weight allotted to each lectin
+  for(j in 1:length(unique(bsResiDat$uniparc[tag]))){ # Further distribute weights within clusters based on uniprot ids
+    uniTag = bsResiDat$uniparc[tag] == unique(bsResiDat$uniparc[tag])[j]
+    cuWeights[tag][uniTag] = lectinWeight / sum(uniTag)
+  }
+}
+round(sum(cWeights),5) == nrow(bsResiDat) # Sum of weights is equal to number of binding sites
+round(sum(cuWeights),5) == nrow(bsResiDat) # Sum of weights is equal to number of binding sites
+
+
+
+for(i in 1:ncol(tag23)){
+  cat(colnames(tag23)[i],'\n')
+  
+  sharedClusts = unique(bsResiDat$seqClust50[tag23[,i]])[unique(bsResiDat$seqClust50[tag23[,i]]) %in% unique(bsResiDat$seqClust50[tag26[,i]])]
+  cat(sharedClusts[order(sharedClusts)],'\n')
+  
+  # number of interactions
+  cat('int cnts\n\t')
+  cat('a2-3: ', sum(tag23[,i] & bsResiDat$seqClust50 %in% sharedClusts), '\n\t')
+  cat('a2-6: ', sum(tag26[,i] & bsResiDat$seqClust50 %in% sharedClusts) , '\n')
+  
+  # cumulative weight of interactions
+  cat('int wts\n\t')
+  cat('a2-3: ', sum(cuWeights[tag23[,i] & bsResiDat$seqClust50 %in% sharedClusts]), '\n\t')
+  cat('a2-6: ', sum(cuWeights[tag26[,i] & bsResiDat$seqClust50 %in% sharedClusts]), '\n\n')
+  
+  # Limit tags to only interactions in shared clusters for each pair
+  tag23[,i] = tag23[,i] & bsResiDat$seqClust50 %in% sharedClusts
+  tag26[,i] = tag26[,i] & bsResiDat$seqClust50 %in% sharedClusts
+}
+
+tag23 = apply(tag23, 1, any)
+tag26 = apply(tag26, 1, any)
+
+neuTags = cbind(tag26, tag23)
+
+# number of interactions
+cat('int cnts\n\t')
+cat('a2-3: ', sum(tag23), '\n\t')
+cat('a2-6: ', sum(tag26) , '\n')
+
+# cumulative weight of interactions
+cat('int wts\n\t')
+cat('a2-3: ', sum(cuWeights[tag23]), '\n\t')
+cat('a2-6: ', sum(cuWeights[tag26]), '\n\n')
+
+###
+
+
+
+# # Drop ligands with <=1 interactions in shared clusters?
+# apply(tag23, 2, sum)
+# apply(tag26, 2, sum)
+# tag23 = tag23[,apply(tag23, 2, sum) > 1]
+# tag26 = tag26[,apply(tag26, 2, sum) > 1]
+# # tag26 = tag26[,apply(tag26, 2, any)] 
 
 neuTags = cbind(tag26, tag23)
 
@@ -420,7 +495,7 @@ neuTags = cbind(tag26, tag23)
 # Weighted WMW - Matched NeuAc/Gc pairs one v one (shared clusters)
 #################
 
-ligNames = c("6' vs 3' SLN", "6' vs 3' sialyated Gal")
+ligNames = c("6' vs 3' NeuAc", "6' vs 3' sialyated Gal")
 ligColors = rep('darkviolet', ncol(neuTags))
 
 # Reformat lignames to be formula-friendly
@@ -429,46 +504,48 @@ colnames(neuTags) = gsub('\\)', '.', colnames(neuTags))
 colnames(neuTags) = gsub('\\)', '.', colnames(neuTags))
 colnames(neuTags) = gsub('-', '', colnames(neuTags))
 
-colnames(tag26) = colnames(neuTags)[1:2]
-colnames(tag23) = colnames(neuTags)[3:4]
+# colnames(tag26) = colnames(neuTags)[1:2]
+# colnames(tag23) = colnames(neuTags)[3:4]
 
 
 
-neuStats = as.data.frame(matrix(0, nrow = ncol(predFeats), ncol = (ncol(tag26)*4)))
+neuStats = as.data.frame(matrix(0, nrow = ncol(predFeats), ncol = (ncol(neuTags)*4)))
 row.names(neuStats) = colnames(predFeats)
-colnames(neuStats) = c(paste(colnames(tag26), 'p', sep = '_'), paste(colnames(tag26), 'FC', sep = '_'), paste(colnames(tag26), 'effectSize', sep = '_'), paste(colnames(tag26), 'adj', sep = '_'))
+colnames(neuStats) = c(paste(colnames(neuTags), 'p', sep = '_'), paste(colnames(neuTags), 'FC', sep = '_'), paste(colnames(neuTags), 'effectSize', sep = '_'), paste(colnames(neuTags), 'adj', sep = '_'))
 
 
 wmwFeats = cbind(predFeats,neuTags)
 des <- svydesign(ids = ~1, data = wmwFeats, weights = 1/cuWeights) # Build survey object with binding indicators for glycans of interest
 
-for(i in 1:ncol(tag26)){
-  des_allNEU= subset(des, subset = (apply(cbind(tag26[,i], tag23[,i]), 1, any))) # limit to interactions with current NeuGc glycan or matched NeuAc counter-part
+# for(i in 1:ncol(tag26)){
+i = 1
 
-  des_w = subset(des, subset = tag26[,i]) # temporary design object holding all interactions with the ligand of interest
-  des_wo = subset(des, subset = tag23[,i]) # same as above but OTHER the ligands of interest
-  # scaled_des_w = subset(scaled_des, subset = ligTags[,i]) # 
+des_allNEU= subset(des, subset = apply(neuTags, 1, any)) # limit to interactions with current NeuGc glycan or matched NeuAc counter-part
+
+des_w = subset(des, subset = neuTags[,i]) # temporary design object holding all interactions with the ligand of interest
+des_wo = subset(des, subset = neuTags[,(-1*i)]) # same as above but OTHER the ligands of interest
+# scaled_des_w = subset(scaled_des, subset = ligTags[,i]) # 
+
+for(k in 1:ncol(predFeats)){ # for each feature k
+  ligTest = svyranktest(formula = as.formula(paste(colnames(predFeats)[k], ' ~ ', colnames(neuTags)[i], sep = '')), # Wilcoxon–Mann–Whitney test, sample sizes can be small (~5% of 230 clusters ~= 10), no reason to assume distribution is normal as it likely isn't
+                        design = des_allNEU, 
+                        test = 'wilcoxon') 
   
-  for(k in 1:ncol(predFeats)){ # for each feature k
-    ligTest = svyranktest(formula = as.formula(paste(colnames(predFeats)[k], ' ~ ', colnames(tag26)[i], sep = '')), # Wilcoxon–Mann–Whitney test, sample sizes can be small (~5% of 230 clusters ~= 10), no reason to assume distribution is normal as it likely isn't
-                          design = des_allNEU, 
-                          test = 'wilcoxon') 
-    
-    if (ligTest$p.value != 0){
-      neuStats[k, grepl('_p$', colnames(neuStats))][i] = ligTest$p.value # Raw p-value
-    } else{
-      neuStats[k, grepl('_p$', colnames(neuStats))][i] = 5e-324 # If p-value is too small and R rounds to 0, reset as the smallest positive double as referenced by "?.Machine"
-    }
-    
-    neuStats[k, grepl('_effectSize$', colnames(neuStats))][i] = ligTest$estimate # common language effect size (0.5 transformed to 0)
-    
-    neuStats[k, grepl('_FC$', colnames(neuStats))][i] = svymean(predFeats[tag26[,i],k], des_w)[1] / svymean(predFeats[tag23[,i],k], des_wo)[1] # Fold change in weighted means
-    
-    # ligSpefic_feat_means[k,i] = svymean(scaledFeats[neuTags[,i],k], scaled_des_w)[1] # Get the weighted mean for each feature in interactions with each glycan of interest
+  if (ligTest$p.value != 0){
+    neuStats[k, grepl('_p$', colnames(neuStats))][i] = ligTest$p.value # Raw p-value
+  } else{
+    neuStats[k, grepl('_p$', colnames(neuStats))][i] = 5e-324 # If p-value is too small and R rounds to 0, reset as the smallest positive double as referenced by "?.Machine"
   }
   
-  neuStats[,grepl('_adj$', colnames(neuStats))][,i] = p.adjust(neuStats[grepl('_p$', colnames(neuStats))][,i], method = "BH") # Benjamini-Hochberg MHT correction (FDR)
+  neuStats[k, grepl('_effectSize$', colnames(neuStats))][i] = ligTest$estimate # common language effect size (0.5 transformed to 0)
+  
+  neuStats[k, grepl('_FC$', colnames(neuStats))][i] = svymean(predFeats[neuTags[,i],k], des_w)[1] / svymean(predFeats[neuTags[,(-1*i)],k], des_wo)[1] # Fold change in weighted means
+  
+  # ligSpefic_feat_means[k,i] = svymean(scaledFeats[neuTags[,i],k], scaled_des_w)[1] # Get the weighted mean for each feature in interactions with each glycan of interest
 }
+
+neuStats[,grepl('_adj$', colnames(neuStats))][,i] = p.adjust(neuStats[grepl('_p$', colnames(neuStats))][,i], method = "BH") # Benjamini-Hochberg MHT correction (FDR)
+# }
 
 sum(neuStats[,grepl('_adj$', colnames(neuStats))] < 1e-16)
 
@@ -476,15 +553,17 @@ superSigTag = neuStats[,grepl('_adj$', colnames(neuStats))] < 1e-16
 neuStats[,grepl('_adj$', colnames(neuStats))][superSigTag] <- 10**(-1*runif(sum(superSigTag), max = -log10(3e-19), min = -log10(1e-16))) # Sample from a log-uniform distribution
 
 
+neuStats
+
 #####
 ## Volcano plots
 #####
 
-par(mfrow=c(1,2))
+# par(mfrow=c(1,2))
 xLim = c(-0.53,0.53)
 yLim = c(0,(-log10(min(neuStats[,grepl('_adj$', colnames(neuStats))])) + 1))
-for(i in 1:ncol(tag26)){
-  
+# for(i in 1:ncol(tag26)){
+for(i in 1){
   # yLim = c(0,max(-log10(0.1), -log10(min(neuStats[,grepl('_adj$', colnames(neuStats))][,i]))) + 1)
   
   tag = neuStats[,grepl('_adj$', colnames(neuStats))][,i] < 0.01
@@ -546,16 +625,17 @@ plot(stats$NeuAc.a2.3.Gal.b1.4.Glc_effectSize, neuStats$NeuAc.a26.Gal.b14.GlcNAc
 
 stats = stats[,(grepl('NeuAc', colnames(stats)) | grepl('Sialic', colnames(stats)))]
 
+neuStats = neuStats[,!grepl('^tag23', colnames(neuStats))]
 
 stats = cbind(stats, neuStats)
 
 sigFeats = neuStats[,grepl('_adj$', colnames(neuStats))] < 0.01
 
-hSigFeats = rbind(rep(F,nrow(sigFeats)),rep(F,nrow(sigFeats)),rep(F,nrow(sigFeats)),t(sigFeats))
+hSigFeats = rbind(rep(F,length(sigFeats)),rep(F,length(sigFeats)),rep(F,length(sigFeats)),sigFeats)
 
 allFeatCorrs = cor(stats[,grepl('_effectSize$', colnames(stats))], stats[,grepl('_effectSize$', colnames(stats))], method = 'pearson')
 row.names(allFeatCorrs)  = gsub('_effectSize$', '', row.names(allFeatCorrs))
-row.names(allFeatCorrs)[3:5] = c("3' SL", "6' vs 3' SLN", "6' vs 3' Neu-Gal")
+row.names(allFeatCorrs)[3:4] = c("3' SL", "6' vs 3' NeuAc")
 colnames(allFeatCorrs) = row.names(allFeatCorrs)
 
 corrplot::corrplot(allFeatCorrs)
@@ -646,8 +726,7 @@ pheatmap(resiFeat_stats,
                         'NeuAc vs all',
                         'SL vs all',
                         
-                        "6' vs 3' SLN",
-                        "6' vs 3' sialyated Gal"),
+                        "6' vs 3' NeuAc"),
          annotation_col = resiAnnot,
          annotation_colors = resiAnnot_cols,
          # legend_breaks = c(1,5),
@@ -709,8 +788,7 @@ pheatmap(pocketFeat_stats,
                         'NeuAc vs all',
                         'SL vs all',
                         
-                        "6' vs 3' SLN",
-                        "6' vs 3' sialyated Gal"),
+                        "6' vs 3' NeAc"),
          annotation_col = pockAnnot,
          annotation_colors = pockAnnot_cols,
          # legend_breaks = c(1,5),
@@ -748,8 +826,7 @@ pheatmap(plipFeat_stats,
                         'NeuAc vs all',
                         'SL vs all',
                         
-                        "6' vs 3' SLN",
-                        "6' vs 3' sialyated Gal"),
+                        "6' vs 3' NeuAc"),
          main = '',
          gaps_row = c(3),
          breaks = breakLst,
@@ -757,4 +834,24 @@ pheatmap(plipFeat_stats,
          fontsize_col = 9,
          angle_col = 45)
 dev.off()
+
+
+
+#####################
+
+for(i in 1:length(unique(bsResiDat$seqClust50))){
+  clu = unique(bsResiDat$seqClust50)[order(unique(bsResiDat$seqClust50))][i]
+  cat(clu, '\n')
+  
+  cat('int wts\n\t')
+  cat('a2-3: ', sum(cuWeights[tag23 & bsResiDat$seqClust50 == clu]), '\n\t')
+  cat('a2-6: ', sum(cuWeights[tag26 & bsResiDat$seqClust50 == clu]), '\n\n')
+}
+
+
+
+
+
+
+
 
