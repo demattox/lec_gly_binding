@@ -49,12 +49,12 @@ ligNames[3] = expression(bold("Terminal Fuc Group"))
 ligNames[4] = expression(bold("Lactose"))
 ligNames[5] = expression(bold("Galactose"))
 ligNames[6] = expression(bold("Mannose"))
-ligNames[7] = expression(bold("N-Acetyl Galactosamine"))
-ligNames[8] = expression(bold("N-Acetyl Neuraminic Acid"))
+ligNames[7] = expression(bold("N-Acetylgalactosamine"))
+ligNames[8] = expression(bold("N-Acetylneuraminic Acid"))
 ligNames[9] = expression(bold("3'-Siayllactose"))
 ligNames[10] = expression(bold("Glucose"))
-ligNames[11] = expression(bold("N-Acetyl Lactosamine"))
-ligNames[13] = expression(bold("N-Acetyl Glucosamine"))
+ligNames[11] = expression(bold("N-Acetyllactosamine"))
+ligNames[13] = expression(bold("N-Acetylglucosamine"))
 ligNames[14] = expression(bold("Fucose"))
 ligNames[15] = expression(bold("TF Antigen"))
 
@@ -479,13 +479,18 @@ pocketFeatTag = featColors %in% pocketFeats
 
 
 # Plot volcanoes from weighted WMW test
-dev.off()
+dev.off()  
 pdf(file = paste('./manuscript/figures/subplots/', 
                  'weighted_commonEffect_volcanoes',
                  '.pdf', sep = ''),
     width = 21,
     height = 13)
-par(mfrow=c(3,5))
+# par(mfrow=c(3,5))
+
+par(mfrow=c(3,5), 
+    mai = c(0.51, 0.11, 0.11, .51),
+    mar = c(3.1, 3.1, 4.1, 2.1))
+
 xLim = c(-0.5,0.5)
 yLim = c(0,19)
 for(i in 1:ncol(ligTags)){
@@ -504,20 +509,20 @@ for(i in 1:ncol(ligTags)){
   # abline(h = c(0,1,2,3,4,5,6), lwd = 6, col = fg)
   # abline(h = c(0.5,1.5,2.5,3.5,4.5,5.5,6.5), lwd = 3, col = fg)
   
-  abline(v = 0, lty=2, lwd = 4, col = 'white')
+  abline(v = 0, lty=2, lwd = 6, col = 'white')
   
   par(new=T)
   
   plot(stats_weighted[,grepl('_effectSize$', colnames(stats_weighted))][,i], -log10(stats_weighted[,grepl('_adj$', colnames(stats_weighted))][,i]), # Plot all points w/ color @ alpha 0.5
-       xlab = "Effect size", ylab = "-log10(FDR)", main = '',
+       xlab = "", ylab = "", main = '',
        pch = 19, cex = 2, col = alpha(featColors, 0.33),
-       cex.axis = 1.5, cex.lab = 1.5,
+       cex.axis = 1.5,
        xlim = xLim, ylim = yLim)
   
-  abline(h= -log10(0.01), lwd = 4, col = 'white')
-  abline(h = -log10(1e-16), lwd = 1.5, lty = 2, col = 'white')
+  abline(h= -log10(0.01), lwd = 6, col = 'white')
+  abline(h = -log10(1e-16), lwd = 3, lty = 2, col = 'white')
   
-  title(main = ligNames[i], col.main = ligColors[i], cex.main = 1.8, font.main  = 2)
+  title(main = ligNames[i], col.main = ligColors[i], cex.main = 2.5, font.main  = 2)
   # mtext(ligNames[i], col = ligColors[i],
   #       side=3, adj=0, outer = T,
   #       line=1.2, cex=1, font=2)
@@ -751,7 +756,7 @@ names(Sugar_Cnt) = levels(r_annot$Sugar_Cnt)
 
 annot_cols = list(Terminal_Sugar = Terminal_Sugar, Sugar_Cnt = Sugar_Cnt)
 
-
+dev.off()
 pdf(file = paste('./manuscript/figures/subplots/', 
                  'allFeats_MWM_corplots',
                  '.pdf', sep = ''),

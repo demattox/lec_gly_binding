@@ -70,14 +70,15 @@ ligNames[3] = expression(bold("Terminal Fuc Group"))
 ligNames[4] = expression(bold("Lactose"))
 ligNames[5] = expression(bold("Galactose"))
 ligNames[6] = expression(bold("Mannose"))
-ligNames[7] = expression(bold("N-Acetyl Galactosamine"))
-ligNames[8] = expression(bold("N-Acetyl Neuraminic Acid"))
+ligNames[7] = expression(bold("N-Acetylgalactosamine"))
+ligNames[8] = expression(bold("N-Acetylneuraminic Acid"))
 ligNames[9] = expression(bold("3'-Siayllactose"))
 ligNames[10] = expression(bold("Glucose"))
-ligNames[11] = expression(bold("N-Acetyl Lactosamine"))
-ligNames[13] = expression(bold("N-Acetyl Glucosamine"))
+ligNames[11] = expression(bold("N-Acetyllactosamine"))
+ligNames[13] = expression(bold("N-Acetylglucosamine"))
 ligNames[14] = expression(bold("Fucose"))
 ligNames[15] = expression(bold("TF Antigen"))
+
 
 
 ligColors = rep('', ncol(ligTags))
@@ -403,34 +404,33 @@ par(mar = c(8.6, 5.1, 5.1, 4.1), # change the margins
 plot(0,0,col = 'white', xlab = '',ylab = '',type="n",
      axes=FALSE,ann=FALSE,
      xlim = c(0,16),
-     ylim = c(-1,1))
+     ylim = c(0,1))
 i<-1 
-vioplot(testDat$kappa[(testDat$ligand == colnames(ligTags)[i]) & (testDat$mode == 'pred')], at = i, side = 'left',
+vioplot(testDat$f2[(testDat$ligand == colnames(ligTags)[i]) & (testDat$mode == 'pred')], at = i, side = 'left',
         add=T,
         col = ligColors[i],
         xlim = c(0,16), ylim = c(-1,1),
         plotCentre = "line")
-vioplot(testDat$kappa[(testDat$ligand == colnames(ligTags)[i]) & (testDat$mode == 'rand')], at = i, side = 'right',
+vioplot(testDat$f2[(testDat$ligand == colnames(ligTags)[i]) & (testDat$mode == 'rand')], at = i, side = 'right',
         add = T,
         col = alpha(ligColors[i],0.33),
         xlim = c(0,16), ylim = c(-1,1),
         plotCentre = "line")
 for(i in 2:ncol(ligTags)){
-  vioplot(testDat$kappa[(testDat$ligand == colnames(ligTags)[i]) & (testDat$mode == 'pred')], at = i, side = 'left',
+  vioplot(testDat$f2[(testDat$ligand == colnames(ligTags)[i]) & (testDat$mode == 'pred')], at = i, side = 'left',
           col = ligColors[i],
           xlim = c(0,16), ylim = c(-1,1),
           add = T,
           plotCentre = "line")
-  vioplot(testDat$kappa[(testDat$ligand == colnames(ligTags)[i]) & (testDat$mode == 'rand')], at = i, side = 'right',
+  vioplot(testDat$f2[(testDat$ligand == colnames(ligTags)[i]) & (testDat$mode == 'rand')], at = i, side = 'right',
           add = T,
           col = alpha(ligColors[i],0.3),
           xlim = c(0,16), ylim = c(-1,1),
           plotCentre = "line")
 }
-abline(h=0, lty = 2)
 axis(side=1,at=1:15, labels = F)
 axis(side=2,at=seq.int(-1,1,0.5))
-title(xlab = "", ylab = "Kappa", main = "5x CV + LOCO\nValidation Kappa compared to random classifiers")
+title(xlab = "", ylab = "F2 Score", main = "5x CV + LOCO\nValidation F2 Scores compared to random classifiers")
 text(x = 1:15,
      y = par("usr")[3] - 0.08,
      labels = ligNames,
@@ -584,10 +584,10 @@ p +
 
 
 
-p <- ggplot(data.frame(x=(1:3),y=rep(1,3),sugar=c('o-fuc','STn','n-linked-sialyl-biantennary'))) + 
-  geom_sugar(aes(x,y,sugar=sugar),size=10,align="centre") + 
-  theme_minimal()
-p
+# p <- ggplot(data.frame(x=(1:3),y=rep(1,3),sugar=c('o-fuc','STn','n-linked-sialyl-biantennary'))) + 
+#   geom_sugar(aes(x,y,sugar=sugar),size=10,align="centre") + 
+#   theme_minimal()
+# p
 
 
 breakLst = seq(0,1,0.01)
@@ -796,15 +796,20 @@ axis(side=3,at=seq.int(1,29,2), labels = F, pos = 2.2)
 
 ###
 ###
-# Alt Fig 2 with sample size boxplots dropped out into a separate panel
-## Vertical labels
+# Alt Fig 2 with sample size boxplots dropped out into a supp fig panel
+## Diag labels
 ###
 
-# Panel A -- P & R same plot with violin & box plots
+dev.off()
+pdf(file = paste('./manuscript/figures/subplots/', 
+                 'RF-violins',
+                 '.pdf', sep = ''),
+    width = 20,
+    height = 12)#  P & R same plot with violin & box plots
 xLim = c(0,30)
 yLim = c(0.2,1)
 
-par(mar = c(16.1, 5.1, 5.1, 4.1), # change the margins
+par(mar = c(16.1, 9.1, 5.1, 4.1), # change the margins
     lwd = 2, # increase the line thickness
     cex.axis = 1.2 # increase default axis label size
 )
@@ -847,7 +852,7 @@ axis(side=2,at=pretty(c(0.2,1)), las = 2)
 axis(side = 4, at = pretty(c(0.2,1)), las = 2)  # Add second axis
 # abline(v=6, lwd = 0.75)
 mtext("Precision", side = 4, line = 3, cex = 2, col = alpha('black',0.85))  # Add second axis label
-title(xlab = "", ylab = "Recall", main = "Random Forest Validation - Precision & Recall (Violin plots) \n Versus Random Classifier (Boxplots)", cex.main = 1.5, cex.lab = 2)
+title(xlab = "", ylab = "Recall", main = "Random Forest Validation - Precision & Recall (Violin plots) \n Versus Random Classifier (Boxplots)", cex.main = 2.5, cex.lab = 2)
 text(x = seq.int(1,29,2),
      y = par("usr")[3] - 0.05,
      labels = ligNames,
@@ -855,17 +860,19 @@ text(x = seq.int(1,29,2),
      ## Change the clipping region.
      xpd = NA,
      ## Rotate the labels by 35 degrees.
-     srt = 270,
+     srt = 35,
      ## Adjust the labels to almost 100% right-justified.
-     #adj = 0.965,
-     adj = 0.04,
+     adj = 0.965,
      ## Increase label size.
-     cex = 1.2)
+     cex = 1.8)
+dev.off()
 
-# copy to clipboard @ 1800x800
 
-# Panel B - Boxplots of number of binding interaction used to train models
-
+# Panel B, (supp fig 4) - Boxplots of number of binding interaction used to train models
+par(mar = c(16.1, 9.1, 5.1, 4.1), # change the margins
+    lwd = 2, # increase the line thickness
+    cex.axis = 1.2 # increase default axis label size
+)
 plot(0,0, col = 'white', type = 'n',
      xlim = xLim,
      ylim = c(1.3, 4),
@@ -890,8 +897,21 @@ for(j in 1:ncol(ligTags)){
           axes = F, xlab = '', ylab ='')
 }
 axis(side=2,at=log10(logTicks), labels = logTicks, las = 2, pos = 0)
-axis(side=3,at=seq.int(1,29,2), labels = F, pos = 2.25)
+axis(side=1,at=seq.int(1,29,2), labels = F, pos = 1.2)
+text(x = seq.int(1,29,2)+.75,
+     y = par("usr")[3] - 0.05,
+     labels = ligNames,
+     col = ligColors,
+     ## Change the clipping region.
+     xpd = NA,
+     ## Rotate the labels by 35 degrees.
+     srt = 35,
+     ## Adjust the labels to almost 100% right-justified.
+     adj = 1.1,
+     ## Increase label size.
+     cex = 1.2)
 
+# copied at 1200 x 800
 
 #######################
 # PR curves
@@ -906,12 +926,12 @@ rawLigNames[3] = "Terminal Fuc Group"
 rawLigNames[4] = "Lactose"
 rawLigNames[5] = "Galactose"
 rawLigNames[6] = "Mannose"
-rawLigNames[7] = "N-Acetyl Galactosamine"
-rawLigNames[8] = "N-Acetyl Neuraminic Acid"
+rawLigNames[7] = "N-Acetylnalactosamine"
+rawLigNames[8] = "N-Acetylneuraminic Acid"
 rawLigNames[9] = "3'-Siayllactose"
 rawLigNames[10] = "Glucose"
-rawLigNames[11] = "N-Acetyl Lactosamine"
-rawLigNames[13] = "N-Acetyl Glucosamine"
+rawLigNames[11] = "N-Acetyllactosamine"
+rawLigNames[13] = "N-Acetylglucosamine"
 rawLigNames[14] = "Fucose"
 rawLigNames[15] = "TF Antigen"
 
@@ -1137,13 +1157,14 @@ plot(POCKmeds$Fuc[order(POCKmeds$Fuc, decreasing = T)], pch = 19, col = featColo
 plot(PLIPmeds$Fuc[order(PLIPmeds$Fuc, decreasing = T)], pch = 19, col = featColors[1:11][order(PLIPmeds$Fuc, decreasing = T)])
 
 
+# copied @ 1400 x 900
 par(mfrow = c(3,5))
 for (i in 1:ncol(medFeatPercentiles)){
   plot(medFeatPercentiles[order(medFeatPercentiles[, i], decreasing = T), i],
        pch = 19,
        col = featColors[order(medFeatPercentiles[,i], decreasing = T)],
-       ylab = 'Median importance percentile')
-  title(main = ligNames[i], col.main = ligColors[i])
+       ylab = 'Median importance percentile', xlab = 'Ranked features', cex.lab = 1.5)
+  title(main = ligNames[i], col.main = ligColors[i], cex.main = 1.5)
 }
 
 par(mfrow = c(3,5))
@@ -1151,10 +1172,10 @@ for (i in 1:ncol(RESImeds)){
   plot(RESImeds[order(RESImeds[, i], decreasing = T), i],
        pch = 19,
        col = featColors[resiFeatTag][order(RESImeds[,i], decreasing = T)],
-       ylab = 'Median importance percentile',
+       ylab = 'Median importance percentile', xlab = 'Ranked features', cex.lab = 1.5,
        ylim = c(0,1))
   abline(h = 0.75)
-  title(main = ligNames[i], col.main = ligColors[i])
+  title(main = ligNames[i], col.main = ligColors[i], cex.main = 1.5)
 }
 
 par(mfrow = c(3,5))
@@ -1162,10 +1183,10 @@ for (i in 1:ncol(POCKmeds)){
   plot(POCKmeds[order(POCKmeds[, i], decreasing = T), i],
        pch = 19,
        col = featColors[pocketFeatTag][order(POCKmeds[,i], decreasing = T)],
-       ylab = 'Median importance percentile',
+       ylab = 'Median importance percentile', xlab = 'Ranked features', cex.lab = 1.5,
        ylim = c(0,1))
   abline(h = 0.75)
-  title(main = ligNames[i], col.main = ligColors[i])
+  title(main = ligNames[i], col.main = ligColors[i], cex.main = 1.5)
 }
 
 par(mfrow = c(3,5))
@@ -1173,10 +1194,10 @@ for (i in 1:ncol(PLIPmeds)){
   plot(PLIPmeds[order(PLIPmeds[, i], decreasing = T), i],
        pch = 19,
        col = featColors[1:11][order(PLIPmeds[,i], decreasing = T)],
-       ylab = 'Median importance percentile',
+       ylab = 'Median importance percentile', xlab = 'Ranked features', cex.lab = 1.5,
        ylim = c(0,1))
   abline(h = 0.75)
-  title(main = ligNames[i], col.main = ligColors[i])
+  title(main = ligNames[i], col.main = ligColors[i], cex.main = 1.5)
 }
 
 #######################
@@ -1232,6 +1253,8 @@ for (i in 1:ncol(medFeatPercentiles)){
   
   plot(abs(stats[,grepl('_effectSize$', colnames(stats))][,i]), stratAllFeatsImp[,i],
        xlab = '|Effect size|', ylab = 'Stratified feat imp percentile', main = ligNames[i], col.main = ligColors[i],
+       cex.main = 1.5,
+       cex.lab = 1.5,
        col = alpha(featColors, 0.4),
        xlim = c(0,0.4),
        ylim = c(0,1),
@@ -1393,6 +1416,7 @@ resiAnnot_cols <- list(Feature_Type = Feature_Type, Bin = Bin, Terminal_Sugar = 
 resiFeat_stats = t(resiFeat_stats[resiFeatTag,grepl('_effectSize$', colnames(resiFeat_stats))])
 row.names(resiFeat_stats) = gsub('_effectSize$', '', row.names(resiFeat_stats))
 
+dev.off()
 # pdf(file = paste('./manuscript/figures/subplots/', 
 #                  'resiFeats_MWM_heatmap',
 #                  '.pdf', sep = ''),
@@ -1458,6 +1482,8 @@ pockAnnot_cols <- list(Feature_Type = Feature_Type, Threshold = Threshold, Termi
 pocketFeat_stats = t(stats[pocketFeatTag,grepl('_effectSize$', colnames(stats))])
 row.names(pocketFeat_stats) = gsub('_effectSize$', '', row.names(pocketFeat_stats))
 
+dev.off()
+
 CairoPDF(file = paste('./manuscript/figures/subplots/', 
                  'pocketFeats_MWM_heatmap',
                  '.pdf', sep = ''),
@@ -1493,6 +1519,7 @@ annot_cols = list(Terminal_Sugar = Terminal_Sugar, Sugar_Cnt = Sugar_Cnt)
 plipFeat_stats = t(stats[1:11,grepl('_effectSize$', colnames(stats))])
 row.names(plipFeat_stats) = gsub('_effectSize$', '', row.names(plipFeat_stats))
 
+dev.off()
 
 CairoPDF(file = paste('./manuscript/figures/subplots/', 
                  'plipFeats_MWM_heatmap',

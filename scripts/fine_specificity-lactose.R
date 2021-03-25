@@ -9,6 +9,7 @@ library(philentropy)
 library(vioplot)
 library(pheatmap)
 library(Cairo)
+library(umap)
 
 
 #######################
@@ -248,9 +249,9 @@ for (i in 1:length(unique(bsResiDat$seqClust50))){
 round(sum(cWeights),5) == nrow(bsResiDat) # Sum of weights is equal to number of binding sites
 round(sum(cuWeights),5) == nrow(bsResiDat) # Sum of weights is equal to number of binding sites
 
-wmwFeats = cbind(predFeats,ligTags)
-
-des <- svydesign(ids = ~1, data = wmwFeats, weights = 1/cuWeights)
+# wmwFeats = cbind(predFeats,ligTags)
+# 
+# des <- svydesign(ids = ~1, data = wmwFeats, weights = 1/cuWeights)
 ###
 
 
@@ -285,19 +286,66 @@ sum(unique(bsResiDat$seqClust50[lacTags[,2]]) %in% unique(bsResiDat$seqClust50[l
 ## Limit to shared clusters
 ####
 
-sharedClusts = unique(bsResiDat$seqClust50[lacTags[,2]])[unique(bsResiDat$seqClust50[lacTags[,2]]) %in% unique(bsResiDat$seqClust50[lacTags[,1]])]
+# sharedClusts = unique(bsResiDat$seqClust50[lacTags[,2]])[unique(bsResiDat$seqClust50[lacTags[,2]]) %in% unique(bsResiDat$seqClust50[lacTags[,1]])]
+# 
+# # number of interactions
+# sum(lacTags[,1] & bsResiDat$seqClust50 %in% sharedClusts) 
+# sum(lacTags[,2] & bsResiDat$seqClust50 %in% sharedClusts) 
+# 
+# # cumulative weight of interactions
+# sum(cuWeights[lacTags[,1] & bsResiDat$seqClust50 %in% sharedClusts])
+# sum(cuWeights[lacTags[,2] & bsResiDat$seqClust50 %in% sharedClusts])
+# 
+# lacTags[,1] = lacTags[,1] & bsResiDat$seqClust50 %in% sharedClusts
+# lacTags[,2] = lacTags[,2] & bsResiDat$seqClust50 %in% sharedClusts
 
-# number of interactions
-sum(lacTags[,1] & bsResiDat$seqClust50 %in% sharedClusts) 
-sum(lacTags[,2] & bsResiDat$seqClust50 %in% sharedClusts) 
+
+
+###
+#re-weight within clusters here
+tag = apply(lacTags, 1, any)
+
+bsResiDat = bsResiDat[tag,]
+predFeats = predFeats[tag,]
+lacTags = lacTags[tag,]
+
+
+clusWeight = nrow(bsResiDat)/length(unique(bsResiDat$seqClust50)) # The proportion of the total weight allotted to each cluster
+cWeights = rep(0, nrow(bsResiDat)) # weights based on cluster membership only (all binding sites with each cluster receives the same weight)
+cuWeights = rep(0,nrow(bsResiDat)) # weights based on cluster membership and UniProt ID (all clusters get the same weight, and all unique lectins within each cluster also receive the same weight)
+
+for (i in 1:length(unique(bsResiDat$seqClust50))){
+  clus = unique(bsResiDat$seqClust50)[i]
+  tag = bsResiDat$seqClust50 == clus
+  cWeights[tag] = clusWeight/sum(tag) # Equally divide allotted weight between all binding sites within a given cluster
+  
+  lectinWeight = clusWeight / length(unique(bsResiDat$uniparc[tag])) # Weight allotted to each lectin
+  for(j in 1:length(unique(bsResiDat$uniparc[tag]))){ # Further distribute weights within clusters based on uniprot ids
+    uniTag = bsResiDat$uniparc[tag] == unique(bsResiDat$uniparc[tag])[j]
+    cuWeights[tag][uniTag] = lectinWeight / sum(uniTag)
+  }
+}
+round(sum(cWeights),5) == nrow(bsResiDat) # Sum of weights is equal to number of binding sites
+round(sum(cuWeights),5) == nrow(bsResiDat) # Sum of weights is equal to number of binding sites
+
+
+cat('int cnts\n\t')
+cat('Lac: ', sum(lacTags[,1]), '\n\t')
+cat('LacNAc: ', sum(lacTags[,2]) , '\n')
 
 # cumulative weight of interactions
-sum(cuWeights[lacTags[,1] & bsResiDat$seqClust50 %in% sharedClusts])
-sum(cuWeights[lacTags[,2] & bsResiDat$seqClust50 %in% sharedClusts])
+cat('int wts\n\t')
+cat('Lac: ', sum(cuWeights[lacTags[,1]]), '\n\t')
+cat('LacNAc: ', sum(cuWeights[lacTags[,2]]), '\n\n')
 
-lacTags[,1] = lacTags[,1] & bsResiDat$seqClust50 %in% sharedClusts
-lacTags[,2] = lacTags[,2] & bsResiDat$seqClust50 %in% sharedClusts
 
+
+wmwFeats = cbind(predFeats,lacTags)
+
+des <- svydesign(ids = ~1, data = wmwFeats, weights = 1/cuWeights)
+
+
+## WMW Stats
 
 lacStats = as.data.frame(matrix(0, nrow = ncol(predFeats), ncol = (2*4)))
 row.names(lacStats) = colnames(predFeats)
@@ -399,18 +447,21 @@ for(i in 1:ncol(lacTags)){
 plot(stats$Gal.b1.4.Glc_effectSize, lacStats$Gal.b1.4.Glc_effectSize,
      col = featColors, pch =19,
      main = 'Lactose',
-     xlab = 'Effect Size vs background', ylab = 'Effect size vs LacNAc')
+     xlab = 'Effect Size vs background', ylab = 'Effect size vs LacNAc',
+     xlim = c(-0.5, 0.5), ylim = c(-0.5, 0.5))
 abline(v=0, h=0)
 par(new=T)
 plot(stats$Gal.b1.4.Glc_effectSize[lacStats$Gal.b1.4.Glc_adj <= 0.01], lacStats$Gal.b1.4.Glc_effectSize[lacStats$Gal.b1.4.Glc_adj <= 0.01],
      col = 'black', pch =19,
      cex = 1.7,
-     main = '', xlab = '', ylab = '', axes = F)
+     main = '', xlab = '', ylab = '', axes = F,
+     xlim = c(-0.5, 0.5), ylim = c(-0.5, 0.5))
 par(new=T)
 plot(stats$Gal.b1.4.Glc_effectSize[lacStats$Gal.b1.4.Glc_adj <= 0.01], lacStats$Gal.b1.4.Glc_effectSize[lacStats$Gal.b1.4.Glc_adj <= 0.01],
      col = featColors[lacStats$Gal.b1.4.GlcNAc_adj <= 0.01], pch =19,
      cex = 1.5,
-     main = '', xlab = '', ylab = '', axes = F)
+     main = '', xlab = '', ylab = '', axes = F,
+     xlim = c(-0.5, 0.5), ylim = c(-0.5, 0.5))
 cor.test(stats$Gal.b1.4.Glc_effectSize, lacStats$Gal.b1.4.Glc_effectSize)
 
 
@@ -419,18 +470,21 @@ cor.test(stats$Gal.b1.4.Glc_effectSize, lacStats$Gal.b1.4.Glc_effectSize)
 plot(stats$Gal.b1.4.GlcNAc_effectSize, lacStats$Gal.b1.4.GlcNAc_effectSize,
      col = alpha(featColors, 0.7), pch =19,
      main = 'N-Acetyllactosamine',
-     xlab = 'Effect Size vs background', ylab = 'Effect size vs Lac')
+     xlab = 'Effect Size vs background', ylab = 'Effect size vs Lac',
+     xlim = c(-0.5, 0.5), ylim = c(-0.5, 0.5))
 abline(v=0, h=0)
 par(new=T)
 plot(stats$Gal.b1.4.GlcNAc_effectSize[lacStats$Gal.b1.4.GlcNAc_adj <= 0.01], lacStats$Gal.b1.4.GlcNAc_effectSize[lacStats$Gal.b1.4.GlcNAc_adj <= 0.01],
      col = 'black', pch =19,
      cex = 1.7,
-     main = '', xlab = '', ylab = '', axes = F)
+     main = '', xlab = '', ylab = '', axes = F,
+     xlim = c(-0.5, 0.5), ylim = c(-0.5, 0.5))
 par(new=T)
 plot(stats$Gal.b1.4.GlcNAc_effectSize[lacStats$Gal.b1.4.GlcNAc_adj <= 0.01], lacStats$Gal.b1.4.GlcNAc_effectSize[lacStats$Gal.b1.4.GlcNAc_adj <= 0.01],
      col = featColors[lacStats$Gal.b1.4.GlcNAc_adj <= 0.01], pch =19,
      cex = 1.5,
-     main = '', xlab = '', ylab = '', axes = F)
+     main = '', xlab = '', ylab = '', axes = F,
+     xlim = c(-0.5, 0.5), ylim = c(-0.5, 0.5))
 cor.test(stats$Gal.b1.4.GlcNAc_effectSize, lacStats$Gal.b1.4.GlcNAc_effectSize)
 
 # 
@@ -1034,6 +1088,8 @@ colnames(lacStats) = gsub('Gal.b1.4.Glc', 'Lac', colnames(lacStats))
 
 stats = cbind(stats, lacStats)
 
+sigFeats = lacStats[,'Lac_adj'] < 0.01 # Logical vector, indicates if feature passes threshold for significance from WMW test, FDR of 1%
+
 # hImpFeats = rbind(rep(F,length(topImpfeats)),rep(F,length(topImpfeats)),topImpfeats,topImpfeats)
 hSigFeats = rbind(rep(F,length(sigFeats)),rep(F,length(sigFeats)),sigFeats,sigFeats)
 
@@ -1222,4 +1278,66 @@ pheatmap(plipFeat_stats,
          fontsize_col = 9,
          angle_col = 45)
 dev.off()
+
+
+
+###############
+# Follow-up
+###############
+
+unique(bsResiDat$seqClust50)[order(unique(bsResiDat$seqClust50))]
+
+cat('cluster\t\tLac\t\tLacNAc\n')
+for(i in 1:length(unique(bsResiDat$seqClust50))){
+  clu = unique(bsResiDat$seqClust50)[order(unique(bsResiDat$seqClust50))][i]
+  cat(clu, '\t\t')
+  
+  cat(sum(cuWeights[lacTags[,1] & bsResiDat$seqClust50 == clu]), '\t\t')
+  cat(sum(cuWeights[lacTags[,2] & bsResiDat$seqClust50 == clu]), '\n')
+  cat('', unique(bsResiDat$origine[bsResiDat$seqClust50 == clu]),'\n')
+  cat('', unique(bsResiDat$espece[bsResiDat$seqClust50 == clu]),'\n\n')
+}
+
+
+
+scaledFeats = predFeats  # Scale features between 0 & 1
+zeroCol = rep(F, ncol(predFeats))
+
+for(i in 1:ncol(scaledFeats)){
+  if (all(scaledFeats[,i] == 0)){
+    zeroCol[i] = T
+  } else{
+    scaledFeats[,i] = (scaledFeats[,i] - min(scaledFeats[,i])) / (max(scaledFeats[,i]) - min(scaledFeats[,i]))
+  }
+}
+
+scaledFeats = scaledFeats[,!zeroCol]
+
+lac.umap = umap(scaledFeats)
+
+
+plot(x = lac.umap$layout[,1], y = lac.umap$layout[,2],
+     #xlim = c(-6,7), ylim = c(-6,7),
+     pch = 19, #col = alpha(colors[labels.int], 0.6),
+     xlab = 'UMAP 1', ylab = 'UMAP 2', main = 'UMAP vis for Lac/LacNAc interactions',
+     xlim = c(-4.5,5.2), ylim = c(-8, 6.1))
+
+
+
+
+plot(x = lac.umap$layout[lacTags[,1],1], y = lac.umap$layout[lacTags[,1],2],
+     #xlim = c(-6,7), ylim = c(-6,7),
+     pch = 19, cex = 1.5,
+     col = alpha(ligColors[1], 0.6),
+     xlab = 'UMAP 1', ylab = 'UMAP 2', main = 'UMAP vis for Lac/LacNAc interactions',
+     xlim = c(-4.5,5.2), ylim = c(-8, 6.1))
+par(new = T)
+plot(x = lac.umap$layout[lacTags[,2],1], y = lac.umap$layout[lacTags[,2],2],
+     #xlim = c(-6,7), ylim = c(-6,7),
+     pch = 15, cex = 1.5,
+     # col = alpha(ligColors[2], 0.6),
+     col = alpha('dodgerblue1', 0.6),
+     xlab = '', ylab = '', main = '',
+     xlim = c(-4.5,5.2), ylim = c(-8, 6.1))
+legend(x = 'topright', legend = c('Lac', 'LacNAc'), col = c(ligColors[1], 'dodgerblue1'), pch = c(19, 15))
 
