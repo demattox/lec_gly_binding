@@ -13,161 +13,13 @@ library(Cairo)
 library(protr)
 library(doParallel)
 library(umap)
+library(ggplot2)
+library(vioplot)
+
 
 #######################
 # Functions
 #######################
-# 
-# pullDiverseCases <- function(scaledData, startInds, thresh, prevSampled = NA){
-#   
-#   if (any(is.na(prevSampled))) {
-#     # if no inds being passed in that were sampled from the positive class
-#     if (length(startInds) == 1) {
-#       out = startInds
-#     } else if (length(startInds) == 2) {
-#       if (suppressMessages(distance(scaledFeats[startInds,])) >= thresh) {
-#         out = startInds # Two binding sites are greater than the threshold distance from each other, keep both
-#       } else{
-#         out = sample(startInds, size = 1) # Two binding sites are within the threshold distance from each other, pick one at random
-#       }
-#       
-#     } else {
-#       cnter = 1
-#       out = rep(0, length(startInds)) # Hold the set of diverse indices
-#     }
-#   } else{
-#     # if inds are passed in from the positive class
-#     
-#     out = c(prevSampled, rep(0, length(startInds)))
-#     cnter = length(prevSampled) + 1
-#     
-#     if (length(startInds) == 1) {
-#       # One new neg site to compare to previously smapled positive sites
-#       
-#       distMat = suppressMessages(distance(x = rbind(scaledData[out[out != 0], ], scaledData[startInds, ]))) # Find all pairwise distances b/w binding sites in cluster
-#       if (is.matrix(distMat)){ # if more than one previously sampled binding site
-#         distMat = distMat[1:sum(out != 0), -1 * (1:sum(out != 0))] # Get the top n rows of the distance matrix dropping the first n columns, where n = the number of indices already sampled
-#       }
-#       if (!any(distMat < thresh)) {
-#         out[cnter] = startInds
-#       }
-#     }
-#   }
-#   
-#   
-#   if (any(out == 0)){
-#     while( length(startInds) >= 2 ){
-#       
-#       out[cnter] = sample(startInds, size = 1) # Sample an index randomly
-#       cnter = cnter + 1 # increase the sample count
-#       
-#       startInds = startInds[! startInds %in% out] # Drop sampled indices from vector of remaining indices
-#       
-#       distMat = suppressMessages(distance(x = rbind(scaledData[out[out != 0],], scaledData[startInds,]))) # Find all pairwise distances b/w binding sites in cluster
-#       distMat = distMat[1:sum(out != 0),-1*(1:sum(out != 0))] # Get the top n rows of the distance matrix dropping the first n columns, where n = the number of indices already sampled
-#       
-#       if (is.matrix(distMat)){
-#         distMat = apply(X = distMat, MARGIN = 2, FUN = min) # For each of the remaining binding sites, take the minimum pairwise distance to any sampled binding site
-#       }
-#       
-#       dropInds = startInds[distMat < thresh ]
-#       startInds = startInds[! startInds %in% dropInds]
-#       
-#       if(length(startInds) == 1){
-#         out[cnter] = startInds
-#       }
-#       
-#     }
-#   }
-#   
-#   out = out[out != 0]
-#   return(out)
-# }
-# 
-# sampleDiverseSitesByLig <- function(clusterIDs, testClust, featureSet, ligandTag, distThresh, scaledFeatureSet = featureSet){
-#   # Sample diverse binding sites with ligand and without ligand [ligandTag] for each cluster in clusterIDs, except the cluster held out for LO(C)O validation indicated by testClust
-#   # Samples binding sites from the specified feature set, calculates Euclidean distance b/w binding sites from scaledFeatureSet
-#   # Binding sites sampled randomly if Euc. distance to any previously sampled binding sites is greater than distThresh (median pariwise distance between all binding sites)
-#   
-#   # Drop the excluded cluster
-#   uniClusts = unique(clusterIDs)
-#   uniClusts = uniClusts[ ! uniClusts %in% testClust]
-#   
-#   dat = as.data.frame(matrix(0, nrow = nrow(featureSet), ncol = ncol(featureSet)))
-#   colnames(dat) = colnames(predFeats)
-#   dat$bound = F
-#   dat$clus = 0
-#   
-#   j = 1 # index for writing to returned dataframe (dat)
-#   
-#   for (i in 1:length(uniClusts)) {
-#     inds =  (1:nrow(featureSet))[clusterIDs == uniClusts[i]] # all the row indices matching a specific cluster 
-#     negInds = inds[! ligandTag[inds]] # Indices of binding sites w/o ligand
-#     posInds = inds[ligandTag[inds]] # Indices of binding sites w/ ligand
-#     
-#     if (length(posInds) > 0){
-#       outInds = pullDiverseCases(scaledData = scaledFeatureSet, startInds = posInds, thresh = distThresh)
-#     } else {
-#       outInds = NA
-#     }
-#     if (length(negInds > 0)){
-#       outInds = pullDiverseCases(scaledData = scaledFeatureSet, startInds = negInds, thresh = distThresh, prevSampled = outInds)
-#     }
-#     
-#     dat[(j:(j+length(outInds) - 1)), (1:ncol(predFeats))] = predFeats[outInds, ] # set feature values for representative binding sites
-#     dat$bound[(j:(j+length(outInds) - 1))] = ligandTag[outInds] # Set bound variable
-#     dat$clus[(j:(j+length(outInds) - 1))] = uniClusts[i] # Set cluster ID
-#     
-#     j = j + length(outInds)
-#   }
-#   dat = dat[-1*(j:nrow(dat)), ]
-#   dat$bound = as.factor(dat$bound)
-#   return(dat)
-# }
-
-# f2 <- function (data, lev = NULL, model = NULL, beta = 2) {
-#   precision <- posPredValue(data$pred, data$obs, positive = "TRUE")
-#   recall  <- sensitivity(data$pred, data$obs, postive = "TRUE")
-#   f2_val <- ((1 + beta^2) * precision * recall) / (beta^2 * precision + recall)
-#   names(f2_val) <- c("F2")
-#   f2_val
-# }
-
-# f3 <- function (data, lev = NULL, model = NULL, beta = 3) {
-#   precision <- posPredValue(data$pred, data$obs, positive = "TRUE")
-#   recall  <- sensitivity(data$pred, data$obs, postive = "TRUE")
-#   f3_val <- ((1 + beta^2) * precision * recall) / (beta^2 * precision + recall)
-#   names(f3_val) <- c("F3")
-#   f3_val
-# }
-
-pCnt <- function(x){
-  return(x/sum(x))
-}
-
-# getKPRFb <- function(conMatDF){
-#   # conMatDF has rows of different confusion matrices, with the columns ordered as TP, TN, FP, FN
-#   # sums each column and finds performance metrics
-#   f2TestCon = apply(X = conMatDF, MARGIN = 2, FUN = sum)
-#   
-#   TP = f2TestCon[[1]]
-#   TN = f2TestCon[[2]]
-#   FP = f2TestCon[[3]]
-#   FN = f2TestCon[[4]]
-#   
-#   f2_validationRecall = TP / ( TP + FN)
-#   f2_validationPrec = TP / (TP + FP)
-#   f2_validationF2 = ((1+(2^2)) * f2_validationPrec * f2_validationRecall) / (2^2 * f2_validationPrec + f2_validationRecall)
-#   # f3score = ((1+(3^2)) * f2_validationPrec * f2_validationRecall) / (3^2 * f2_validationPrec + f2_validationRecall)
-#   # f4score = ((1+(4^2)) * f2_validationPrec * f2_validationRecall) / (4^2 * f2_validationPrec + f2_validationRecall)
-#   randAcc = ((TN+FP)*(TN+FN) + (FN+TP)*(FP+TP)) / sum(c(TP + TN + FP + FN))^2
-#   testAcc = (TP+TN)/(TP+TN+FP+FN)
-#   f2_validationKappa = (testAcc - randAcc) / (1 - randAcc)
-#   return(list(kappa = f2_validationKappa,
-#               recall = f2_validationRecall,
-#               F2 = f2_validationF2,
-#               precision = f2_validationPrec))
-# }
 
 addSlash = function(string) {
   # Adds a trailing forward slash to the end of a string (ex path to a driectory) if it is not present
@@ -180,8 +32,6 @@ addSlash = function(string) {
 }
 
 colfunc = colorRampPalette(c("red","goldenrod","forestgreen","royalblue","darkviolet"))
-
-# perc.rank <- function(x) trunc(rank(x))/length(x)
 
 ###########################
 
@@ -275,6 +125,14 @@ neu23Tag = grepl('^NeuAc\\(a2-3\\)',ligSort50)
 ligSort50[neu23Tag]
 neu26Tag = grepl('^NeuAc\\(a2-6\\)',ligSort50)
 ligSort50[neu26Tag]
+
+for (i in 1:sum(neu26Tag)){
+  cat(ligSort50[neu26Tag][i], '\n')
+}
+
+for (i in 1:sum(neu23Tag)){
+  cat(ligSort50[neu23Tag][i], '\n')
+}
 
 sum(gsub('^NeuAc\\(a2-3\\)', 'NeuAc(a2-6)', ligSort50[neu23Tag]) %in% ligSort50[neu26Tag])
 
@@ -451,6 +309,21 @@ predFeats = predFeats[tag,]
 tag23 = tag23[tag]
 tag26 = tag26[tag]
 
+bsResiDat[tag23, c('pdb', 'iupac', 'bsiteSequence', 'longname')]
+bsResiDat[tag26, c('pdb', 'iupac', 'bsiteSequence', 'longname')]
+
+# Drop leftover glycans from N-glycosylation sites (1RVT and 1RV0), and non-canonical binding sites (1HGG)
+tag = row.names(bsResiDat) %in% c('1RV0_NDG:H:642', '1RV0_NDG:J:640', '1RV0_NDG:L:644',
+                                  '1RVT_NDG:H:742', '1RVT_NDG:J:740', '1RVT_NDG:L:744',
+                                  '1HGG_BGC:I:1', '1HGG_BGC:L:1', '1HGG_BGC:O:1')
+
+tag = !tag
+sum(tag)
+
+bsResiDat = bsResiDat[tag,]
+predFeats = predFeats[tag,]
+tag23 = tag23[tag]
+tag26 = tag26[tag]
 
 scaledFeats = predFeats  # Scale features between 0 & 1
 zeroCol = rep(F, ncol(predFeats))
@@ -467,13 +340,13 @@ neu.umap = umap(scaledFeats)
 
 summary(neu.umap$layout)
 
-xLim = c(-4.4,4.1)
-yLim = c(-4, 7)
+xLim = c(-3.1,3.8)
+yLim = c(-5.1, 5.1)
 
 # UMAP plot
 plot(x = neu.umap$layout[,1], y = neu.umap$layout[,2],
      pch = 19, #col = alpha(colors[labels.int], 0.6),
-     xlab = 'UMAP 1', ylab = 'UMAP 2', main = "UMAP vis for 3' & 6' interactions",
+     xlab = 'UMAP 1', ylab = 'UMAP 2', main = "UMAP vis for 3' & 6' HA interactions",
      xlim = xLim, ylim = yLim)
 
 
@@ -481,7 +354,7 @@ plot(x = neu.umap$layout[,1], y = neu.umap$layout[,2],
 plot(x = neu.umap$layout[tag23,1], y = neu.umap$layout[tag23,2],
      pch = 19, cex = 1.5,
      col = alpha('dodgerblue1', 0.6),
-     xlab = 'UMAP 1', ylab = 'UMAP 2', main = "UMAP vis for 3' & 6' interactions",
+     xlab = 'UMAP 1', ylab = 'UMAP 2', main = "UMAP vis for 3' & 6' HA interactions",
      xlim = xLim, ylim = yLim)
 par(new = T)
 plot(x = neu.umap$layout[tag26,1], y = neu.umap$layout[tag26,2],
@@ -533,7 +406,7 @@ plot(x = neu.umap$layout[bsResiDat$strain == strainLst[1],1], y = neu.umap$layou
      pch = strainPnts[1],
      cex = 1.5,
      col = alpha(strainCols[1], 0.7),
-     xlab = 'UMAP 1', ylab = 'UMAP 2', main = "UMAP vis for 3' & 6' interactions",
+     xlab = 'UMAP 1', ylab = 'UMAP 2', main = "UMAP vis for 3' & 6' HA interactions",
      xlim = xLim, ylim = yLim)
 for (i in 2:length(strainCols)){
   par(new = T)
@@ -583,7 +456,7 @@ plot(x = neu.umap$layout[bsResiDat$strain == strainLst[1],1], y = neu.umap$layou
      pch = strainPnts[1],
      cex = strainWts[bsResiDat$strain == strainLst[1]],
      col = alpha(strainCols[1], 0.7),
-     xlab = 'UMAP 1', ylab = 'UMAP 2', main = "UMAP vis for 3' & 6' interactions",
+     xlab = 'UMAP 1', ylab = 'UMAP 2', main = "UMAP vis for 3' & 6' HA interactions",
      xlim = xLim, ylim = yLim)
 # text(x = mean(neu.umap$layout[bsResiDat$strain == strainLst[1],1]), y = mean(neu.umap$layout[bsResiDat$strain == strainLst[1],2]),
 #      labels = strainLst[1],
@@ -754,6 +627,7 @@ for(i in 1:ncol(neuTags)){
 # neuStats = neuStats[,grepl('^a26_NeuAc', colnames(neuStats))]
 
 sum(neuStats[,grepl('_adj$', colnames(neuStats))] < 1e-16)
+neuStats[neuStats[,grepl('_adj$', colnames(neuStats))] < 1e-16,]
 
 # superSigTag = neuStats[,grepl('_adj$', colnames(neuStats))] < 1e-16
 # neuStats[,grepl('_adj$', colnames(neuStats))][superSigTag] <- 10**(-1*runif(sum(superSigTag), max = -log10(3e-19), min = -log10(1e-16))) # Sample from a log-uniform distribution
@@ -762,7 +636,10 @@ sum(neuStats[,grepl('_adj$', colnames(neuStats))] < 1e-16)
 #####
 # HA Only Volcano Plots
 #####
-
+dev.off()
+pdf(file = 'analysis/fine_specificity/HA_23-26/volcano.pdf',
+    height = 8.62,
+    width = 11.2)
 xLim = c(-0.5,0.5)
 yLim = c(0,(-log10(min(neuStats[,grepl('_adj$', colnames(neuStats))])) + 1))
 # for(i in 1:ncol(tag26)){
@@ -810,7 +687,7 @@ for(i in 1){
        xlab = "", ylab = "", axes = F, main = "",
        xlim = xLim, ylim = yLim)
 }
-
+dev.off()
 
 
 #####
@@ -1047,6 +924,111 @@ downFeats$y = -log10(downFeats$a26_NeuAc_adj)
 downFeats = downFeats[order(downFeats$y,decreasing = T),]
 downFeats
 
+predFeats[bsResiDat$pdb == '3UBE', sigFeats]
+
+predFeats[bsResiDat$pdb == '1RVX', sigFeats]
+
+unique(bsResiDat[,c(1,9,165,164)])
+
+
+#####
+# T155V
+#####
+
+bsResiDat[bsResiDat$VAL_bin2 > 0, c('iupac','strain', 'VAL_bin2')]
+
+bsResiDat[bsResiDat$type == 'H10', c('iupac','strain', 'VAL_bin2')]
+bsResiDat[bsResiDat$type == 'H7', c('iupac','strain', 'VAL_bin2')]
+bsResiDat[bsResiDat$type == 'H3', c('iupac','strain', 'VAL_bin2', 'THR_bin2')]
+
+# PDB IDs HA by type/subtype and ligand
+## Formatted for cpy/pst into python
+for (i in 1:length(typeLst)){
+  cat(typeLst[i],'\n')
+  cat(typeLst[i], ' with a23 SA\n', paste0(',"', unique(bsResiDat$pdb[bsResiDat$type == typeLst[i] & tag23]), '"'), '\n', sep = '')
+  cat(typeLst[i], ' with a26 SA\n', paste0(',"', unique(bsResiDat$pdb[bsResiDat$type == typeLst[i] & tag26]), '"'), '\n', sep = '')
+}
+
+
+h1_26_V = c(4.0,4.1,4.0,4.1,4.2,4.4,4.2,4.3,4.1,4.0,4.1,4.2,4.4,4.1,4.2) # Copied over from output of commented out code at the bottom of bsResiFeatures.py script
+h1_26_T = c(4.0,4.2,4.1,4.0,4.1,4.2,4.6)
+
+h1_23_V = c(3.8,4.6,4.2,4.4,4.4,4.1,4.4,4.4)
+h1_23_T = c(3.9,4.1,4.0,4.0,4.0,4.1,4.5)
+
+
+h1_a26_155 = data.frame(ligand = rep("6'", length(c(h1_26_V, h1_26_T))),
+                        residue = c(rep("Valine", length(h1_26_V)), rep("Threonine", length(h1_26_T))),
+                        distance = c(h1_26_V, h1_26_T))
+
+h1_a23_155 = data.frame(ligand = rep("3'", length(c(h1_23_V, h1_23_T))),
+                        residue = c(rep("Valine", length(h1_23_V)), rep("Threonine", length(h1_23_T))),
+                        distance = c(h1_23_V, h1_23_T))
+
+
+xLim = c(0.5,2.5)
+yLim = c(3.6,4.8)
+
+par(mar = c(5.6, 7.1, 5.1, 4.1), # change the margins
+    lwd = 2, # increase the line thickness
+    cex.axis = 1.5, # increase default axis label size
+    cex.lab = 2
+)
+# par(cex.lab=1.5, mar = c(5, 4, 4, 4) + 0.3)
+plot(0,0,col = 'white', xlab = '',ylab = '',type="n",
+     axes=FALSE,ann=FALSE,
+     xlim = xLim,
+     ylim = yLim)
+
+vioplot(h1_a26_155$distance[h1_a26_155$residue == 'Valine'], at = 1, side = 'left',
+        col = ligColors[1],
+        xlim = xLim, ylim = yLim,
+        add = T,
+        plotCentre = "line")
+vioplot(h1_a23_155$distance[h1_a23_155$residue == 'Valine'], at = 1, side = 'right',
+        col = ligColors[2],
+        xlim = xLim, ylim = yLim,
+        add = T,
+        plotCentre = "line")
+par(new = T)
+plot(0.95,4, pch = 21, # contact w/ 6' @ 4 Ang
+     cex = 2.5, col = 'black', bg = 'grey40',
+     xlim = xLim, ylim = yLim,
+     xlab = '',ylab = '', axes = F)
+par(new = T)
+plot(1.05,3.8, pch = 21, # contact w/ 3' @ 3.8 Ang
+     cex = 2.5, col = 'black', bg = 'grey40',
+     xlim = xLim, ylim = yLim,
+     xlab = '',ylab = '', axes = F)
+
+vioplot(h1_a26_155$distance[h1_a26_155$residue == 'Threonine'], at = 2, side = 'left',
+        col = ligColors[1],
+        xlim = xLim, ylim = yLim,
+        add = T,
+        plotCentre = "line")
+vioplot(h1_a23_155$distance[h1_a23_155$residue == 'Threonine'], at = 2, side = 'right',
+        col = ligColors[2],
+        xlim = xLim, ylim = yLim,
+        add = T,
+        plotCentre = "line")
+
+par(new = T)
+plot(rep(2.05,2),c(3.9, 4), pch = 21, # contact w/ 3' @ 3.9 & 4 Ang
+     cex = 2.5, col = 'black', bg = 'grey40',
+     xlim = xLim, ylim = yLim,
+     xlab = '',ylab = '', axes = F)
+
+axis(side=1,at=seq.int(1,2,1), labels = c('Valine', 'Threonine'), cex = 1)
+axis(side=2,at=pretty(yLim), las = 2)
+title(xlab = "", ylab = expression('Minimum distance from resiude to glycan(' ~ ring(A) ~ ')'), main = "H1 T155V", cex.main = 2, cex.lab = 2)
+
+legend(x = 'topright',
+       legend = c('Hydrophobic contact', "6' Sialoglycan", "3' Sialoglycan"),
+       pch = c(19, 15, 15),
+       pt.cex = c(2,2.5,2.5),
+       col = c('grey40', ligColors),
+       cex = 1.8)
+
 
 #####
 # HA Only UMAP with sig feats
@@ -1067,13 +1049,13 @@ neu.umap = umap(scaledFeats[,sigFeats])
 
 summary(neu.umap$layout)
 
-xLim = c(-3.6,2.9)
-yLim = c(-4, 3.5)
+xLim = c(-3.7,5.2)
+yLim = c(-3.4, 2.4)
 
 # UMAP plot
 plot(x = neu.umap$layout[,1], y = neu.umap$layout[,2],
      pch = 19, #col = alpha(colors[labels.int], 0.6),
-     xlab = 'UMAP 1', ylab = 'UMAP 2', main = "UMAP vis for 3' & 6' interactions",
+     xlab = 'UMAP 1', ylab = 'UMAP 2', main = "UMAP vis for 3' & 6' HA interactions - 35 sig feats",
      xlim = xLim, ylim = yLim)
 
 
@@ -1081,7 +1063,7 @@ plot(x = neu.umap$layout[,1], y = neu.umap$layout[,2],
 plot(x = neu.umap$layout[tag23,1], y = neu.umap$layout[tag23,2],
      pch = 19, cex = 1.5,
      col = alpha('dodgerblue1', 0.6),
-     xlab = 'UMAP 1', ylab = 'UMAP 2', main = "UMAP vis for 3' & 6' interactions",
+     xlab = 'UMAP 1', ylab = 'UMAP 2', main = "UMAP vis for 3' & 6' HA interactions - 35 sig feats",
      xlim = xLim, ylim = yLim)
 par(new = T)
 plot(x = neu.umap$layout[tag26,1], y = neu.umap$layout[tag26,2],
@@ -1090,7 +1072,7 @@ plot(x = neu.umap$layout[tag26,1], y = neu.umap$layout[tag26,2],
      col = alpha('firebrick2', 0.6),
      xlab = '', ylab = '', main = '',
      xlim = xLim, ylim = yLim)
-legend(x = 'topright', legend = c("3' SA", "6' SA"), col = c('dodgerblue1', 'firebrick2'), pch = c(19, 19))
+legend(x = 'bottomright', legend = c("3' SA", "6' SA"), col = c('dodgerblue1', 'firebrick2'), pch = c(19, 19))
 
 
 # Color by subtype & ligand
@@ -1112,7 +1094,7 @@ plot(x = neu.umap$layout[bsResiDat$strain == strainLst[1],1], y = neu.umap$layou
      pch = strainPnts[1],
      cex = 1.5,
      col = alpha(strainCols[1], 0.9),
-     xlab = 'UMAP 1', ylab = 'UMAP 2', main = "HA UMAP vis. for 3' & 6' interactions with sig. features",
+     xlab = 'UMAP 1', ylab = 'UMAP 2', main = "UMAP vis for 3' & 6' HA interactions - 35 sig feats",
      xlim = xLim, ylim = yLim)
 # text(x = mean(neu.umap$layout[bsResiDat$strain == strainLst[1],1]), y = mean(neu.umap$layout[bsResiDat$strain == strainLst[1],2]),
 #      labels = strainLst[1],
@@ -1143,7 +1125,7 @@ for (i in 2:length(strainLst)){
   #      labels = strainLst[i],
   #      col = strainCols[i])
 }
-legend(x = 'topright', legend = c(strainLst, '', "6' SA", "3' SA"), col = c(strainCols, 'white', 'firebrick2', 'dodgerblue1'), pch = c(strainPnts, rep(1,3)), pt.cex = 2, bty = 'n')
+legend(x = 'bottomright', legend = c(strainLst, '', "6' SA", "3' SA"), col = c(strainCols, 'white', 'firebrick2', 'dodgerblue1'), pch = c(strainPnts, rep(1,3)), pt.cex = 2, bty = 'n')
 
 
 
@@ -1152,7 +1134,7 @@ legend(x = 'topright', legend = c(strainLst, '', "6' SA", "3' SA"), col = c(stra
 plot(x = neu.umap$layout[tag23,1], y = neu.umap$layout[tag23,2],
      pch = 19, cex = 1.5,
      col = alpha('dodgerblue1', 0.6),
-     xlab = 'UMAP 1', ylab = 'UMAP 2', main = "UMAP vis for 3' & 6' interactions \nand representative interactions",
+     xlab = 'UMAP 1', ylab = 'UMAP 2', main = "UMAP vis for 3' & 6' HA interactions - 35 sig feats \nand representative interactions",
      xlim = xLim, ylim = yLim)
 par(new = T)
 plot(x = neu.umap$layout[tag26,1], y = neu.umap$layout[tag26,2],
@@ -1161,7 +1143,7 @@ plot(x = neu.umap$layout[tag26,1], y = neu.umap$layout[tag26,2],
      col = alpha('firebrick2', 0.6),
      xlab = '', ylab = '', main = '', axes = F,
      xlim = xLim, ylim = yLim)
-legend(x = 'topleft', legend = c("3' SA", "6' SA"), col = c('dodgerblue1', 'firebrick2'), pch = c(19, 19))
+legend(x = 'bottomright', legend = c("3' SA", "6' SA"), col = c('dodgerblue1', 'firebrick2'), pch = c(19, 19))
 
 
 for (i in 1:ncol(neuTags)){
@@ -1183,7 +1165,7 @@ plot(x = neu.umap$layout["3UBE_GAL:M:1",1], y = neu.umap$layout["3UBE_GAL:M:1",2
      xlab = '', ylab = '', main = '', axes = F,
      xlim = xLim, ylim = yLim)
 text(x = neu.umap$layout["3UBE_GAL:M:1",1], y = neu.umap$layout["3UBE_GAL:M:1",2],
-     labels = "3UBE_GAL:M:1", pos = 3, offset = 1, col = 'firebrick2')
+     labels = "3UBE_GAL:M:1", pos = 1, offset = 1, col = 'firebrick2')
 # par(new=T)
 # plot(x = neu26.umap["a26_NeuAc",1], y = neu26.umap["a26_NeuAc",2],
 #      cex =1,
@@ -1225,12 +1207,39 @@ colnames(globPsimmat) = names(allSeqs)
 
 plot(density(globPsimmat))
 
+corrplot::corrplot(globPsimmat)
+
+# Rename and order sequences by homology for hemagglutinin MSA
+haSeqsOut = allSeqs
+
+globDistMat = globPsimmat*-1 + 1 # convert sequence similarities to distances
+seqClusts = hclust(d = as.dist(globDistMat))
+
+haSeqsOut = haSeqsOut[seqClusts$order]
+names(haSeqsOut) = paste0(haStrains, rep(' (', length(allSeqs)), names(allSeqs), rep(')', length(allSeqs)))[seqClusts$order]
+
+for (i in 1:length(haSeqsOut)){ # Reorder clusters to match color bar from pheatmap vis below (clusters on similarity instead of pseudo-distance_)
+  cat(i, ' ', names(haSeqsOut)[i], '\n')
+}
+
+haSeqsOut = haSeqsOut[c(3:11, 14, 13, 12, 15:19, # H5
+                        20:29, # H1
+                        1,2, # B
+                        30:32, # H3
+                        33, # H10
+                        34:42)] # H7
+
+seqinr::write.fasta(haSeqsOut, names = gsub('', '', names(haSeqsOut)), file.out = 'data/structures/holo/seqs/nrSeqs/haSeqs.fst')
+# seqinr::write.fasta(haSeqsOut, names = gsub('', '', names(allSeqs)[seqClusts$order]), file.out = 'data/structures/holo/seqs/nrSeqs/haSeqs_pdbs.fst')
+
+
+
 ha.umap = umap(globPsimmat)
 
 summary(ha.umap$layout)
 
-xLim = c(-3.8,7)
-yLim = c(-7.5, 10.1)
+xLim = c(-8.3,10.5)
+yLim = c(-16.5, 18.5)
 
 row.names(ha.umap$layout)
 
@@ -1320,6 +1329,9 @@ corrplot::corrplot(globPsimmat, order = 'hclust')
 
 
 globDistMat = globPsimmat*-1 + 1
+
+plot(density(globPsimmat))
+plot(density(globDistMat))
 
 ha.mds = cmdscale(globDistMat, eig = T, k=2)
 
@@ -1434,14 +1446,14 @@ plot(x = neu.mds$points[ha23,1], y = neu.mds$points[ha23,2],
      pch = 19, cex = 1.5,
      col = alpha('dodgerblue1', 0.6),
      xlab = 'UMAP 1', ylab = 'UMAP 2', main = "UMAP vis for HA sequence similarities",
-     xlim = c(-0.4,0.6), ylim = c(-.3, 0.65))
+     xlim = c(-0.42,0.5), ylim = c(-.35, 0.4))
 par(new = T)
 plot(x = neu.mds$points[ha26,1], y = neu.mds$points[ha26,2],
      pch = 19, cex = 1.5,
      # col = alpha(ligColors[2], 0.6),
      col = alpha('firebrick2', 0.6),
      xlab = '', ylab = '', main = '', axes = F,
-     xlim = c(-0.4,0.6), ylim = c(-.3, 0.65))
+     xlim = c(-0.42,0.5), ylim = c(-.35, 0.4))
 legend(x = 'bottomright', legend = c("3' SA", "6' SA"), col = c('dodgerblue1', 'firebrick2'), pch = c(19, 19))
 
 
@@ -1450,21 +1462,21 @@ plot(x = neu.mds$points[haStrains == strainLst[1] & ha26,1], y = neu.mds$points[
      cex = 2.5,
      col = alpha('firebrick2', 0.7),
      xlab = '', ylab = '', main = "", axes = F,
-     xlim = c(-0.4,0.6), ylim = c(-.3, 0.65))
+     xlim = c(-0.42,0.5), ylim = c(-.35, 0.4))
 par(new=T)
 plot(x = neu.mds$points[haStrains == strainLst[1] & ha23,1], y = neu.mds$points[haStrains == strainLst[1] & ha23,2],
      pch = strainPnts[1],
      cex = 2.5,
      col = alpha('dodgerblue1', 0.7),
      xlab = '', ylab = '', main = "", axes = F,
-     xlim = c(-0.4,0.6), ylim = c(-.3, 0.65))
+     xlim = c(-0.42,0.5), ylim = c(-.35, 0.4))
 par(new=T)
 plot(x = neu.mds$points[haStrains == strainLst[1],1], y = neu.mds$points[haStrains == strainLst[1],2],
      pch = strainPnts[1],
      cex = 1.5,
      col = alpha(strainCols[1], 0.9),
      xlab = 'Dim 1', ylab = 'Dim 2', main = "MDS of HA interaction distances (Pearson Cor 28 sig feats)",
-     xlim = c(-0.4,0.6), ylim = c(-.3, 0.65))
+     xlim = c(-0.42,0.5), ylim = c(-.35, 0.4))
 for (i in 2:length(strainLst)){
   par(new = T)
   plot(x = neu.mds$points[haStrains == strainLst[i] & ha26,1], y = neu.mds$points[haStrains == strainLst[i] & ha26,2],
@@ -1472,21 +1484,21 @@ for (i in 2:length(strainLst)){
        cex = 2.5,
        col = alpha('firebrick2', 0.7),
        xlab = '', ylab = '', main = "", axes = F,
-       xlim = c(-0.4,0.6), ylim = c(-.3, 0.65))
+       xlim = c(-0.42,0.5), ylim = c(-.35, 0.4))
   par(new=T)
   plot(x = neu.mds$points[haStrains == strainLst[i] & ha23,1], y = neu.mds$points[haStrains == strainLst[i] & ha23,2],
        pch = strainPnts[i],
        cex = 2.5,
        col = alpha('dodgerblue1', 0.7),
        xlab = '', ylab = '', main = "", axes = F,
-       xlim = c(-0.4,0.6), ylim = c(-.3, 0.65))
+       xlim = c(-0.42,0.5), ylim = c(-.35, 0.4))
   par(new=T)
   plot(x = neu.mds$points[haStrains == strainLst[i],1], y = neu.mds$points[haStrains == strainLst[i],2],
        pch = strainPnts[i],
        cex = 1.5,
        col = alpha(strainCols[i], 0.9),
        xlab = '', ylab = '', main = "", axes = F,
-       xlim = c(-0.4,0.6), ylim = c(-.3, 0.65))
+       xlim = c(-0.42,0.5), ylim = c(-.35, 0.4))
 }
 legend(x = 'topright', legend = c(strainLst, '', "6' SA", "3' SA"), col = c(strainCols, 'white', 'firebrick2', 'dodgerblue1'), pch = c(strainPnts, rep(1,3)), pt.cex = 2, bty = 'n')
 
@@ -1560,6 +1572,19 @@ pheatmap(globPsimmat,
          clustering_method = 'complete')
 dev.off()
 
+pdf(file = "analysis/fine_specificity/HA_23-26/wholeSeqSim_lower_nogaps.pdf",
+    height = 9, width = 10)
+pheatmap(globPsimmat,
+         color = colorRampPalette(c("ivory", "darkslateblue"))(length(breakLst)),
+         border_color = 'ivory',
+         breaks = breakLst,
+         cellwidth = cWidth, cellheight = cHeight,
+         labels_col = paste0(gsub('^Type ', '', haStrains), rep(' (', length(allSeqs)), names(allSeqs), rep(')', length(allSeqs))),
+         annotation_row = annot,
+         annotation_colors = annot_cols, 
+         clustering_method = 'complete')
+dev.off()
+
 # Cluster interactions by binding site sequences
 bsSeqs = vector(mode = 'list', length = nrow(bsResiDat))
 names(bsSeqs) = row.names(bsResiDat)
@@ -1583,7 +1608,7 @@ corrplot::corrplot(locBSmat, order = 'hclust')
 colnames(globBSmat) = names(bsSeqs)
 colnames(locBSmat) = names(bsSeqs)
 
-breakLst = seq(0,1,0.01)
+
 
 annot <- data.frame(Ligand = rep("", nrow(globBSmat)))
 row.names(annot) = row.names(globBSmat)
@@ -1605,18 +1630,30 @@ names(Type) = levels(annot$Type)
 
 annot_cols <- list(Ligand = Ligand, Type = Type)
 
+cWidth = 7.5
+cHeight = 7.5
+
+breakLst = seq(-1,1,0.01)
+
+dev.off()
+pdf(file = "analysis/fine_specificity/HA_23-26/globalBSseqSim.pdf",
+    height =20, width = 20)
 pheatmap(globBSmat,
-         color = colorRampPalette(c("ivory", "darkslateblue"))(length(breakLst)),
+         color = colorRampPalette(c("firebrick3","ivory", "darkslateblue"))(length(breakLst)),
          border_color = 'ivory',
          breaks = breakLst,
-         cutree_cols = 7,
-         cutree_rows = 7,
+         cutree_cols = 5,
+         cutree_rows = 5,
+         cellwidth = cWidth, cellheight = cHeight,
          labels_row = bsResiDat$pdb,
-         labels_col = bsResiDat$strain,
-         annotation_col = annot,
+         labels_col = paste0(gsub('^Type ', '', bsResiDat$strain), rep(' (', nrow(bsResiDat)), bsResiDat$pdb, rep(')', nrow(bsResiDat))),
+         annotation_row = annot,
          annotation_colors = annot_cols,
-         clustering_method = 'complete')
+         fontsize_col = 9)
+         # clustering_method = 'complete')
+dev.off()
 
+breakLst = seq(0,1,0.01)
 
 pheatmap(locBSmat,
          color = colorRampPalette(c("ivory", "darkslateblue"))(length(breakLst)),
@@ -1624,6 +1661,7 @@ pheatmap(locBSmat,
          breaks = breakLst,
          cutree_cols = 5,
          cutree_rows = 5,
+         cellwidth = cWidth, cellheight = cHeight,
          labels_row = bsResiDat$pdb,
          labels_col = bsResiDat$strain,
          annotation_col = annot,
@@ -1643,6 +1681,11 @@ for(i in 1:ncol(scaledFeats)){
   }
 }
 cor28Feats = cor(t(scaledFeats[,sigFeats]))
+
+corrplot::corrplot(cor28Feats)
+
+# cor28Feats = cor(t(predFeats[,sigFeats]), method = 'spear')
+# corrplot::corrplot(cor28Feats)
 
 
 
@@ -1672,20 +1715,21 @@ cWidth = 7.5
 cHeight = 7.5
 
 dev.off()
-pdf(file = "analysis/fine_specificity/HA_23-26/28FeatCor.pdf",
+pdf(file = "analysis/fine_specificity/HA_23-26/35FeatCor.pdf",
     height =20, width = 20)
 pheatmap(cor28Feats,
-         color = colorRampPalette(c("gold2", "ivory", "darkslateblue"))(length(breakLst)),
+         color = colorRampPalette(c("firebrick3","ivory", "darkslateblue"))(length(breakLst)),
          border_color = 'ivory',
          na_col = 'white',
          breaks = breakLst,
-         cutree_cols = 8,
-         cutree_rows = 8,
+         cutree_cols = 6,
+         cutree_rows = 6,
          labels_row = paste0(gsub('^Type ', '', bsResiDat$strain), rep(' (', nrow(bsResiDat)), bsResiDat$pdb, rep(')', nrow(bsResiDat))),
          labels_col = bsResiDat$pdb,
          cellwidth = cWidth, cellheight = cHeight,
          annotation_col = annot,
-         annotation_colors = annot_cols, fontsize_row = 10)
+         annotation_colors = annot_cols,
+         fontsize_row = 9)
          # clustering_method = 'complete')
 dev.off()
 # 1350 x 1350
@@ -1734,7 +1778,7 @@ names(Type) = levels(annot$Type)
 annot_cols <- list(Ligand = Ligand, Type = Type)
 
 pheatmap(cor28FeatsStruct,
-         color = colorRampPalette(c("ivory", "darkslateblue"))(length(breakLst)),
+         color = colorRampPalette(c("firebrick3","ivory", "darkslateblue"))(length(breakLst)),
          border_color = 'ivory',
          breaks = breakLst,
          cutree_cols = 6,

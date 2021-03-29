@@ -12,7 +12,7 @@ import os
 import glob
 import collections
 import dill
-# import numpy as np
+import numpy as np
 import Bio.PDB
 # from Bio.PDB.DSSP import make_dssp_dict
 
@@ -228,6 +228,7 @@ if __name__ == '__main__':
         
                 # # Print bsite resiudes in proper format for pymol
                 # # bin 1
+                # print(lig)
                 # out = 'sele '
                 # for chainKey in bin1Resis.keys():
                 #     if out == 'sele ':
@@ -300,8 +301,79 @@ if __name__ == '__main__':
                 
     
 
-    
-    
-    
-    
+# Investigating residue at position 155 in different HA types
+
+# HA_pdbs = {}
+# HA_pdbs['H1'] = {'a23' : ["1RV0","1RVX","3HTT","3UBJ","3UBQ"],
+#                  'a26' : ["1RVT","1RVZ","3HTQ","3UBE","3UBN"]}
+# HA_pdbs['H3'] = {'a23' : ["1HGG","1MQM"],
+#                  'a26' : ["1MQN"]}
+# HA_pdbs['H5'] = {'a23' : ["3ZNK","3ZNL","3ZNM","3ZPB","4BGX","4BGY","4BH1","4CQQ","4CQW","4CQY","4CQZ"],
+#                  'a26' : ["4BH0","4BH3","4BH4","4CQR","4CQU","4CQX"]}
+# HA_pdbs['H7'] = {'a23' : ["3M5H","4BSI"],
+#                  'a26' : ["3M5I","4BSB","4BSC","4BSD","4BSE","4BSF","4BSH"]}
+# HA_pdbs['H10'] = {'a26' : ["4D00"]}
+# HA_pdbs['B'] = {'a23' : ["2RFT"],
+#                 'a26' : ["2RFU"]}
+
+
+# resi_positions = {'H1' : [155], # Analogous positions for T155V in H1 for other types/subtypes
+#                    'H3' : [155],
+#                    'H5' : [150, 151],
+#                    'H7' : [144, 155],
+#                    'H10': [146],
+#                    'B'  : [160]}
+
+# HA_resis = collections.defaultdict(lambda: collections.defaultdict(list)) # Nest default dicts to hold {['HA type'] : ['ligand type'] : [residue list]} same structure as HA_pdbs
+
+
+# for h in HA_pdbs.keys():
+#     print(h)
+#     for l in HA_pdbs[h].keys():
+#         print(l)
+#         for pdb in HA_pdbs[h][l]:
+#             print(pdb)
+#             plipDat = allPLIP[pdb]
+#             for lig in plipDat.bsites:
+#                 print(lig)
+#                 bs = plipDat.bsites[lig]
+#                 out = []
+#                 for res in bs.bs_res:
+#                     if res['resnr'] in resi_positions[h]:
+#                         out.append(res)
+#                 if out:
+#                     if len(out) == 2:
+#                         out = out[np.argmin([o['min_dist'] for o in out])]
+#                     HA_resis[h][l].extend(out)
+#                 #     print(out)
+#                 # else:
+#                 #     print('----------------\n\tMISSING ' + pdb + ' ' + lig + '\n----------------\n')
+                
+# ## H1
+# h = 'H1'
+
+# h = 'B'
+
+# print("6' with Val")
+# print(','.join([str(r['min_dist']) for r in HA_resis[h]['a26'] if r['aa'] == 'VAL']))
+# print('Contacts at distances: ' + ','.join([str(r['min_dist']) for r in HA_resis[h]['a26'] if r['aa'] == 'VAL' and r['contact']]))
+
+# print("3' with Val")
+# print(','.join([str(r['min_dist']) for r in HA_resis[h]['a23'] if r['aa'] == 'VAL']))
+# print('Contacts at distances: ' + ','.join([str(r['min_dist']) for r in HA_resis[h]['a23'] if r['aa'] == 'VAL' and r['contact']]))
+# print()
+
+
+# print("6' with Thr")
+# print(','.join([str(r['min_dist']) for r in HA_resis[h]['a26'] if r['aa'] == 'THR']))
+# print('Contacts at distances: ' + ','.join([str(r['min_dist']) for r in HA_resis[h]['a26'] if r['aa'] == 'THR' and r['contact']]))
+
+# print("3' with Thr")
+# print(','.join([str(r['min_dist']) for r in HA_resis[h]['a23'] if r['aa'] == 'THR']))
+# print('Contacts at distances: ' + ','.join([str(r['min_dist']) for r in HA_resis[h]['a23'] if r['aa'] == 'THR' and r['contact']]))
+
+
+
+
+
     
