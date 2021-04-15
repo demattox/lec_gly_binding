@@ -47,7 +47,7 @@ qcDir = './analysis/QC/'
 
 ########################################################################
 # Thresholds and defaults
-COV_THRESH = 1.7 # 1.7 angstrom covalent bond threshold, drop to ~1.43 for C-O bond length?
+COV_THRESH = 1.7 # 1.7 angstrom covalent bond threshold
 CENTROID_THRESH = 1.7 # If the centroids of the residues potentially missing a covalent link are less than 1.7 Ang apart, don't inlcude
 CA_THRESH = 3.0 # "Max. distance between metal ion and interacting atom (Harding, 2001)" from plip/plip/modules/config.py
 CHAIN_LEN_THRESH =  15 # If a glycan is covalently linked to a protein chain less than this threshold, glycan treated as ligand, otherwise treated as glycosylation and removed from analysis
@@ -288,7 +288,7 @@ if __name__ == '__main__':
     
         linkPairs = [] # Hold pairs of hetatoms from PDB within at the threshold distance
         linkCentDists = {} # Store the distances between centroids for pairs of hetatms within the threshold distance (looking for overlapping anomers)
-        proteinLinks = [] # Stores tuples of potential N/O linked glycans stored as ligands, and a list of bioPDB residues they are within the threshold distance of
+        proteinLinks = [] # Stores tuples of potential N/O/C/S linked glycans stored as ligands, and a list of bioPDB residues they are within the threshold distance of
         resiCentroids = [] # Stores tuples of potential centroid overlaps among HETATMs
     
         for res in model.get_residues():

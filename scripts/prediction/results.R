@@ -1275,6 +1275,10 @@ for (i in 1:ncol(medFeatPercentiles)){
 }
 
 
+# Global correlation
+cor.test(unlist(abs(stats[,grepl('_effectSize$', colnames(stats))])), unlist(stratAllFeatsImp))
+
+
 ##############################################
 ### Figure 3 panels B-D
 ##############################################
@@ -2301,6 +2305,7 @@ d2Dists_fig4 = d2Dists[c('1SID_BGC:I:1',
 
 
 ###################
+dev.off()
 pdf(file = paste('./manuscript/figures/subplots/', 
                  'sia_neuac_hiMan_d2plots',
                  '.pdf', sep = ''),
@@ -2308,13 +2313,15 @@ pdf(file = paste('./manuscript/figures/subplots/',
     width = 9.5, height = 8)
 par(mfrow = c(3,1),
     cex.lab = 1.5,
-    cex.axis = 1.2,
-    cex.main = 2)
+    cex.axis = 1.8,
+    cex.main = 2.5,
+    mai = c(0.51, 0.11, 0.11, .51),
+    mar = c(3.1, 3.1, 4.1, 1.1))
 xmax = 54 # plot values from first 54 bins (xlim of 27)
 ymax = 70000
 scale = 10000
 threshStrings = c('_4Ang$', '_6Ang$', '_8Ang$', '_10Ang$')
-mainTitles = c('Sialic Acid', 'NeuAc', 'High Mannose')
+mainTitles = c('Terminal NeuAc Group', 'NeuAc', 'High mannose group')
 tCols = c('magenta', "firebrick3", 'darkorange', 'gold2')
 
 for (i in 1:nrow(d2Dists_fig4)){
@@ -2326,20 +2333,28 @@ for (i in 1:nrow(d2Dists_fig4)){
     if (t ==4){
       barplot(height = c(0,as.numeric(d2Dists_fig4[i,grepl(threshStrings[t], colnames(d2Dists_fig4))])[1:xmax])/scale,
               width = 1, space = 0,
-              ylab = '', xlab = 'Distances between pairs of surface points (\uc5)', main = mainTitles[i],
+              ylab = '', xlab = '', main = mainTitles[i], # 'Distances between pairs of surface points (\uc5);
               ylim = c(0, ymax/scale),
               axes = F,
               names.arg = x,
               col = alpha(tCols[t],0.9))
       axis(side = 1, at = c(0:xmax), labels = FALSE)
       axis(side = 2, at = c(0:7), labels = c(0:7), line = -0.5)
-      mtext('Counts (10k)', side = 2, line = 2, cex = 1, col = alpha('black',1))  # Add y axis label
+      #mtext('Counts (10k)', side = 2, line = 1.5, cex = 1.5, col = alpha('black',1))  # Add y axis label
     } else{
       barplot(height = c(0,as.numeric(d2Dists_fig4[i,grepl(threshStrings[t], colnames(d2Dists_fig4))])[1:xmax])/scale, 
               width = 1, space = 0,
               ylim = c(0, ymax/scale),
               axes = F, ylab = '', xlab ='', main = '',
               col = alpha(tCols[t],0.9))
+    }
+    if (i == 2 & t == 4){
+      legend(x = 46, y = 7.5,
+             legend = c('4 \uc5', '6 \uc5', '8 \uc5', '10 \uc5'),
+             pch = 15,
+             col = tCols,
+             cex = 3, pt.cex = 5,
+             bty = 'n')
     }
     if (t != 1){par(new=T)}
   }
@@ -2351,6 +2366,9 @@ for (i in 1:nrow(d2Dists_fig4)){
     volText = paste(volText, as.character())
   }
 }
+
+
+
 dev.off()
 #####################
 

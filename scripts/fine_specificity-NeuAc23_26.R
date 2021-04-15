@@ -312,6 +312,8 @@ tag26 = tag26[tag]
 bsResiDat[tag23, c('pdb', 'iupac', 'bsiteSequence', 'longname')]
 bsResiDat[tag26, c('pdb', 'iupac', 'bsiteSequence', 'longname')]
 
+sum(tag)
+
 # Drop leftover glycans from N-glycosylation sites (1RVT and 1RV0), and non-canonical binding sites (1HGG)
 tag = row.names(bsResiDat) %in% c('1RV0_NDG:H:642', '1RV0_NDG:J:640', '1RV0_NDG:L:644',
                                   '1RVT_NDG:H:742', '1RVT_NDG:J:740', '1RVT_NDG:L:744',
@@ -938,7 +940,7 @@ unique(bsResiDat[,c(1,9,165,164)])
 bsResiDat[bsResiDat$VAL_bin2 > 0, c('iupac','strain', 'VAL_bin2')]
 
 bsResiDat[bsResiDat$type == 'H10', c('iupac','strain', 'VAL_bin2')]
-bsResiDat[bsResiDat$type == 'H7', c('iupac','strain', 'VAL_bin2')]
+bsResiDat[bsResiDat$type == 'H7', c('iupac','strain', 'VAL_bin2', 'uniparc')]
 bsResiDat[bsResiDat$type == 'H3', c('iupac','strain', 'VAL_bin2', 'THR_bin2')]
 
 # PDB IDs HA by type/subtype and ligand
