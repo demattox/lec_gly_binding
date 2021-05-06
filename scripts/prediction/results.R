@@ -621,6 +621,34 @@ mycol = colorRampPalette(c("ivory", "cornflowerblue", "navy"))(n = length(breakL
 # 
 # cor.test(sampSizes, testMeds$kappa)
 
+
+
+mean(testDat$recall[testDat$mode == 'pred'])
+mean(testDat$prec[testDat$mode == 'pred'])
+
+mean(testDat$recall[testDat$mode == 'rand'])
+mean(testDat$prec[testDat$mode == 'rand'])
+
+mean(trainDat$recall[trainDat$mode == 'pred'])
+mean(trainDat$prec[trainDat$mode == 'pred'])
+
+mean(trainDat$recall[trainDat$mode == 'rand'])
+mean(trainDat$prec[trainDat$mode == 'rand'])
+
+
+summPerf = as.data.frame(matrix(0,nrow = 15, ncol = 4))
+row.names(summPerf) = colnames(ligTags)
+colnames(summPerf) = c('recall', 'precision', 'rand_recall', 'rand_prec')
+
+for (i in 1:nrow(summPerf)){
+  lig = row.names(summPerf)[i]
+  mets = c(median(testDat$recall[testDat$mode == 'pred' & testDat$ligand == lig]),
+           median(testDat$prec[testDat$mode == 'pred' & testDat$ligand == lig]),
+           median(testDat$recall[testDat$mode == 'rand' & testDat$ligand == lig]),
+           median(testDat$prec[testDat$mode == 'rand' & testDat$ligand == lig]))
+  summPerf[i,] = mets
+}
+
 #########################
 ## Figure 2
 #########################
@@ -1207,6 +1235,10 @@ for (i in 1:ncol(PLIPmeds)){
 
 stats = read.delim(file = './analysis/training/weightedWMW_stats.tsv', sep = '\t', stringsAsFactors = F)
 # all(round(stats,4) == round(stats_weighted,4))
+
+mean(apply(stats[,grepl('_adj$', colnames(stats))] < 0.01, 2, sum))
+sd(apply(stats[,grepl('_adj$', colnames(stats))] < 0.01, 2, sum))
+
 
 percentThresh = 0.75 # >= 75th percentile in feature importance in each feature class
 

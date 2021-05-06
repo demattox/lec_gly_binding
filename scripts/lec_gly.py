@@ -22,10 +22,6 @@ import numpy as np
 
 # os.chdir(homeDir)
 
-#################
-# Define a class to hold lectin binding sites, inspired by the PLIP xml format??
-#################
-
 
 #################
 # Function toolbox

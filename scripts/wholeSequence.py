@@ -44,8 +44,11 @@ outF = sys.argv[2]
 with open(outF, 'w') as outFH:
     chainID = ''
     chain = ''
+    prevResNum = ''
     for l in pro:
-        if l.AtomName == 'CA':
+        if l.AtomName == 'CA' and l.ResNum != prevResNum:
+            prevResNum = l.ResNum
+            # print(l.ResName, l.ResNum)
             r = d[l.ResName] if l.ResName in d.keys() else 'X' # Get one letter code if available, else use "X"
             if l.Chain != chainID:              # end of a chain
                 if chain != '':                 # Save out old chain
