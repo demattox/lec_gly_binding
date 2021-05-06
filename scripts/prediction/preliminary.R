@@ -316,15 +316,40 @@ hist(upc50,probability = F, breaks = max(upc50), col = mycol[1], main = 'Histogr
 
 #clusters per uniprot ID???
 cpu50 = rep(0,length(unique(clustDF$uniprot)))
-for (i in 1:length(cpu50)){cpu50[i] = length(unique(clustDF$clus50[clustDF$uniprot == unique(clustDF$uniprot)[i]]))}
+for (i in 1:length(cpu50)){
+  cpu50[i] = length(unique(clustDF$clus50[clustDF$uniprot == unique(clustDF$uniprot)[i]]))
+  if (cpu50[i] > 1){
+    cat(unique(clustDF$uniprot)[i], '\n')
+  }
+}
 cpu60 = rep(0,length(unique(clustDF$uniprot)))
-for (i in 1:length(cpu60)){cpu60[i] = length(unique(clustDF$clus60[clustDF$uniprot == unique(clustDF$uniprot)[i]]))}
+for (i in 1:length(cpu60)){
+  cpu60[i] = length(unique(clustDF$clus60[clustDF$uniprot == unique(clustDF$uniprot)[i]]))
+  if (cpu60[i] > 1){
+    cat(unique(clustDF$uniprot)[i], '\n')
+  }
+}
 cpu70 = rep(0,length(unique(clustDF$uniprot)))
-for (i in 1:length(cpu70)){cpu70[i] = length(unique(clustDF$clus70[clustDF$uniprot == unique(clustDF$uniprot)[i]]))}
+for (i in 1:length(cpu70)){
+  cpu70[i] = length(unique(clustDF$clus70[clustDF$uniprot == unique(clustDF$uniprot)[i]]))
+  if (cpu70[i] > 1){
+    cat(unique(clustDF$uniprot)[i], '\n')
+  }
+}
 cpu80 = rep(0,length(unique(clustDF$uniprot)))
-for (i in 1:length(cpu80)){cpu80[i] = length(unique(clustDF$clus80[clustDF$uniprot == unique(clustDF$uniprot)[i]]))}
+for (i in 1:length(cpu80)){
+  cpu80[i] = length(unique(clustDF$clus80[clustDF$uniprot == unique(clustDF$uniprot)[i]]))
+  if (cpu80[i] > 1){
+    cat(unique(clustDF$uniprot)[i], '\n')
+  }
+}
 cpu90 = rep(0,length(unique(clustDF$uniprot)))
-for (i in 1:length(cpu90)){cpu90[i] = length(unique(clustDF$clus90[clustDF$uniprot == unique(clustDF$uniprot)[i]]))}
+for (i in 1:length(cpu90)){
+  cpu90[i] = length(unique(clustDF$clus90[clustDF$uniprot == unique(clustDF$uniprot)[i]]))
+  if (cpu90[i] > 1){
+    cat(unique(clustDF$uniprot)[i], '\n')
+  }
+}
 
 # par(mfrow=c(2,3),oma = c(4, 4, 0.2, 0.2), mai = c(0.5, 0.1, 0.1, 0.5))
 # plot(density(cpu50), col = mycol[1], lwd = 3,  main = '')
@@ -734,6 +759,7 @@ ggplot(melt_ligOccur, aes(fill = Clust_ID, x = Ligand, alpha = Ligand, y = Clust
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
 dev.off()
 
+
 # Ligand tags
 parenCnt = bracCnt = manCnt = neuCnt = bracCnt = rep(0,length(uniLigs))
 for (i in 1:length(uniLigs)){
@@ -766,9 +792,9 @@ fucTag = grepl('^Fuc',uniLigs) & !mTag # Has a terminal fucose
 # uniLigs[fucTag]
 
 # get tags to indicate binding sites containing one of the 15 ligands of interest
-ligTags = as.data.frame(matrix(F, nrow = nrow(bsResiDat), ncol = 3+length(top50)))
+ligTags = as.data.frame(matrix(F, nrow = nrow(bsResiDat), ncol = length(top50)))
 row.names(ligTags) =  row.names(bsResiDat)
-colnames(ligTags) = colnames(topLigOccurences)[2:ncol(topLigOccurences)]
+colnames(ligTags) = colnames(topLigOccurences)[5:ncol(topLigOccurences)]
 
 ligTags$High_Mannose = bsResiDat$iupac %in% uniLigs[manTag]
 ligTags$Sialic_Acid = bsResiDat$iupac %in% uniLigs[neuTag]
@@ -788,7 +814,10 @@ for (i in 1:length(top50)){
   ligTags[,colInd] = grepl(lig, bsResiDat$iupac)
 }
 
-# unique(bsResiDat$iupac[apply(ligTags, 1, sum) == 2])
+unique(bsResiDat$iupac[apply(ligTags, 1, sum) == 2])
+apply(ligTags,2,sum)
+
+ligTags = ligTags[,c(14,13,15,1:12)]
 
 ###########################
 # Extract features from d2Dists and d2Feats
