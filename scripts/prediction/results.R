@@ -62,7 +62,7 @@ load('./analysis/training/surveyObject.RData')
 ligNames = colnames(ligTags)
 ligNames = gsub('_', ' ', ligNames)
 
-ligNames[12] = expression(bold(paste("2", alpha, "-Mannobiose", sep = '')))
+ligNames[13] = expression(bold(paste("2", alpha, "-Mannobiose", sep = '')))
 
 ligNames[1] = expression(bold("Terminal NeuAc Group"))
 ligNames[2] = expression(bold("High Mannose Group"))
@@ -74,11 +74,10 @@ ligNames[7] = expression(bold("N-Acetylgalactosamine"))
 ligNames[8] = expression(bold("N-Acetylneuraminic Acid"))
 ligNames[9] = expression(bold("3'-Siayllactose"))
 ligNames[10] = expression(bold("Glucose"))
-ligNames[11] = expression(bold("N-Acetyllactosamine"))
-ligNames[13] = expression(bold("N-Acetylglucosamine"))
+ligNames[11] = expression(bold("N-Acetylglucosamine"))
+ligNames[12] = expression(bold("N-Acetyllactosamine"))
 ligNames[14] = expression(bold("Fucose"))
 ligNames[15] = expression(bold("TF Antigen"))
-
 
 
 ligColors = rep('', ncol(ligTags))
@@ -88,7 +87,7 @@ ligColors[9] = 'purple2' # 3' Sialyllactose
 
 ligColors[2] = 'forestgreen' # High mannose
 ligColors[6] = 'darkgreen' # Mannose monosacc.
-ligColors[12] = 'forestgreen' # 2alpha mannobiose
+ligColors[13] = 'forestgreen' # 2alpha mannobiose
 
 ligColors[3] = 'red1' # Terminal Fuc
 ligColors[14] = 'firebrick3' # Fuc monosacc.
@@ -96,11 +95,11 @@ ligColors[14] = 'firebrick3' # Fuc monosacc.
 ligColors[4] = 'goldenrod2' # Lactose
 ligColors[5] = 'darkgoldenrod3' # Gal monosacc.
 ligColors[7] = 'darkgoldenrod3' # GalNAc (Tn antigen)
-ligColors[11] = 'goldenrod2' # N-Acetyllactosamine (LacNAc)
+ligColors[12] = 'goldenrod2' # N-Acetyllactosamine (LacNAc)
 ligColors[15] = 'goldenrod2' # TF antigen
 
 ligColors[10] = 'mediumblue' # Glc monosacc.
-ligColors[13] = 'royalblue2' # GlcNAc
+ligColors[11] = 'royalblue2' # GlcNAc
 ####
 
 # inDir = './analysis/training/train_and_validate/seqID50/'
@@ -450,6 +449,9 @@ trainDat$sampSizes = apply(trainDat[,4:7], MARGIN = 1, FUN = sum)
 
 cor.test(trainDat$sampSizes[trainDat$mode == 'pred'], trainDat$kappa[trainDat$mode == 'pred'])
 
+cor.test(trainDat$sampSizes[trainDat$mode == 'pred'], trainDat$f2[trainDat$mode == 'pred'])
+
+
 plot(0,0, type = 'n',
      xlim = c(0,175), ylim = c(-1, 1),
      xlab = '', ylab = '')
@@ -461,7 +463,7 @@ for (i in 1:ncol(ligTags)){
        axes = F, xlab = '', ylab ='')
 }
 title(xlab = 'Number of samples used for training', ylab = 'Training Kappa', cex.lab = 1.5 )
-text(x = 110, y = -0.8, labels = 'Pearson corr: 0.53 (p<0.001)', cex = 1.3)
+text(x = 110, y = -0.8, labels = 'Pearson corr: 0.55 (p<0.001)', cex = 1.3)
 
 CVperf_melt = melt(trainDat[trainDat$mode == 'pred',], id.vars = c("ligand", "sampSizes", "kappa", "f2"))
 
@@ -533,12 +535,16 @@ CVperf_ligMeans = CVperf_ligMeans[levels(CVperf_ligMeans$ligand),]
 # 
 # meltLigCols = meltLigCols[c()]
 
-p + geom_label(data = CVperf_ligMeans, aes(x=sampSizes, y = f2, label = ligand), colour = meltLigCols)
+cor.test(CVperf_melt$sampSizes, CVperf_melt$f2)
+
+p + geom_label(data = CVperf_ligMeans, aes(x=sampSizes, y = f2, label = ligand), colour = meltLigCols) +
+  annotate("text", label = 'Pearson corr: 0.50 (p<0.001)', x = 100, y = 0.2, size = 6, colour = "black")
+
 
 p + 
   geom_text(data = CVperf_ligMeans, aes(x=sampSizes, y = f2, label = ligand), colour = meltLigCols, size = 8.02, family = "mono", fontface = 'bold') +
   geom_text(data = CVperf_ligMeans, aes(x=sampSizes, y = f2, label = ligand), colour = 'black', size = 7.98, family = "mono") +
-  annotate("text", label = 'Pearson corr: 0.53 (p<0.001)', x = 100, y = 0.2, size = 6, colour = "black")
+  annotate("text", label = 'Pearson corr: 0.50 (p<0.001)', x = 100, y = 0.2, size = 6, colour = "black")
   
 
 # p + geom_sugar(data = CVperf_ligMeans, aes(x=sampSizes, y = f2),
@@ -946,7 +952,7 @@ text(x = seq.int(1,29,2)+.75,
 #######################
 
 rawLigNames = rep('',length(ligNames))
-rawLigNames[12] = "2 alpha-Mannobiose"
+rawLigNames[13] = "2 alpha-Mannobiose"
 
 rawLigNames[1] = "Terminal NeuAc Group"
 rawLigNames[2] = "High Mannose Group"
@@ -958,8 +964,8 @@ rawLigNames[7] = "N-Acetylnalactosamine"
 rawLigNames[8] = "N-Acetylneuraminic Acid"
 rawLigNames[9] = "3'-Siayllactose"
 rawLigNames[10] = "Glucose"
-rawLigNames[11] = "N-Acetyllactosamine"
-rawLigNames[13] = "N-Acetylglucosamine"
+rawLigNames[12] = "N-Acetyllactosamine"
+rawLigNames[11] = "N-Acetylglucosamine"
 rawLigNames[14] = "Fucose"
 rawLigNames[15] = "TF Antigen"
 
@@ -1307,9 +1313,12 @@ for (i in 1:ncol(medFeatPercentiles)){
 }
 
 
+
 # Global correlation
 cor.test(unlist(abs(stats[,grepl('_effectSize$', colnames(stats))])), unlist(stratAllFeatsImp))
 
+
+mean(diag(cor(abs(stats[,grepl('_effectSize$', colnames(stats))][,c(1,6,14)]), stratAllFeatsImp[,c(1,6,14)])))
 
 ##############################################
 ### Figure 3 panels B-D
@@ -1397,8 +1406,8 @@ names(Terminal_Sugar) = levels(r_annot$Terminal_Sugar)
 
 r_annot$Sugar_Cnt = rep("", nrow(allFeatCorrs))
 r_annot$Sugar_Cnt[c(1:3, 9)] = '3+'
-r_annot$Sugar_Cnt[c(4,11,12,15)] = '2'
-r_annot$Sugar_Cnt[c(5,6,7,8,10,13,14)] = '1'
+r_annot$Sugar_Cnt[c(4,12,13,15)] = '2'
+r_annot$Sugar_Cnt[c(5,6,7,8,10,11,14)] = '1'
 
 r_annot$Sugar_Cnt <- factor(r_annot$Sugar_Cnt, levels = c('1', '2', '3+'))
 

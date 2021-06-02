@@ -41,7 +41,7 @@ for(i in 1:ncol(scaledFeats)){
 ligNames = colnames(ligTags)
 ligNames = gsub('_', ' ', ligNames)
 
-ligNames[12] = expression(bold(paste("2", alpha, "-Mannobiose", sep = '')))
+ligNames[13] = expression(bold(paste("2", alpha, "-Mannobiose", sep = '')))
 
 ligNames[1] = expression(bold("Terminal NeuAc Group"))
 ligNames[2] = expression(bold("High Mannose Group"))
@@ -53,8 +53,8 @@ ligNames[7] = expression(bold("N-Acetylgalactosamine"))
 ligNames[8] = expression(bold("N-Acetylneuraminic Acid"))
 ligNames[9] = expression(bold("3'-Siayllactose"))
 ligNames[10] = expression(bold("Glucose"))
-ligNames[11] = expression(bold("N-Acetyllactosamine"))
-ligNames[13] = expression(bold("N-Acetylglucosamine"))
+ligNames[11] = expression(bold("N-Acetylglucosamine"))
+ligNames[12] = expression(bold("N-Acetyllactosamine"))
 ligNames[14] = expression(bold("Fucose"))
 ligNames[15] = expression(bold("TF Antigen"))
 
@@ -66,7 +66,7 @@ ligColors[9] = 'purple2' # 3' Sialyllactose
 
 ligColors[2] = 'forestgreen' # High mannose
 ligColors[6] = 'darkgreen' # Mannose monosacc.
-ligColors[12] = 'forestgreen' # 2alpha mannobiose
+ligColors[13] = 'forestgreen' # 2alpha mannobiose
 
 ligColors[3] = 'red1' # Terminal Fuc
 ligColors[14] = 'firebrick3' # Fuc monosacc.
@@ -74,11 +74,11 @@ ligColors[14] = 'firebrick3' # Fuc monosacc.
 ligColors[4] = 'goldenrod2' # Lactose
 ligColors[5] = 'darkgoldenrod3' # Gal monosacc.
 ligColors[7] = 'darkgoldenrod3' # GalNAc (Tn antigen)
-ligColors[11] = 'goldenrod2' # N-Acetyllactosamine (LacNAc)
+ligColors[12] = 'goldenrod2' # N-Acetyllactosamine (LacNAc)
 ligColors[15] = 'goldenrod2' # TF antigen
 
 ligColors[10] = 'mediumblue' # Glc monosacc.
-ligColors[13] = 'royalblue2' # GlcNAc
+ligColors[11] = 'royalblue2' # GlcNAc
 ####
 
 ###########################
@@ -348,6 +348,13 @@ for (i in 1:length(unique(bsResiDat$seqClust50))){
 }
 round(sum(cWeights),5) == nrow(bsResiDat) # Sum of weights is equal to number of binding sites
 round(sum(cuWeights),5) == nrow(bsResiDat) # Sum of weights is equal to number of binding sites
+
+
+for (i in 1:ncol(ligTags)){
+  cat(colnames(ligTags)[i], '\n')
+  cat('\t', sum(cuWeights[ligTags[,i]]), '\n')
+}
+
 
 wmwFeats = cbind(predFeats,ligTags)
 
@@ -745,8 +752,8 @@ names(Terminal_Sugar) = levels(r_annot$Terminal_Sugar)
 
 r_annot$Sugar_Cnt = rep("", nrow(allFeatCorrs))
 r_annot$Sugar_Cnt[c(1:3, 9)] = '3+'
-r_annot$Sugar_Cnt[c(4,11,12,15)] = '2'
-r_annot$Sugar_Cnt[c(5,6,7,8,10,13,14)] = '1'
+r_annot$Sugar_Cnt[c(4,12,13,15)] = '2'
+r_annot$Sugar_Cnt[c(5,6,7,8,10,11,14)] = '1'
 
 r_annot$Sugar_Cnt <- factor(r_annot$Sugar_Cnt, levels = c('1', '2', '3+'))
 
@@ -774,7 +781,7 @@ pheatmap(allFeatCorrs,
          main = ' ',
          breaks = breakLst,
          show_colnames = F,
-         cutree_rows = 4,
+         cutree_rows = 5,
          # cutree_cols = 4,
          treeheight_col = 0,
          
@@ -787,6 +794,7 @@ cor.test(stats_weighted$Gal.b1.4.Glc_effectSize, stats_weighted$Gal.b1.4.GlcNAc_
 
 
 cor.test(stats_weighted$Man.a1.2.Man_effectSize, stats_weighted$Glc_effectSize)
+cor.test(stats_weighted$Man_effectSize, stats_weighted$Glc_effectSize)
 
 cor.test(stats_weighted$Man.a1.2.Man_effectSize, stats_weighted$High_Mannose_effectSize)
 
