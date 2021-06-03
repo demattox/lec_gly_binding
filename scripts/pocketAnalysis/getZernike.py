@@ -95,7 +95,7 @@ if __name__ == '__main__':
                 scaleFactor = (RESOLUTION*0.6/2.0)/maxDist_from_cent # Scale factor, 1 Ang == scaleFactor voxel units
                 pVDW = scaleFactor * GRID_POINT_SPACING/1.5 # pseudoVDW radius for pocket points, scaled
                 
-                extmult = 0.6/maxDist_from_cent # to scale points between [0,0.6], unit sphere has radius 1 and want to stay within 60% of exterior
+                extmult = 0.6/maxDist_from_cent # to scale points between [0,0.6], unit sphere has radius 1 and want to stay within 60% of center
                 pcktPnts *= extmult
                         
                 for i,pnt in enumerate(pcktPnts):
