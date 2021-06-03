@@ -1,0 +1,216 @@
+
+#################################
+Ligand checker script quality control report, generated from checkPLIPligands.py
+#################################
+
+6 PDB files with no ligands left over after all filter steps
+
+Ligand counts at each step of cleaning and filtering for ligandless PDBs:
+pdb 	       init 	     merge 	    glycan 	    protein 	     cent
+4B15 :		 3		3		1		0		0
+5Y96 :		 7		7		7		0		0
+4P14 :		 8		8		0		0		0
+4Z8S :		 5		5		3		0		0
+4ZA3 :		 11		10		3		0		0
+4EB2 :		 26		26		4		0		0
+Zeroed out by glycan content filter:
+	['4P14']
+Zeroed out by protein-linkage filter:
+	['4B15', '5Y96', '4Z8S', '4ZA3', '4EB2']
+
+Check post-processing reports for each pdb to verify each cases, add to override exceptions if appropriate
+In PDB 4P14:
+	Ligand is adenine w/o ribose, no glycan content.
+In PDBs 4B15, 5Y96, 4Z8S, 4ZA3, & 4EB2:
+	Only glycans present are glycosylation events.
+
+
+Total ligand counts at each step of ligand filtering, accompanies figure in ./analysis/QC/plots/ligCntBoxplots.jpg:
+Initial number of binding sites across all PDB files:
+	9828, 725 unique ligands
+Number of binding sites across all PDB files after merging glycan ligands with missing links and Ca2+ coord ions:
+	9791, 733 unique ligands
+Number of binding sites across all PDB files after filtering for minimal glycan content:
+	4907, 605 unique ligands
+Number of binding sites across all PDB files after filtering for protein glycosylation:
+	4134, 575 unique ligands
+Number of binding sites across all PDB files after filtering glycan ligands with overlapping centroids:
+	4132, 575 unique ligands
+
+
+
+773 PLIP ligands detected within covalent bond distance of a protein residue in 162 PDB files from 56 unique UniProt IDs.
+	Median glycosylation occurrences when glycosylation observed: 4.0
+	Mean glycosylation occurrences when glycosylation observed: 4.77
+
+The closest types of protein residue when a PLIP ligand glycan is within 1.7 Angstroms, along with the number of occurrences
+	[('ASN', 756), ('SER', 13), ('TRP', 3), ('THR', 1)]
+
+
+
+10 pdb files with missing covalent bonds in ligands detected & fixed:
+6R41
+	('BGC:A:1004', 'GAL:B:1')
+5T20
+	('MAN:F:500', 'MAN:V:1')
+2VXJ
+	('BGC:N:204', 'GAL:l:1')
+4X0C
+	('NDG:C:1', 'FUC:C:2')
+3ZP3
+	('SIA:E:1326', 'GAL:E:1327')
+5TPC
+	('GAL:B:1', 'NGA:C:1')
+4ZA3
+	('NAG:C:1', 'NAG:D:1')
+4ZBV
+	('NAG:B:303', 'NAG:C:1')
+	('GAL:B:309', 'A2G:B:310')
+4ZGR
+	('XYP:B:309', 'BMA:F:2')
+	('MAN:B:310', 'BMA:F:2')
+	('NAG:E:1', 'NAG:F:1')
+4ZLB
+	('XYP:B:307', 'BMA:E:2')
+	('NAG:D:1', 'NAG:E:1')
+
+
+
+3 pdb files with coordination Ca2+ ions missing from the compound ligand:
+1OKO
+	['CA:B:900', 'GLA:B:901']
+	['GLA:C:901', 'CA:C:900']
+	['GLA:D:901', 'CA:D:900']
+2Z48
+	['CA:A:1007', 'A2G:A:1001']
+	['CA:A:1102', 'NGA:A:1002']
+	['CA:A:1103', 'NGA:A:1003']
+	['NGA:A:1004', 'CA:A:1104']
+	['A2G:A:1005', 'CA:A:1205']
+	['CA:B:1201', 'A2G:B:2001']
+	['CA:B:1202', 'NGA:B:2002']
+	['NGA:B:2003', 'CA:B:1203']
+	['CA:B:1204', 'NGA:B:2004']
+	['CA:B:1205', 'A2G:B:2005']
+2Z49
+	['AMG:A:1400', 'CA:A:1001']
+	['AMG:A:1401', 'CA:A:1002']
+	['AMG:A:1402', 'CA:A:1003']
+	['CA:A:1004', 'AMG:A:1403']
+	['CA:A:1005', 'AMG:A:1404']
+	['CA:B:1001', 'AMG:B:1405']
+	['CA:B:1002', 'AMG:B:1409']
+	['AMG:B:1406', 'CA:B:1003']
+	['AMG:B:1407', 'CA:B:1004']
+	['CA:B:1005', 'AMG:B:1408']
+
+
+
+2 pdb files with residues from separate ligands that have overlapping centroids:
+4D52
+	('GXL:A:1316', 'GIV:A:2316')
+2VMC
+	('A2G:A:501', 'NGA:A:505')
+
+
+
+20 pdb files with glycan ligands detected on the listed glycopeptide chains.
+Interactions wih the listed chains excluded from the analysis but ligands are kept.
+
+1LGB
+	['C']
+1G1S
+	['C', 'D']
+5D2A
+	['C', 'D', 'E']
+5NES
+	['E']
+5NEY
+	['E']
+5NF0
+	['F', 'E', 'G', 'H']
+6S5P
+	['E', 'F', 'H']
+6S5S
+	['C']
+6S7G
+	['F', 'G', 'H', 'E']
+5T5J
+	['a', 'b']
+5T5L
+	['a', 'b']
+5T5O
+	['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j']
+5T5P
+	['a', 'b']
+1LGC
+	['H', 'I', 'J']
+3ZYB
+	['I', 'J', 'N']
+1URL
+	['B']
+3WV0
+	['X', 'Y']
+5XO2
+	['X', 'Y']
+5XOF
+	['O', 'P', 'Q', 'R']
+2CWG
+	['D']
+
+#####
+There are 4132 binding sites from 1367 structures
+#####
+
+
+
+
+#################################
+Addendum, added on by manualBSfilter.py
+#################################
+
+Manual inspection of binding sites in lectin structures if any binding sites in the structure have:
+	Fewer than 3 interactions
+	(OR)
+	Fewer than 3 proteins residues within 4.5 Angstoms
+Binding sites are dropped if the glycan in the binding site appears to be a glycosylation occurence, a separate binding site because of a missing covalent bond, or other (artifact/glycan not near protein/etc.)
+
+In total, 44 false binding sites removed from 23 PLIP records
+
+WARNING! All ligands removed for 3 PDB IDs:
+	4JKX
+	4Z9W
+	5MZD
+
+13 PDB IDs with dropped binding sites for reason (missed glycosylation):
+	2J3O: NAG:B:1293
+	2J3U: NAG:C:1293, NAG:F:1293
+	1F9K: NAG:D:1
+	3CL5: NAG:A:2527
+	1RVX: NAG:A:3017, NAG:A:3018, NAG:B:3019, NAG:C:3020, NAG:G:3011, NAG:G:3012, NAG:I:3013, NAG:J:3014, NAG:K:3015, NAG:L:3016
+	1RVZ: NAG:A:3321, NAG:E:3311, NAG:F:3331
+	2RFU: NAG:A:348, NAG:D:1
+	3ZP3: NAG:F:401, NAG:F:411
+	3ZP6: NAG:F:421
+	1RZO: GAL:A:5001, GAL:C:5501
+	5Y97: NAG:C:303
+	4JKX: NAG:B:307
+	2RL9: NAG:B:502
+5 PDB IDs with dropped binding sites for reason (missed covalent link):
+	2J3U: MAN:B:1295, MAN:E:1294
+	3S5X: MAN:A:205, MAN:A:305
+	4FBV: MAN:A:305
+	4Z9W: BMA:B:306, NAG:B:302
+	4ZBV: BMA:B:306
+7 PDB IDs with dropped binding sites for reason (other):
+	2GUC: MAN:A:125
+	5D2A: PHB:C:101
+	5HCH: DC:B:1
+	6Q8H: DLE:C:3
+	2ZMK: BMA:C:306
+	1RZO: GAL:B:5006, GAL:D:5504
+	5MZD: BGC:B:1
+#####
+There remain 4088 binding sites from 1364 structures
+#####
+
