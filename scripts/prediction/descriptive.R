@@ -20,13 +20,18 @@ threshColors = c('firebrick3', 'darkorange2', 'darkgoldenrod2', 'gold2')
 homeDir = '/Users/dmattox/cbk/lec_gly_binding/'
 setwd(homeDir)
 
-# Load McCaldon aa frequencies
-mccaldon = read.delim('~/episweep/data/mccaldon.csv', header = F, sep = ",", stringsAsFactors = F)
-colnames(mccaldon) = c("aa", 'mcFreq')
+# # Load McCaldon aa frequencies
+# mccaldon = read.delim('~/episweep/data/mccaldon.csv', header = F, sep = ",", stringsAsFactors = F)
+# colnames(mccaldon) = c("aa", 'mcFreq')
 
 ligTags <- read.delim(file = './analysis/training/data_in/ligTags.tsv', sep = '\t', stringsAsFactors = F)
 predFeats <- read.delim(file = './analysis/training/data_in/predFeats.csv', sep = ',', stringsAsFactors = F)
 bsResiDat <- read.delim(file = './analysis/training/data_in/bsResiDat.tsv', sep = '\t', stringsAsFactors = F)
+
+all(row.names(bsResiDat) == row.names(predFeats))
+allOut = cbind(bsResiDat[,1:13], predFeats)
+write.csv(allOut, 'interactionData/suppFile1.csv', quote = T)
+
 
 uniLigs = unique(bsResiDat$iupac)
 
@@ -556,8 +561,8 @@ legend(x = 'center',
                c(rbind(resiFeats,rep('white', length(resiFeats)))), 'white',
                c(rbind(pocketFeats,rep('white', length(pocketFeats)))), 'white'),
        legend = c('PLIP interaction\ncounts', '','',
-                  'Residue\ncounts/bin', '', 'Residue\nsec struct.', '', 'Amino acid\nproperty counts', '', 'Residue\nidentities', '','',
-                  'Pocket features', '', 'D2 distribution\nfeatures', '','D2 Principal\nComponents', '', '3DZD Principal\nComponents', ''),
+                  'Residue counts', '', 'Residue sec.\nstructure', '', 'Amino acid\nproperties', '', 'Amino acid\nidentities', '','',
+                  'Pocket descriptors', '', 'D2 distribution\nstatistics', '','D2 Principal\nComponents', '', '3DZD Principal\nComponents', ''),
        pch = 19,
        pt.cex = 2.5)
 
