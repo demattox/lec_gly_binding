@@ -1,4 +1,4 @@
-# Glycan binding
+# Comprehensive analysis of lectin-glycan interactions reveals determinants of lectin specificity
 
 Project to identify and map features of lectin binding sites and associations with affinity or specificity towards particular glycans
 ---
