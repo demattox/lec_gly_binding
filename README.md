@@ -10,7 +10,7 @@ Project to identify and map features of lectin binding sites and associations wi
 5. Package dependencies
 
 ### Quick notes
-Thanks for checking out my repo! I'm sorry that's a bit disorganized, I'm the sole developer/contributor and with other active projects, havne't had as much time as I would like to clean everything up as well as I should. Please feel free to reach out with any questions/issues/concerns, either by submitting an issue here or reaching out to me directly: dmattox.com/
+Thanks for checking out my repo! I'm sorry that's a bit disorganized, I'm the sole developer/contributor and with other active projects, I haven't had as much time as I would like to clean everything up as well as I should. Please feel free to reach out with any questions/issues/concerns, either by submitting an issue here or reaching out to me directly: dmattox.com/
 
 ### Interaction QC report
 Automatically generated QC report and associated plots generated while screening and eliminating PLIP-identified lectin-ligand interactions.
