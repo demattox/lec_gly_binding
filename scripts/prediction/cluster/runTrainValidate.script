@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# Name of the job
+#SBATCH --job-name=LOO_trainValidate
+
+# Number of compute nodes
+#SBATCH --nodes=1
+
+# Number of tasks per node
+#SBATCH --ntasks-per-node=12
+
+# Request memory
+#SBATCH --mem=24G
+
+# Walltime (job duration)
+#SBATCH --time=12:00:00
+
+# Email notifications (comma-separated options: BEGIN,END,FAIL)
+#SBATCH --mail-type=FAIL
+
+Rscript --vanilla /dartfs-hpc/rc/home/y/f002tsy/cbklab/Mattox/lec_gly_binding/scripts/prediction/train_validate.R
+
+exit 0
