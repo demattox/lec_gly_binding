@@ -267,6 +267,11 @@ plot(0,0,col = 'white', xlab = '',ylab = '',type="n",
      ylim = c(0,1))
 for(j in 1:ncol(ligTags)){
   i = ((j-1) * 2) + 1
+  if(j == 2){ # Swap Term Fuc and High Man
+    i = 5
+  }else if(j ==3){
+    i = 3
+  }
   vioplot(trainDat$recall[(trainDat$ligand == colnames(ligTags)[j]) & (trainDat$mode == 'pred')], at = i, side = 'left',
           col = ligColors[j],
           xlim = xLim, ylim = yLim,
@@ -297,8 +302,8 @@ title(main = "5x CV + LOCO - TRAINING\nPrecision & Recall vs random", xlab = "",
 #   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
 text(x = seq.int(1,29,2),                   
      y = par("usr")[3] - 0.05,
-     labels = ligNames,
-     col = ligColors,
+     labels = ligNames[c(1,3,2,4:15)],
+     col = ligColors[c(1,3,2,4:15)],
      ## Change the clipping region.
      xpd = NA,
      ## Rotate the labels by 35 degrees.
@@ -307,6 +312,8 @@ text(x = seq.int(1,29,2),
      adj = 0.965,
      ## Increase label size.
      cex = 1.2)
+
+# Copied @ 1400 x 1000
 
 
 ###############
@@ -511,11 +518,11 @@ meltLigCols[8] = 'royalblue2' # GlcNAc
 p = ggplot(data = CVperf_melt, aes(x = sampSizes, y = f2, col = ligand))
 
 p = p +
-  geom_point(size = 7) +
+  geom_point(size = 5) +
   theme_linedraw(base_size = 22) +
-  scale_color_manual(values = alpha(meltLigCols, 0.3), guide = F) +
+  scale_color_manual(values = alpha(meltLigCols, 0.3), guide = "none") +
   labs(x = "Number of interactions for training", y = "Training F2 score") +
-  xlim(0, 150) + ylim(0,1)
+  xlim(0, 125) + ylim(0,1)
 
 p
 
@@ -538,13 +545,13 @@ CVperf_ligMeans = CVperf_ligMeans[levels(CVperf_ligMeans$ligand),]
 cor.test(CVperf_melt$sampSizes, CVperf_melt$f2)
 
 p + geom_label(data = CVperf_ligMeans, aes(x=sampSizes, y = f2, label = ligand), colour = meltLigCols) +
-  annotate("text", label = 'Pearson corr: 0.50 (p<0.001)', x = 100, y = 0.2, size = 6, colour = "black")
+  annotate("text", label = 'Pearson corr: 0.39 (p<0.001)', x = 100, y = 0.2, size = 6, colour = "black")
 
 
 p + 
   geom_text(data = CVperf_ligMeans, aes(x=sampSizes, y = f2, label = ligand), colour = meltLigCols, size = 8.02, family = "mono", fontface = 'bold') +
   geom_text(data = CVperf_ligMeans, aes(x=sampSizes, y = f2, label = ligand), colour = 'black', size = 7.98, family = "mono") +
-  annotate("text", label = 'Pearson corr: 0.50 (p<0.001)', x = 100, y = 0.2, size = 6, colour = "black")
+  annotate("text", label = 'Pearson corr: 0.39 (p<0.001)', x = 100, y = 0.2, size = 6, colour = "black")
   
 
 # p + geom_sugar(data = CVperf_ligMeans, aes(x=sampSizes, y = f2),
@@ -856,6 +863,11 @@ abline(h = c(0.2,0.4,0.6,0.8,1.0), lwd = 1, col = 'grey80')
 abline(h = c(0.3,0.5,0.7,0.9), lwd = 1, lty = 2, col = 'grey80')
 for(j in 1:ncol(ligTags)){
   i = ((j-1) * 2) + 1
+  if(j == 2){ # Swap Term Fuc and High Man
+    i = 5
+  }else if(j ==3){
+    i = 3
+  }
   vioplot(testDat$recall[(testDat$ligand == colnames(ligTags)[j]) & (testDat$mode == 'pred')], at = i, side = 'left',
           col = ligColors[j],
           xlim = xLim, ylim = yLim,
@@ -877,7 +889,7 @@ for(j in 1:ncol(ligTags)){
 }
 
 par(new = T)
-plot(0,0,col = 'white', xlab = '',ylab = '',type="n",
+plot(0,0,col = 'white', xlab = '',ylab = '',type="n", # Add new plot to simplify labels/axes
      axes=FALSE,ann=FALSE,
      xlim = xLim,
      ylim = yLim)
@@ -889,8 +901,8 @@ mtext("Precision", side = 4, line = 3, cex = 2, col = alpha('black',0.85))  # Ad
 title(xlab = "", ylab = "Recall", main = "Random Forest Validation - Precision & Recall (Violin plots) \n Versus Random Classifier (Boxplots)", cex.main = 2.5, cex.lab = 2)
 text(x = seq.int(1,29,2),
      y = par("usr")[3] - 0.05,
-     labels = ligNames,
-     col = ligColors,
+     labels = ligNames[c(1,3,2,4:15)],
+     col = ligColors[c(1,3,2,4:15)],
      ## Change the clipping region.
      xpd = NA,
      ## Rotate the labels by 35 degrees.
@@ -921,6 +933,11 @@ for (i in 1:length(logTicks)){
 
 for(j in 1:ncol(ligTags)){
   i = ((j-1) * 2) + 1
+  if(j == 2){ # Swap Term Fuc and High Man
+    i = 5
+  }else if(j ==3){
+    i = 3
+  }
   par(new = T)
   boxplot(log10(trainDat$sampSizes[trainDat$ligand == colnames(ligTags)[j] & trainDat$mode == 'pred']),
           at = i,
@@ -934,8 +951,8 @@ axis(side=2,at=log10(logTicks), labels = logTicks, las = 2, pos = 0)
 axis(side=1,at=seq.int(1,29,2), labels = F, pos = 1.2)
 text(x = seq.int(1,29,2)+.75,
      y = par("usr")[3] - 0.05,
-     labels = ligNames,
-     col = ligColors,
+     labels = ligNames[c(1,3,2,4:15)],
+     col = ligColors[c(1,3,2,4:15)],
      ## Change the clipping region.
      xpd = NA,
      ## Rotate the labels by 35 degrees.
@@ -951,125 +968,125 @@ text(x = seq.int(1,29,2)+.75,
 # PR curves
 #######################
 
-rawLigNames = rep('',length(ligNames))
-rawLigNames[13] = "2 alpha-Mannobiose"
-
-rawLigNames[1] = "Terminal NeuAc Group"
-rawLigNames[2] = "High Mannose Group"
-rawLigNames[3] = "Terminal Fuc Group"
-rawLigNames[4] = "Lactose"
-rawLigNames[5] = "Galactose"
-rawLigNames[6] = "Mannose"
-rawLigNames[7] = "N-Acetylnalactosamine"
-rawLigNames[8] = "N-Acetylneuraminic Acid"
-rawLigNames[9] = "3'-Siayllactose"
-rawLigNames[10] = "Glucose"
-rawLigNames[12] = "N-Acetyllactosamine"
-rawLigNames[11] = "N-Acetylglucosamine"
-rawLigNames[14] = "Fucose"
-rawLigNames[15] = "TF Antigen"
-
-
-par(mfrow = c(3,5))
-
-ligDirs = dir(predDirs)  
-ligDirs  = ligDirs[order(as.numeric(ligDirs))]
-
-allPredAUCs = as.data.frame(matrix(0, nrow = 100, ncol = ncol(ligTags)))
-colnames(allPredAUCs) = colnames(ligTags)
-
-allRandAUCs = allPredAUCs
-
-for(i in 9:length(ligDirs)){
-  lig = colnames(ligTags)[as.numeric(ligDirs[i])]
-  cat(lig,'\n')
-  
-  curDir = paste(predDirs, ligDirs[i], sep = '')
-  ranDir = gsub(pattern = 'pred', replacement = 'rand', x = curDir)
-  
-  subDirs = dir(curDir)
-  
-  # predAUC = randAUC = rep(0,100)
-  
-  for (j in 1:length(subDirs)){
-    cat(j, '\t')
-    #read in pred
-    inFiles = dir(paste(curDir, subDirs[j], sep = '/'))
-    
-    readFile = inFiles[grepl('outcomes.csv', inFiles)] # change here to read other files
-    
-    tmp = read.delim(file = paste(curDir, subDirs[j], readFile, sep = '/'), header = T, sep = ',', stringsAsFactors = F)
-    
-    if (! exists('outcomes')){
-      outcomes = tmp
-    }else{
-      outcomes = cbind(outcomes, tmp)
-    }
-    
-    #read in rand
-    inFiles = dir(paste(ranDir, subDirs[j], sep = '/'))
-    
-    readFile = inFiles[grepl('outcomes.csv', inFiles)] # change here to read other files
-    
-    tmp = read.delim(file = paste(ranDir, subDirs[j], readFile, sep = '/'), header = T, sep = ',', stringsAsFactors = F)
-    
-    extraRows = as.data.frame(matrix(NA, nrow = sum(!row.names(bsResiDat) %in% row.names(tmp)), ncol = 10))
-    row.names(extraRows) = row.names(bsResiDat)[!row.names(bsResiDat) %in% row.names(tmp)]
-    
-    tmp = rbind(tmp, extraRows)
-    tmp = tmp[row.names(bsResiDat),]
-    
-    if (! exists('Rand_outcomes')){
-      Rand_outcomes = tmp
-
-    }else{
-      Rand_outcomes = cbind(Rand_outcomes, tmp)
-    }
-  }
-  cat('\n')
-  
-  Rand_outcomes = Rand_outcomes[! apply(is.na(Rand_outcomes), 1, all), ] # drop rows that don't have any values
-  Rand_outcomes = Rand_outcomes[row.names(outcomes),]
-  
-  obs = ligTags[row.names(outcomes), lig]
-
-  al = 0.1
-  wid = 2
-  
-  n=1
-  pr = pr.curve(outcomes[(obs == T) & (!is.na(outcomes[,n])), n], outcomes[(obs == F) & (!is.na(outcomes[,n])), n], curve= T, rand.compute = T)
-  allPredAUCs[n,i] = pr$auc.integral
-  plot(pr$curve[,1:2], type = 'l', lwd = wid, col = alpha(ligColors[i],al),
-       xlim = c(0,1), ylim = c(0,1),
-       xlab = 'Recall', ylab = 'Precision', cex.lab = 1.5)
-  
-  rand_pr = pr.curve(Rand_outcomes[(obs == T) & (!is.na(Rand_outcomes[,n])), n], Rand_outcomes[(obs == F) & (!is.na(Rand_outcomes[,n])), n], curve= T, rand.compute = T)
-  lines(rand_pr$curve[,1:2], lwd = wid, col = alpha('black',al))
-  allRandAUCs[n,i] = rand_pr$auc.integral
-  
-  for(n in (2:ncol(outcomes))){
-    pr = pr.curve(outcomes[(obs == T) & (!is.na(outcomes[,n])), n], outcomes[(obs == F) & (!is.na(outcomes[,n])), n], curve= T, rand.compute = T)
-    allPredAUCs[n,i] = pr$auc.integral
-    lines(pr$curve[,1:2], lwd = wid, col = alpha(ligColors[i],al))
-    
-    rand_pr = pr.curve(Rand_outcomes[(obs == T) & (!is.na(Rand_outcomes[,n])), n], Rand_outcomes[(obs == F) & (!is.na(Rand_outcomes[,n])), n], curve= T, rand.compute = T)
-    lines(rand_pr$curve[,1:2], lwd = wid, col = alpha('black',al))
-    allRandAUCs[n,i] = rand_pr$auc.integral
-  }
-
-  if (i != 12){
-    title(main = bquote(atop("PR Curve" ~ - ~ bold(.(rawLigNames[i])),
-                             "Mean AUC:" ~ .(round(mean(allPredAUCs[,i]),2)) ~ '(random:' ~ .(round(mean(allRandAUCs[,i]),2)) ~ ')')))
-  }else{
-    title(main = bquote(atop("PR Curve" ~ - ~ bold( "2" ~ alpha ~ "-Mannobiose"),
-                             "Mean AUC:" ~ .(round(mean(allPredAUCs[,i]),2)) ~ '(random:' ~ .(round(mean(allRandAUCs[,i]),2)) ~ ')')))
-  }
-
-  rm(outcomes, Rand_outcomes)
-  
-}
-
-
+# rawLigNames = rep('',length(ligNames))
+# rawLigNames[13] = "2 alpha-Mannobiose"
+# 
+# rawLigNames[1] = "Terminal NeuAc Group"
+# rawLigNames[2] = "High Mannose Group"
+# rawLigNames[3] = "Terminal Fuc Group"
+# rawLigNames[4] = "Lactose"
+# rawLigNames[5] = "Galactose"
+# rawLigNames[6] = "Mannose"
+# rawLigNames[7] = "N-Acetylnalactosamine"
+# rawLigNames[8] = "N-Acetylneuraminic Acid"
+# rawLigNames[9] = "3'-Siayllactose"
+# rawLigNames[10] = "Glucose"
+# rawLigNames[12] = "N-Acetyllactosamine"
+# rawLigNames[11] = "N-Acetylglucosamine"
+# rawLigNames[14] = "Fucose"
+# rawLigNames[15] = "TF Antigen"
+# 
+# 
+# par(mfrow = c(3,5))
+# 
+# ligDirs = dir(predDirs)  
+# ligDirs  = ligDirs[order(as.numeric(ligDirs))]
+# 
+# allPredAUCs = as.data.frame(matrix(0, nrow = 100, ncol = ncol(ligTags)))
+# colnames(allPredAUCs) = colnames(ligTags)
+# 
+# allRandAUCs = allPredAUCs
+# 
+# for(i in 9:length(ligDirs)){
+#   lig = colnames(ligTags)[as.numeric(ligDirs[i])]
+#   cat(lig,'\n')
+#   
+#   curDir = paste(predDirs, ligDirs[i], sep = '')
+#   ranDir = gsub(pattern = 'pred', replacement = 'rand', x = curDir)
+#   
+#   subDirs = dir(curDir)
+#   
+#   # predAUC = randAUC = rep(0,100)
+#   
+#   for (j in 1:length(subDirs)){
+#     cat(j, '\t')
+#     #read in pred
+#     inFiles = dir(paste(curDir, subDirs[j], sep = '/'))
+#     
+#     readFile = inFiles[grepl('outcomes.csv', inFiles)] # change here to read other files
+#     
+#     tmp = read.delim(file = paste(curDir, subDirs[j], readFile, sep = '/'), header = T, sep = ',', stringsAsFactors = F)
+#     
+#     if (! exists('outcomes')){
+#       outcomes = tmp
+#     }else{
+#       outcomes = cbind(outcomes, tmp)
+#     }
+#     
+#     #read in rand
+#     inFiles = dir(paste(ranDir, subDirs[j], sep = '/'))
+#     
+#     readFile = inFiles[grepl('outcomes.csv', inFiles)] # change here to read other files
+#     
+#     tmp = read.delim(file = paste(ranDir, subDirs[j], readFile, sep = '/'), header = T, sep = ',', stringsAsFactors = F)
+#     
+#     extraRows = as.data.frame(matrix(NA, nrow = sum(!row.names(bsResiDat) %in% row.names(tmp)), ncol = 10))
+#     row.names(extraRows) = row.names(bsResiDat)[!row.names(bsResiDat) %in% row.names(tmp)]
+#     
+#     tmp = rbind(tmp, extraRows)
+#     tmp = tmp[row.names(bsResiDat),]
+#     
+#     if (! exists('Rand_outcomes')){
+#       Rand_outcomes = tmp
+# 
+#     }else{
+#       Rand_outcomes = cbind(Rand_outcomes, tmp)
+#     }
+#   }
+#   cat('\n')
+#   
+#   Rand_outcomes = Rand_outcomes[! apply(is.na(Rand_outcomes), 1, all), ] # drop rows that don't have any values
+#   Rand_outcomes = Rand_outcomes[row.names(outcomes),]
+#   
+#   obs = ligTags[row.names(outcomes), lig]
+# 
+#   al = 0.1
+#   wid = 2
+#   
+#   n=1
+#   pr = pr.curve(outcomes[(obs == T) & (!is.na(outcomes[,n])), n], outcomes[(obs == F) & (!is.na(outcomes[,n])), n], curve= T, rand.compute = T)
+#   allPredAUCs[n,i] = pr$auc.integral
+#   plot(pr$curve[,1:2], type = 'l', lwd = wid, col = alpha(ligColors[i],al),
+#        xlim = c(0,1), ylim = c(0,1),
+#        xlab = 'Recall', ylab = 'Precision', cex.lab = 1.5)
+#   
+#   rand_pr = pr.curve(Rand_outcomes[(obs == T) & (!is.na(Rand_outcomes[,n])), n], Rand_outcomes[(obs == F) & (!is.na(Rand_outcomes[,n])), n], curve= T, rand.compute = T)
+#   lines(rand_pr$curve[,1:2], lwd = wid, col = alpha('black',al))
+#   allRandAUCs[n,i] = rand_pr$auc.integral
+#   
+#   for(n in (2:ncol(outcomes))){
+#     pr = pr.curve(outcomes[(obs == T) & (!is.na(outcomes[,n])), n], outcomes[(obs == F) & (!is.na(outcomes[,n])), n], curve= T, rand.compute = T)
+#     allPredAUCs[n,i] = pr$auc.integral
+#     lines(pr$curve[,1:2], lwd = wid, col = alpha(ligColors[i],al))
+#     
+#     rand_pr = pr.curve(Rand_outcomes[(obs == T) & (!is.na(Rand_outcomes[,n])), n], Rand_outcomes[(obs == F) & (!is.na(Rand_outcomes[,n])), n], curve= T, rand.compute = T)
+#     lines(rand_pr$curve[,1:2], lwd = wid, col = alpha('black',al))
+#     allRandAUCs[n,i] = rand_pr$auc.integral
+#   }
+# 
+#   if (i != 12){
+#     title(main = bquote(atop("PR Curve" ~ - ~ bold(.(rawLigNames[i])),
+#                              "Mean AUC:" ~ .(round(mean(allPredAUCs[,i]),2)) ~ '(random:' ~ .(round(mean(allRandAUCs[,i]),2)) ~ ')')))
+#   }else{
+#     title(main = bquote(atop("PR Curve" ~ - ~ bold( "2" ~ alpha ~ "-Mannobiose"),
+#                              "Mean AUC:" ~ .(round(mean(allPredAUCs[,i]),2)) ~ '(random:' ~ .(round(mean(allRandAUCs[,i]),2)) ~ ')')))
+#   }
+# 
+#   rm(outcomes, Rand_outcomes)
+#   
+# }
+# 
+# 
 
 
 
@@ -1185,6 +1202,7 @@ for (i in 1:length(unique(colnames(featPercentiles)))){
   
 }
 
+dev.off()
 plot(medFeatPercentiles$Fuc[order(medFeatPercentiles$Fuc, decreasing = T)], pch = 19, col = featColors[order(medFeatPercentiles$Fuc, decreasing = T)])
 plot(RESImeds$Fuc[order(RESImeds$Fuc, decreasing = T)], pch = 19, col = featColors[resiFeatTag][order(RESImeds$Fuc, decreasing = T)])
 plot(POCKmeds$Fuc[order(POCKmeds$Fuc, decreasing = T)], pch = 19, col = featColors[pocketFeatTag][order(POCKmeds$Fuc, decreasing = T)])
@@ -1193,7 +1211,7 @@ plot(PLIPmeds$Fuc[order(PLIPmeds$Fuc, decreasing = T)], pch = 19, col = featColo
 
 # copied @ 1400 x 900
 par(mfrow = c(3,5))
-for (i in 1:ncol(medFeatPercentiles)){
+for (i in c(1,3,2,4:15)){
   plot(medFeatPercentiles[order(medFeatPercentiles[, i], decreasing = T), i],
        pch = 19,
        col = featColors[order(medFeatPercentiles[,i], decreasing = T)],
@@ -1202,7 +1220,7 @@ for (i in 1:ncol(medFeatPercentiles)){
 }
 
 par(mfrow = c(3,5))
-for (i in 1:ncol(RESImeds)){
+for (i in c(1,3,2,4:15)){
   plot(RESImeds[order(RESImeds[, i], decreasing = T), i],
        pch = 19,
        col = featColors[resiFeatTag][order(RESImeds[,i], decreasing = T)],
@@ -1213,7 +1231,7 @@ for (i in 1:ncol(RESImeds)){
 }
 
 par(mfrow = c(3,5))
-for (i in 1:ncol(POCKmeds)){
+for (i in c(1,3,2,4:15)){
   plot(POCKmeds[order(POCKmeds[, i], decreasing = T), i],
        pch = 19,
        col = featColors[pocketFeatTag][order(POCKmeds[,i], decreasing = T)],
@@ -1224,7 +1242,7 @@ for (i in 1:ncol(POCKmeds)){
 }
 
 par(mfrow = c(3,5))
-for (i in 1:ncol(PLIPmeds)){
+for (i in c(1,3,2,4:15)){
   plot(PLIPmeds[order(PLIPmeds[, i], decreasing = T), i],
        pch = 19,
        col = featColors[1:11][order(PLIPmeds[,i], decreasing = T)],
@@ -1285,8 +1303,9 @@ all(colnames(sigFeats) == colnames(topImpfeats))
 # }
 
 # Plot with STRATIFIED median feature importance percentiles on the y-axis
+dev.off()
 par(mfrow = c(3,5))
-for (i in 1:ncol(medFeatPercentiles)){
+for (i in c(1,3,2,4:15)){
   lig = colnames(medFeatPercentiles)[i]
   
   plot(abs(stats[,grepl('_effectSize$', colnames(stats))][,i]), stratAllFeatsImp[,i],
@@ -1417,10 +1436,46 @@ names(Sugar_Cnt) = levels(r_annot$Sugar_Cnt)
 
 annot_cols = list(Terminal_Sugar = Terminal_Sugar, Sugar_Cnt = Sugar_Cnt)
 
+dev.off()
+pdf(file = paste('./manuscript/figures/subplots/', 
+                 'allFeats_MWM_corplots',
+                 '.pdf', sep = ''),
+    width = 11.5,
+    height = 8.25)
+breakLst = seq(-1,1,0.05)
+pheatmap(allFeatCorrs,
+         color = colorRampPalette(c("firebrick2", "ivory", "dodgerblue3"))(length(breakLst)),
+         border_color = 'white',
+         cellwidth = cHeight,
+         cellheight = cHeight,
+         legend_breaks = c(-1, -0.5, 0, 0.5, 1, 0.97),
+         legend_labels = c("-1", "-0.5", "0", "0.5", "1", "Pearson Corr\n\n"),
+         labels_row = ligNames,
+         main = ' ',
+         breaks = breakLst,
+         show_colnames = F,
+         cutree_rows = 5,
+         # cutree_cols = 4,
+         treeheight_col = 0,
+         fontsize_row = 13,
+         
+         annotation_row = r_annot,
+         annotation_colors = annot_cols)
+# grid.text(label = 'Pearson correlations between feature-specific effect sizes across ligands',x = .415, y=0.985, gp=gpar(col="black", cex = 1.5))
+dev.off() 
+
 ####
 # PANEL B - adjusted from descriptive.R
 ## Residue features only
 ####
+
+
+cWidth = 10
+cHeight = 20 
+
+
+breakLst = seq(-0.5,0.5,0.01)
+
 
 resiAnnot = data.frame(Feature_Type = rep("", sum(resiFeatTag)))
 row.names(resiAnnot) = row.names(stats)[resiFeatTag]
@@ -1490,7 +1545,8 @@ pheatmap(resiFeat_stats,
          breaks = breakLst,
          show_colnames = T,
          fontsize_col = 7,
-         angle_col = 45)
+         angle_col = 45,
+         fontsize_row = 14)
 dev.off()
 
 
@@ -1546,11 +1602,12 @@ pheatmap(pocketFeat_stats,
          annotation_row = r_annot,
          annotation_colors = pockAnnot_cols,
          main = '',
-         cutree_rows = 4,
+         cutree_rows = 5,
          breaks = breakLst,
          show_colnames = T,
          fontsize_col = 9,
-         angle_col = 45)
+         angle_col = 45,
+         fontsize_row = 12)
 dev.off()
 
 
@@ -1586,7 +1643,8 @@ pheatmap(plipFeat_stats,
          breaks = breakLst,
          show_colnames = T,
          fontsize_col = 9,
-         angle_col = 45)
+         angle_col = 45,
+         fontsize_row = 12)
 dev.off()
 
 
@@ -2189,8 +2247,8 @@ legend(x = 'center',
                   'High Imp RF XOR Stat Sig',
                   'High Imp RF & Stat Sig'))
 
-
-## Find prototypical binding sites for each of 10 ligands in focus
+##################################
+## Find prototypical binding sites for each ligand
 row.names(stats) = gsub('^H_bin', 'a-helix_bin', row.names(stats))
 row.names(stats) = gsub('^B_bin', 'b-bridge_bin', row.names(stats))
 row.names(stats) = gsub('^E_bin', 'b-strand_bin', row.names(stats))
@@ -2204,7 +2262,7 @@ colnames(ligSpefic_feat_means) = gsub('_weightedFeatureMean$', '', colnames(ligS
 
 # ligSpefic_feat_means = ligSpefic_feat_means[colnames(allSigFeats),] # Limit to the set of 60 features that are significant and important in at least one of the 10 best performing ligands with RF
 
-top60_scaledFeats = scaledFeats
+top60_scaledFeats = scaledFeats # Use all features
 colnames(top60_scaledFeats) = row.names(stats) # carry over reformatted feature names
 # top60_scaledFeats = top60_scaledFeats[,colnames(allSigFeats)] # Subset of 60 top features scaled from 0,1
 

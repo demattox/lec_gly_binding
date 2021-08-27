@@ -15,7 +15,7 @@ if homeDir[-1] != '/':
 # import os
 import numpy as np
 # import sys
-# from rdkit import Chem
+from rdkit import Chem
 # import pliptool.plip.modules.plipxml as plipxml
 # import Bio.PDB
 

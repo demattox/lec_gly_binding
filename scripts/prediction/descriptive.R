@@ -30,7 +30,7 @@ bsResiDat <- read.delim(file = './analysis/training/data_in/bsResiDat.tsv', sep 
 
 all(row.names(bsResiDat) == row.names(predFeats))
 allOut = cbind(bsResiDat[,1:13], predFeats)
-write.csv(allOut, 'interactionData/suppFile1.csv', quote = T)
+# write.csv(allOut, 'interactionData/suppFile1.csv', quote = T)
 
 
 uniLigs = unique(bsResiDat$iupac)
@@ -89,95 +89,95 @@ ligColors[11] = 'royalblue2' # GlcNAc
 ###########################
 ## McCaldon analysis
 ###########################
-mccaldon$aa = lapply(mccaldon$aa, FUN = aaa) # convert from 1-letter aminoacid code to 3, capitalized
-mccaldon$aa = lapply(mccaldon$aa, FUN = str_to_upper)
-
-mccaldon$freq_bin1 = 0
-mccaldon$freq_bin2 = 0
-mccaldon$freq_bin3 = 0
-mccaldon$freq_bin4 = 0
-
-clusLst50 = unique(bsResiDat$seqClust50)
-
-for (i in 1:nrow(mccaldon)){
-  b1 = b2 = b3 = b4 = 0
-  for (j in 1:length(clusLst50)){
-    tag = bsResiDat$seqClust50 == clusLst50[j]
-    b1 = b1 + mean( bsResiDat[,grepl( paste('^',mccaldon$aa[i][[1]],'_bin1$', sep = ''), colnames(bsResiDat))] ) # Running sum of the average frequency for each cluster
-    b2 = b2 + mean( bsResiDat[,grepl( paste('^',mccaldon$aa[i][[1]],'_bin2$', sep = ''), colnames(bsResiDat))] )
-    b3 = b3 + mean( bsResiDat[,grepl( paste('^',mccaldon$aa[i][[1]],'_bin3$', sep = ''), colnames(bsResiDat))] )
-    b4 = b4 + mean( bsResiDat[,grepl( paste('^',mccaldon$aa[i][[1]],'_bin4$', sep = ''), colnames(bsResiDat))] )
-  }
-  mccaldon$freq_bin1[i] = b1/length(clusLst50) # Take average across the clusters s.t. each cluster gets equal weight
-  mccaldon$freq_bin2[i] = b2/length(clusLst50)
-  mccaldon$freq_bin3[i] = b3/length(clusLst50)
-  mccaldon$freq_bin4[i] = b4/length(clusLst50)
-}
-
-mcFreqs = mccaldon[,grep('[Ff]req', colnames(mccaldon))]
-colnames(mcFreqs) = c('McCaldon', 'bin1', 'bin2', 'bin3', 'bin4')
-mcFreqs$aa = unlist(mccaldon$aa)
-mcFreqs = mcFreqs[,c(6,2:5,1)]
-
-meltMc = melt(data = mcFreqs, id.vars = "aa", measure.vars = c("bin1", "bin2", "bin3", "bin4"))
-colnames(meltMc) = c("Amino_acid", "Bin_Number", "Frequency")
-
-# pdf(file = './analysis/prelimPlots/McCaldon_Frequencies.pdf', width = 16, height = 7)
-# ggplot(meltMc, aes(fill = Bin_Number, x = Amino_acid, y = Frequency)) + geom_bar(stat="identity", color="black", position=position_dodge())+
-#   scale_fill_manual(values=c(threshColors)) + 
-#   theme_grey(base_size = 22) + 
-#   geom_segment(aes(x = 0.6, y = mccaldon$mcFreq[1], xend = 1.4, yend = mccaldon$mcFreq[1]), cex=2) + 
-#   geom_segment(aes(x = 1.6, y = mccaldon$mcFreq[2], xend = 2.4, yend = mccaldon$mcFreq[2]), cex=2) + 
-#   geom_segment(aes(x = 2.6, y = mccaldon$mcFreq[3], xend = 3.4, yend = mccaldon$mcFreq[3]), cex=2) + 
-#   geom_segment(aes(x = 3.6, y = mccaldon$mcFreq[4], xend = 4.4, yend = mccaldon$mcFreq[4]), cex=2) + 
-#   geom_segment(aes(x = 4.6, y = mccaldon$mcFreq[5], xend = 5.4, yend = mccaldon$mcFreq[5]), cex=2) + 
-#   geom_segment(aes(x = 5.6, y = mccaldon$mcFreq[6], xend = 6.4, yend = mccaldon$mcFreq[6]), cex=2) + 
-#   geom_segment(aes(x = 6.6, y = mccaldon$mcFreq[7], xend = 7.4, yend = mccaldon$mcFreq[7]), cex=2) + 
-#   geom_segment(aes(x = 7.6, y = mccaldon$mcFreq[8], xend = 8.4, yend = mccaldon$mcFreq[8]), cex=2) + 
-#   geom_segment(aes(x = 8.6, y = mccaldon$mcFreq[9], xend = 9.4, yend = mccaldon$mcFreq[9]), cex=2) + 
-#   geom_segment(aes(x = 9.6, y = mccaldon$mcFreq[10], xend = 10.4, yend = mccaldon$mcFreq[10]), cex=2) + 
-#   geom_segment(aes(x = 10.6, y = mccaldon$mcFreq[11], xend = 11.4, yend = mccaldon$mcFreq[11]), cex=2) + 
-#   geom_segment(aes(x = 11.6, y = mccaldon$mcFreq[12], xend = 12.4, yend = mccaldon$mcFreq[12]), cex=2) + 
-#   geom_segment(aes(x = 12.6, y = mccaldon$mcFreq[13], xend = 13.4, yend = mccaldon$mcFreq[13]), cex=2) + 
-#   geom_segment(aes(x = 13.6, y = mccaldon$mcFreq[14], xend = 14.4, yend = mccaldon$mcFreq[14]), cex=2) + 
-#   geom_segment(aes(x = 14.6, y = mccaldon$mcFreq[15], xend = 15.4, yend = mccaldon$mcFreq[15]), cex=2) + 
-#   geom_segment(aes(x = 15.6, y = mccaldon$mcFreq[16], xend = 16.4, yend = mccaldon$mcFreq[16]), cex=2) + 
-#   geom_segment(aes(x = 16.6, y = mccaldon$mcFreq[17], xend = 17.4, yend = mccaldon$mcFreq[17]), cex=2) + 
-#   geom_segment(aes(x = 17.6, y = mccaldon$mcFreq[18], xend = 18.4, yend = mccaldon$mcFreq[18]), cex=2) + 
-#   geom_segment(aes(x = 18.6, y = mccaldon$mcFreq[19], xend = 19.4, yend = mccaldon$mcFreq[19]), cex=2) + 
-#   geom_segment(aes(x = 19.6, y = mccaldon$mcFreq[20], xend = 20.4, yend = mccaldon$mcFreq[20]), cex=2)
-# dev.off()
-
-mcFreqs = mccaldon[,grep('[Ff]req', colnames(mccaldon))]
-colnames(mcFreqs) = c('McCaldon', 'bin1', 'bin2', 'bin3', 'bin4')
-mcFreqs$aa = unlist(mccaldon$aa)
-mcFreqs = mcFreqs[,c(6,2:5,1)]
-
-tag = (mcFreqs$bin1 > mcFreqs$McCaldon)*100
-tag[!tag] = -100
-mcFreqs$bin1 = (mcFreqs$bin1 / mcFreqs$McCaldon) * tag
-
-tag = (mcFreqs$bin2 > mcFreqs$McCaldon)*100
-tag[!tag] = -100
-mcFreqs$bin2 = (mcFreqs$bin2 / mcFreqs$McCaldon) * tag
-
-tag = (mcFreqs$bin3 > mcFreqs$McCaldon)*100
-tag[!tag] = -100
-mcFreqs$bin3 = (mcFreqs$bin3 / mcFreqs$McCaldon) * tag
-
-tag = (mcFreqs$bin4 > mcFreqs$McCaldon)*100
-tag[!tag] = -100
-mcFreqs$bin4 = (mcFreqs$bin4 / mcFreqs$McCaldon) * tag
-
-meltMc = melt(data = mcFreqs, id.vars = "aa", measure.vars = c("bin1", "bin2", "bin3", "bin4"))
-colnames(meltMc) = c("Amino_acid", "Bin_Number", "PercentDiff_McCaldon")
-
-ggplot(meltMc, aes(fill = Bin_Number, x = Amino_acid, y = PercentDiff_McCaldon)) + geom_bar(stat="identity", color="black", position=position_dodge())+
-  geom_hline(yintercept = c(0)) +
-  scale_fill_manual(values=c(threshColors)) +
-  theme_dark(base_size = 22) + 
-  labs(title = 'Lectin binding site deviations from McCaldon frequency', x = "Amino Acids", y = "Percent change from McCaldon") +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
+# mccaldon$aa = lapply(mccaldon$aa, FUN = aaa) # convert from 1-letter aminoacid code to 3, capitalized
+# mccaldon$aa = lapply(mccaldon$aa, FUN = str_to_upper)
+# 
+# mccaldon$freq_bin1 = 0
+# mccaldon$freq_bin2 = 0
+# mccaldon$freq_bin3 = 0
+# mccaldon$freq_bin4 = 0
+# 
+# clusLst50 = unique(bsResiDat$seqClust50)
+# 
+# for (i in 1:nrow(mccaldon)){
+#   b1 = b2 = b3 = b4 = 0
+#   for (j in 1:length(clusLst50)){
+#     tag = bsResiDat$seqClust50 == clusLst50[j]
+#     b1 = b1 + mean( bsResiDat[,grepl( paste('^',mccaldon$aa[i][[1]],'_bin1$', sep = ''), colnames(bsResiDat))] ) # Running sum of the average frequency for each cluster
+#     b2 = b2 + mean( bsResiDat[,grepl( paste('^',mccaldon$aa[i][[1]],'_bin2$', sep = ''), colnames(bsResiDat))] )
+#     b3 = b3 + mean( bsResiDat[,grepl( paste('^',mccaldon$aa[i][[1]],'_bin3$', sep = ''), colnames(bsResiDat))] )
+#     b4 = b4 + mean( bsResiDat[,grepl( paste('^',mccaldon$aa[i][[1]],'_bin4$', sep = ''), colnames(bsResiDat))] )
+#   }
+#   mccaldon$freq_bin1[i] = b1/length(clusLst50) # Take average across the clusters s.t. each cluster gets equal weight
+#   mccaldon$freq_bin2[i] = b2/length(clusLst50)
+#   mccaldon$freq_bin3[i] = b3/length(clusLst50)
+#   mccaldon$freq_bin4[i] = b4/length(clusLst50)
+# }
+# 
+# mcFreqs = mccaldon[,grep('[Ff]req', colnames(mccaldon))]
+# colnames(mcFreqs) = c('McCaldon', 'bin1', 'bin2', 'bin3', 'bin4')
+# mcFreqs$aa = unlist(mccaldon$aa)
+# mcFreqs = mcFreqs[,c(6,2:5,1)]
+# 
+# meltMc = melt(data = mcFreqs, id.vars = "aa", measure.vars = c("bin1", "bin2", "bin3", "bin4"))
+# colnames(meltMc) = c("Amino_acid", "Bin_Number", "Frequency")
+# 
+# # pdf(file = './analysis/prelimPlots/McCaldon_Frequencies.pdf', width = 16, height = 7)
+# # ggplot(meltMc, aes(fill = Bin_Number, x = Amino_acid, y = Frequency)) + geom_bar(stat="identity", color="black", position=position_dodge())+
+# #   scale_fill_manual(values=c(threshColors)) + 
+# #   theme_grey(base_size = 22) + 
+# #   geom_segment(aes(x = 0.6, y = mccaldon$mcFreq[1], xend = 1.4, yend = mccaldon$mcFreq[1]), cex=2) + 
+# #   geom_segment(aes(x = 1.6, y = mccaldon$mcFreq[2], xend = 2.4, yend = mccaldon$mcFreq[2]), cex=2) + 
+# #   geom_segment(aes(x = 2.6, y = mccaldon$mcFreq[3], xend = 3.4, yend = mccaldon$mcFreq[3]), cex=2) + 
+# #   geom_segment(aes(x = 3.6, y = mccaldon$mcFreq[4], xend = 4.4, yend = mccaldon$mcFreq[4]), cex=2) + 
+# #   geom_segment(aes(x = 4.6, y = mccaldon$mcFreq[5], xend = 5.4, yend = mccaldon$mcFreq[5]), cex=2) + 
+# #   geom_segment(aes(x = 5.6, y = mccaldon$mcFreq[6], xend = 6.4, yend = mccaldon$mcFreq[6]), cex=2) + 
+# #   geom_segment(aes(x = 6.6, y = mccaldon$mcFreq[7], xend = 7.4, yend = mccaldon$mcFreq[7]), cex=2) + 
+# #   geom_segment(aes(x = 7.6, y = mccaldon$mcFreq[8], xend = 8.4, yend = mccaldon$mcFreq[8]), cex=2) + 
+# #   geom_segment(aes(x = 8.6, y = mccaldon$mcFreq[9], xend = 9.4, yend = mccaldon$mcFreq[9]), cex=2) + 
+# #   geom_segment(aes(x = 9.6, y = mccaldon$mcFreq[10], xend = 10.4, yend = mccaldon$mcFreq[10]), cex=2) + 
+# #   geom_segment(aes(x = 10.6, y = mccaldon$mcFreq[11], xend = 11.4, yend = mccaldon$mcFreq[11]), cex=2) + 
+# #   geom_segment(aes(x = 11.6, y = mccaldon$mcFreq[12], xend = 12.4, yend = mccaldon$mcFreq[12]), cex=2) + 
+# #   geom_segment(aes(x = 12.6, y = mccaldon$mcFreq[13], xend = 13.4, yend = mccaldon$mcFreq[13]), cex=2) + 
+# #   geom_segment(aes(x = 13.6, y = mccaldon$mcFreq[14], xend = 14.4, yend = mccaldon$mcFreq[14]), cex=2) + 
+# #   geom_segment(aes(x = 14.6, y = mccaldon$mcFreq[15], xend = 15.4, yend = mccaldon$mcFreq[15]), cex=2) + 
+# #   geom_segment(aes(x = 15.6, y = mccaldon$mcFreq[16], xend = 16.4, yend = mccaldon$mcFreq[16]), cex=2) + 
+# #   geom_segment(aes(x = 16.6, y = mccaldon$mcFreq[17], xend = 17.4, yend = mccaldon$mcFreq[17]), cex=2) + 
+# #   geom_segment(aes(x = 17.6, y = mccaldon$mcFreq[18], xend = 18.4, yend = mccaldon$mcFreq[18]), cex=2) + 
+# #   geom_segment(aes(x = 18.6, y = mccaldon$mcFreq[19], xend = 19.4, yend = mccaldon$mcFreq[19]), cex=2) + 
+# #   geom_segment(aes(x = 19.6, y = mccaldon$mcFreq[20], xend = 20.4, yend = mccaldon$mcFreq[20]), cex=2)
+# # dev.off()
+# 
+# mcFreqs = mccaldon[,grep('[Ff]req', colnames(mccaldon))]
+# colnames(mcFreqs) = c('McCaldon', 'bin1', 'bin2', 'bin3', 'bin4')
+# mcFreqs$aa = unlist(mccaldon$aa)
+# mcFreqs = mcFreqs[,c(6,2:5,1)]
+# 
+# tag = (mcFreqs$bin1 > mcFreqs$McCaldon)*100
+# tag[!tag] = -100
+# mcFreqs$bin1 = (mcFreqs$bin1 / mcFreqs$McCaldon) * tag
+# 
+# tag = (mcFreqs$bin2 > mcFreqs$McCaldon)*100
+# tag[!tag] = -100
+# mcFreqs$bin2 = (mcFreqs$bin2 / mcFreqs$McCaldon) * tag
+# 
+# tag = (mcFreqs$bin3 > mcFreqs$McCaldon)*100
+# tag[!tag] = -100
+# mcFreqs$bin3 = (mcFreqs$bin3 / mcFreqs$McCaldon) * tag
+# 
+# tag = (mcFreqs$bin4 > mcFreqs$McCaldon)*100
+# tag[!tag] = -100
+# mcFreqs$bin4 = (mcFreqs$bin4 / mcFreqs$McCaldon) * tag
+# 
+# meltMc = melt(data = mcFreqs, id.vars = "aa", measure.vars = c("bin1", "bin2", "bin3", "bin4"))
+# colnames(meltMc) = c("Amino_acid", "Bin_Number", "PercentDiff_McCaldon")
+# 
+# ggplot(meltMc, aes(fill = Bin_Number, x = Amino_acid, y = PercentDiff_McCaldon)) + geom_bar(stat="identity", color="black", position=position_dodge())+
+#   geom_hline(yintercept = c(0)) +
+#   scale_fill_manual(values=c(threshColors)) +
+#   theme_dark(base_size = 22) + 
+#   labs(title = 'Lectin binding site deviations from McCaldon frequency', x = "Amino Acids", y = "Percent change from McCaldon") +
+#   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), title = element_text(face = "bold.italic", color = "black"))
 
 ###########################
 ## Mean-based WMW test
@@ -468,7 +468,6 @@ stats_weighted = cbind(stats_weighted, ligSpefic_feat_means)
 ####################
 
 
-
 # Colors to features for plotting
 featColors = rep('', nrow(stats_weighted))
 resiFeats = colorRampPalette(c("plum1","tomato", "firebrick4"))(4)
@@ -505,7 +504,7 @@ par(mfrow=c(3,5),
 
 xLim = c(-0.5,0.5)
 yLim = c(0,19)
-for(i in 1:ncol(ligTags)){
+for(i in c(1,3,2,4:15)){
   
   # yLim = c(0,max(-log10(0.1), -log10(min(stats_weighted[,grepl('_adj$', colnames(stats_weighted))][,i]))) + 1)
   
@@ -522,6 +521,7 @@ for(i in 1:ncol(ligTags)){
   # abline(h = c(0.5,1.5,2.5,3.5,4.5,5.5,6.5), lwd = 3, col = fg)
   
   abline(v = 0, lty=2, lwd = 6, col = 'white')
+  abline(v = c(-.8, -.4, .4, .8), lwd = .75, col = 'white')
   
   par(new=T)
   

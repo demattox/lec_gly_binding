@@ -506,6 +506,13 @@ topLigOccurences$id_cutoff = c('50%', '80%')
 
 ## 50% id
 
+####################
+# Extracted later but ported back up here for consistency and redoing some plots (result of peer-review suggested revisions)
+neuExlcLst = c('NeuAc(a2-3)Gal(b1-4)[Fuc(a1-3)]GlcNAc','NeuAc(a2-3)Gal(b1-4)[Fuc(a1-3)]GlcNAc(b1-6)[Gal(b1-3)]GalNAc','NeuAc(a1-3)Gal(b1-4)GlcNAc','NeuAc(a1-3)Gal(b1-3)GlcNAc','NeuAc(a2-3)Gal(b1-4)GlcNAc(b1-2)Man(a1-6)[GlcNAc(b1-2)Man(a1-3)]Man(b1-4)GlcNAc(b1-4)[Fuc(a1-6)]GlcNAc','NeuAc(','NeuAc(a2-3)Gal(a1-4)[Fuc(a1-3)]GlcNAc','NeuAc;NeuAc(a2-8)NeuAc','NeuAc()Gal()GalNAc()Gal()NeuAc','NeuAc(a2-8)NeuAc,Gal','NeuAc(a2-3)GlcNAc(b1-4)[Fuc(a1-3)]GlcNAc')
+fucLst = c('Gal(b1-4)[Fuc(a1-3)]GlcNAc(b1-3)Gal(b1-4)Glc','Gal(b1-4)[Fuc(a1-3)]GlcNAc','Gal(a1-3)[Fuc(a1-2)]Gal','Fuc(a1-2)Gal(b1-3)[Fuc(a1-4)]GlcNAc(b1-3)Gal','Fuc(a1-2)Gal(b1-3)[Fuc(a1-4)]GlcNAc(b1-3)Gal(b1-4)Glc','GalNAc(a1-3)[Fuc(a1-2)]Gal(b1-3)[Fuc(a1-4)]GlcNAc','Gal(a1-3)[Fuc(a1-2)]Gal(b1-3)[Fuc(a1-4)]GlcNAc(b1-3)Gal(b1-4)Glc','GalNAc(a1-3)[Fuc(a1-2)]Gal(b1-3)GlcNAc(b1-3)Gal(b1-4)Glc','GalNAc(a1-3)[Fuc(a1-2)]Gal(b1-4)[Fuc(a1-3)]Glc','Fuc(a1-2)Gal(b1-4)[Fuc(a1-3)]GlcNAc','GalNAc(a1-3)[Fuc(a1-2)]Gal(b1-4)[Fuc(a1-3)]GlcNAc','Fuc(a1-2)Gal(b1-4)GlcNAc','Fuc(a1-6)GlcNAc','GalNAc(a1-3)[Fuc(a1-2)]Gal','Fuc(a1-2)Gal(b1-4)Glc','Fuc(a1-2)Gal(b1-2)Xyl','Fuc(a1-2)Gal(b1-3)GlcNAc(b1-3)Gal','Gal(a1-3)[Fuc(a1-2)]Gal(b1-4)Glc','Gal(b1-4)[Fuc(a1-3)]GlcNAc(b1-4)Glc','Gal(b1-4)[Fuc(a1-3)]GlcNAc(b1-3)Gal','Gal(b1-3)[Fuc(a1-4)]GlcNAc','Fuc(a1-4)GlcNAc','Gal(b1-3)[Fuc(a1-4)]GlcNAc(b1-3)Gal','GalNAc(a1-3)[Fuc(a1-2)]Gal(b1-4)GlcNAc','GalNAc(a1-3)[Fuc(a1-2)]Gal(b1-4)Glc','Gal(b1-4)[Fuc(a1-3)]GlcNAc(b1-2)Man(a1-3)[GlcNAc(b1-2)Man(a1-6)]Man(b1-4)GlcNAc(b1-4)[Fuc(a1-6)]GlcNAc','Fuc(a1-2)Gal(b1-3)[Fuc(a1-4)]GlcNAc','Fuc(a1-2)Gal(b1-3)GlcNAc(b1-3)Gal(b1-4)Glc','Fuc(a1-2)Gal(b1-3)GlcNAc','Gal(a1-3)[Fuc(a1-2)]Gal(b1-3)GlcNAc(b1-3)Gal(b1-4)Glc','Fuc(a1-2)Gal(b1-3)GalNAc(b1-3)Gal(a1-4)Gal','GalNAc(a1-3)[Fuc(a1-2)]Gal(b1-3)GlcNAc','Fuc(a1-2)Gal','Gal(b1-4)[Fuc(a1-3)]Glc','GlcNAc(b1-4)[Fuc(a1-3)]GlcNAc')
+####################
+
+
 parenCnt = bracCnt = manCnt = neuCnt = bracCnt = rep(0,length(ligSort50))
 for (i in 1:length(ligSort50)){
   lig = ligSort50[i]
@@ -525,8 +532,21 @@ bTag = bracCnt >= 1 # Branched glycans
 hist(manCnt)
 
 manTag = manCnt >= 3 & grepl('^Man',ligSort50) # High mannose
+
 neuTag = grepl('^NeuAc',ligSort50) & !mTag # Has terminal sialic acid and is not a monosacc.
-fucTag = grepl('^Fuc',ligSort50) & !mTag # Has a terminal fucose and is not a monosacc.
+for (i in 1:length(ligSort50)){
+  if (ligSort50[i] %in% neuExlcLst){
+    neuTag[i] = F
+  }
+}
+
+# fucTag = grepl('^Fuc',ligSort50) & !mTag # Has a terminal fucose and is not a monosacc.
+fucTag = rep(F, length(ligSort50))
+for (i in 1:length(ligSort50)){
+  if (ligSort50[i] %in% fucLst){
+    fucTag[i] = T
+  }
+}
 
 # ligSort50[mTag]
 # ligSort50[dTag]
@@ -536,12 +556,18 @@ fucTag = grepl('^Fuc',ligSort50) & !mTag # Has a terminal fucose and is not a mo
 # 
 # ligSort50[bTag]
 # 
-# ligSort50[manTag]
-# ligSort50[neuTag]
-# ligSort50[fucTag]
+sum(manTag)
+sum(neuTag)
+sum(fucTag)
+
+ligSort50[manTag]
+ligSort50[neuTag]
+ligSort50[fucTag]
+
 
 sacc_col =  colorRampPalette(c("plum1","tomato", "firebrick4"))(5)
 
+dev.off()
 pdf(file = paste('./manuscript/figures/', 
                  'clusts_with_ligands_id50',
                  '.pdf', sep = ''),
@@ -628,8 +654,25 @@ hist(manCnt)
 
 manTag = manCnt >= 3 & grepl('^Man',ligSort80) # High mannose
 neuTag = grepl('^NeuAc',ligSort80) & !mTag # Has terminal sialic acid and is not a monosacc.
-fucTag = grepl('^Fuc',ligSort80) & !mTag # Has a terminal fucose
+for (i in 1:length(ligSort80)){
+  if (ligSort80[i] %in% neuExlcLst){
+    neuTag[i] = F
+  }
+}
 
+# fucTag = grepl('^Fuc',ligSort80) & !mTag # Has a terminal fucose and is not a monosacc.
+fucTag = rep(F, length(ligSort80))
+for (i in 1:length(ligSort80)){
+  if (ligSort80[i] %in% fucLst){
+    fucTag[i] = T
+  }
+}
+
+sum(manTag)
+sum(neuTag)
+sum(fucTag)
+
+dev.off()
 pdf(file = paste('./analysis/sfgPlots/', 
                  'clusts_with_ligands_id80',
                  '.pdf', sep = ''),
@@ -742,6 +785,7 @@ colnames(topLigOccurences)[4] = 'Terminal Fucose'
 melt_ligOccur = melt(data =topLigOccurences[1,], id.vars = 'id_cutoff')
 colnames(melt_ligOccur) = c('Clust_ID', 'Ligand', 'Cluster_Percent_w_ligand')
 
+melt_ligOccur$Ligand = factor(melt_ligOccur$Ligand, levels = levels(melt_ligOccur$Ligand)[c(1,3,2,4:15)])
 
 pdf(file = paste('./manuscript/figures/', 
                  'clust50_pcts_w_TopLigands',
@@ -749,8 +793,8 @@ pdf(file = paste('./manuscript/figures/',
     width = 15,
     height = 10.5)
 ggplot(melt_ligOccur, aes(fill = Clust_ID, x = Ligand, alpha = Ligand, y = Cluster_Percent_w_ligand)) + geom_bar(stat="identity", color="black", position=position_dodge())+
-  scale_fill_manual(values=mycol[c(4)], guide = F) +
-  scale_alpha_manual(values=c(rep(0.6,3), rep(.9,12)), guide = F) +
+  scale_fill_manual(values=mycol[c(4)], guide = 'none') +
+  scale_alpha_manual(values=c(rep(0.6,3), rep(.9,12)), guide = 'none') +
   ylim(c(0, 30)) +
   geom_hline(yintercept = c(5)) +
   geom_vline(xintercept = c(3.5), lty = 2) +
@@ -778,18 +822,95 @@ pTag = !(mTag | dTag | tTag | qTag) # 5+ sugars
 bTag = bracCnt >= 1 # Branched glycans
 
 manTag = manCnt >= 3 & grepl('^Man',uniLigs) # High mannose
-neuTag = grepl('^NeuAc',uniLigs) & !mTag # Has terminal sialic acid and is not a monosacc.
-fucTag = grepl('^Fuc',uniLigs) & !mTag # Has a terminal fucose
+neuTag = grepl('^NeuAc',uniLigs) & !mTag # Has terminal sialic acid and is not a monosacc
+for (i in 1:length(uniLigs)){
+  if (uniLigs[i] %in% neuExlcLst){
+    neuTag[i] = F
+  }
+}
 
+# fucTag = grepl('^Fuc',uniLigs) & !mTag # Has a terminal fucose and is not a monosacc.
+fucTag = rep(F, length(uniLigs))
+for (i in 1:length(uniLigs)){
+  if (uniLigs[i] %in% fucLst){
+    fucTag[i] = T
+  }
+}
+
+# Clean up neuTag, remove IUPAC lignds with obvious errors or Fucose residues
+# sum(neuTag)
+# dropped = rep("",(length(uniLigs)))
+# for (i in 1:length(uniLigs)){
+#   if (neuTag[i]){
+#     cat(i, uniLigs[i])
+#     dec = readline('Press "Enter" to continue or type "F" to disregard ligand: ')
+#     if (dec == "F"){
+#       cat('\tDropping ligand\n\n')
+#       neuTag[i] = FALSE
+#       dropped[i] = uniLigs[i]
+#     }
+#   }
+# }
+# sum(neuTag)
+# droppedNeu = dropped[dropped != ""]
+# 
+# 
+# # Expand Fucose residues
+# sum(fucTag)
+# sum(bigFucTag) # Has any fucose and is not a monosaccharide
+# 
+# uniLigs[bigFucTag]
+# 
+# # Make sure fucose arm comes from monosaccharide of depth <= max(depth) - 2
+# # Exclude ligands with terminal or "arm" NeuAc
+# for (i in 1:length(uniLigs)){
+#   if (bigFucTag[i]){
+#     cat(i, uniLigs[i])
+#     dec = readline('Press "Enter" to continue or type "F" to disregard ligand: ')
+#     if (dec == "F"){
+#       cat('\tDropping ligand\n\n')
+#       bigFucTag[i] = FALSE
+#     }
+#   }
+# }
+# sum(bigFucTag)
+# uniLigs[bigFucTag]
+# sum(bigFucTag | fucTag)
+# bigFucTag = bigFucTag | fucTag
+# 
+# sum(bigFucTag)
+# cat(uniLigs[bigFucTag], sep = "','")
+
+
+
+
+
+
+
+# sum(manTag)
 # uniLigs[manTag]
 # for (i in 1:length(uniLigs[manTag])){
 #   cat(uniLigs[manTag][i],'\n')
 # }
+# 
+# sum(neuTag)
 # uniLigs[neuTag]
 # for (i in 1:length(uniLigs[neuTag])){
 #   cat(uniLigs[neuTag][i],'\n')
 # }
+# 
+# sum(fucTag)
 # uniLigs[fucTag]
+# # uniLigs[bigFucTag]
+# # fucUn = bigFucTag & !fucTag
+# # for (i in 1:length(uniLigs[fucUn])){
+# #   cat(uniLigs[fucUn][i],'\n')
+# # }
+# for (i in 1:length(uniLigs[fucUn])){
+#   cat(uniLigs[fucUn][i],'\n')
+# }
+
+
 
 # get tags to indicate binding sites containing one of the 15 ligands of interest
 ligTags = as.data.frame(matrix(F, nrow = nrow(bsResiDat), ncol = length(top50)))

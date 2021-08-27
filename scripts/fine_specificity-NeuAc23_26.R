@@ -184,117 +184,117 @@ for (i in 1:length(neuClusts)){
 ########################
 ## Neua2-3/a2-6 - Descriptive
 ########################
-tag = tag23 | tag26
-bsResiDat = bsResiDat[tag,]
-predFeats = predFeats[tag,]
-tag23 = tag23[tag]
-tag26 = tag26[tag]
-
-
-scaledFeats = predFeats  # Scale features between 0 & 1
-zeroCol = rep(F, ncol(predFeats))
-for(i in 1:ncol(scaledFeats)){
-  if (all(scaledFeats[,i] == 0)){
-    zeroCol[i] = T
-  } else{
-    scaledFeats[,i] = (scaledFeats[,i] - min(scaledFeats[,i])) / (max(scaledFeats[,i]) - min(scaledFeats[,i]))
-  }
-}
-scaledFeats = scaledFeats[,!zeroCol]
-
-neu.umap = umap(scaledFeats)
-
-summary(neu.umap$layout)
-
-# UMAP plot
-plot(x = neu.umap$layout[,1], y = neu.umap$layout[,2],
-     pch = 19, #col = alpha(colors[labels.int], 0.6),
-     xlab = 'UMAP 1', ylab = 'UMAP 2', main = "UMAP vis for 3' & 6' interactions",
-     xlim = c(-7.8,7), ylim = c(-10, 7.8))
-
-
-# Color by 3' vs 6'
-plot(x = neu.umap$layout[tag23,1], y = neu.umap$layout[tag23,2],
-     pch = 19, cex = 1.5,
-     col = alpha('dodgerblue1', 0.6),
-     xlab = 'UMAP 1', ylab = 'UMAP 2', main = "UMAP vis for 3' & 6' interactions",
-     xlim = c(-7.8,7), ylim = c(-10, 7.8))
-par(new = T)
-plot(x = neu.umap$layout[tag26,1], y = neu.umap$layout[tag26,2],
-    #xlim = c(-6,7), ylim = c(-6,7),
-    pch = 15, cex = 1.5,
-    # col = alpha(ligColors[2], 0.6),
-    col = alpha('firebrick2', 0.6),
-    xlab = '', ylab = '', main = '',
-    xlim = c(-7.8,7), ylim = c(-10, 7.8))
-legend(x = 'bottomright', legend = c("3' SA", "6' SA"), col = c('dodgerblue1', 'firebrick2'), pch = c(19, 15))
-
-
-# Color by species of origin
-specList = unique(bsResiDat$origine)
-specCols = colfunc(length(specList))
-
-plot(x = neu.umap$layout[bsResiDat$origine == specList[1],1], y = neu.umap$layout[bsResiDat$origine == specList[1],2],
-     #xlim = c(-6,7), ylim = c(-6,7),
-     pch = 19, cex = 1.5,
-     col = alpha(specCols[1], 0.6),
-     xlab = 'UMAP 1', ylab = 'UMAP 2', main = "UMAP vis for 3' & 6' interactions",
-     xlim = c(-7.8,7), ylim = c(-10, 7.8))
-for (i in 2:length(specList)){
-  par(new = T)
-  plot(x = neu.umap$layout[bsResiDat$origine == specList[i],1], y = neu.umap$layout[bsResiDat$origine == specList[i],2],
-       #xlim = c(-6,7), ylim = c(-6,7),
-       pch = 19, cex = 1.5,
-       # col = alpha(ligColors[2], 0.6),
-       col = alpha(specCols[i], 0.6),
-       xlab = '', ylab = '', main = '', axes = F,
-       xlim = c(-7.8,7), ylim = c(-10, 7.8))
-}
-
-legend(x = 'bottomright', legend = specList, col = specCols, pch = 19)
-
+# tag = tag23 | tag26
+# bsResiDat = bsResiDat[tag,]
+# predFeats = predFeats[tag,]
+# tag23 = tag23[tag]
+# tag26 = tag26[tag]
+# 
+# 
+# scaledFeats = predFeats  # Scale features between 0 & 1
+# zeroCol = rep(F, ncol(predFeats))
+# for(i in 1:ncol(scaledFeats)){
+#   if (all(scaledFeats[,i] == 0)){
+#     zeroCol[i] = T
+#   } else{
+#     scaledFeats[,i] = (scaledFeats[,i] - min(scaledFeats[,i])) / (max(scaledFeats[,i]) - min(scaledFeats[,i]))
+#   }
+# }
+# scaledFeats = scaledFeats[,!zeroCol]
+# 
+# neu.umap = umap(scaledFeats)
+# 
+# summary(neu.umap$layout)
+# 
+# # UMAP plot
+# plot(x = neu.umap$layout[,1], y = neu.umap$layout[,2],
+#      pch = 19, #col = alpha(colors[labels.int], 0.6),
+#      xlab = 'UMAP 1', ylab = 'UMAP 2', main = "UMAP vis for 3' & 6' interactions",
+#      xlim = c(-7.8,7), ylim = c(-10, 7.8))
+# 
+# 
+# # Color by 3' vs 6'
+# plot(x = neu.umap$layout[tag23,1], y = neu.umap$layout[tag23,2],
+#      pch = 19, cex = 1.5,
+#      col = alpha('dodgerblue1', 0.6),
+#      xlab = 'UMAP 1', ylab = 'UMAP 2', main = "UMAP vis for 3' & 6' interactions",
+#      xlim = c(-7.8,7), ylim = c(-10, 7.8))
 # par(new = T)
-# plot(x = neu.umap$layout[bsResiDat$seqClust50 %in% c(25,27,28,29),1], y = neu.umap$layout[bsResiDat$seqClust50 %in% c(25,27,28,29),2],
-#      col = 'black',
-#      xlim = c(-7.4,10), ylim = c(-10.2, 4))
-
-# Plot by cluster ID
-clusLst = unique(bsResiDat$seqClust50)
-clusLst = clusLst[order(clusLst)]
-clusCols = colfunc(length(clusLst))
-set.seed(1)
-clusCols = clusCols[sample(1:length(clusCols), size = length(clusCols), replace = F)]
-
-plot(x = neu.umap$layout[bsResiDat$seqClust50 == clusLst[1],1], y = neu.umap$layout[bsResiDat$seqClust50 == clusLst[1],2],
-     pch = 19, cex = 1.5,
-     col = alpha(clusCols[1], 0.6),
-     xlab = 'UMAP 1', ylab = 'UMAP 2', main = "UMAP vis for 3' & 6' interactions",
-     xlim = c(-7.8,7), ylim = c(-10, 7.8))
-for (i in 2:length(clusLst)){
-  par(new = T)
-  plot(x = neu.umap$layout[bsResiDat$seqClust50 == clusLst[i],1], y = neu.umap$layout[bsResiDat$seqClust50 == clusLst[i],2],
-       pch = 19, cex = 1.5,
-       # col = alpha(ligColors[2], 0.6),
-       col = alpha(clusCols[i], 0.6),
-       xlab = '', ylab = '', main = '', axes = F,
-       xlim = c(-7.8,7), ylim = c(-10, 7.8))
-}
-
+# plot(x = neu.umap$layout[tag26,1], y = neu.umap$layout[tag26,2],
+#     #xlim = c(-6,7), ylim = c(-6,7),
+#     pch = 15, cex = 1.5,
+#     # col = alpha(ligColors[2], 0.6),
+#     col = alpha('firebrick2', 0.6),
+#     xlab = '', ylab = '', main = '',
+#     xlim = c(-7.8,7), ylim = c(-10, 7.8))
+# legend(x = 'bottomright', legend = c("3' SA", "6' SA"), col = c('dodgerblue1', 'firebrick2'), pch = c(19, 15))
+# 
+# 
+# # Color by species of origin
+# specList = unique(bsResiDat$origine)
+# specCols = colfunc(length(specList))
+# 
+# plot(x = neu.umap$layout[bsResiDat$origine == specList[1],1], y = neu.umap$layout[bsResiDat$origine == specList[1],2],
+#      #xlim = c(-6,7), ylim = c(-6,7),
+#      pch = 19, cex = 1.5,
+#      col = alpha(specCols[1], 0.6),
+#      xlab = 'UMAP 1', ylab = 'UMAP 2', main = "UMAP vis for 3' & 6' interactions",
+#      xlim = c(-7.8,7), ylim = c(-10, 7.8))
+# for (i in 2:length(specList)){
+#   par(new = T)
+#   plot(x = neu.umap$layout[bsResiDat$origine == specList[i],1], y = neu.umap$layout[bsResiDat$origine == specList[i],2],
+#        #xlim = c(-6,7), ylim = c(-6,7),
+#        pch = 19, cex = 1.5,
+#        # col = alpha(ligColors[2], 0.6),
+#        col = alpha(specCols[i], 0.6),
+#        xlab = '', ylab = '', main = '', axes = F,
+#        xlim = c(-7.8,7), ylim = c(-10, 7.8))
+# }
+# 
+# legend(x = 'bottomright', legend = specList, col = specCols, pch = 19)
+# 
+# # par(new = T)
+# # plot(x = neu.umap$layout[bsResiDat$seqClust50 %in% c(25,27,28,29),1], y = neu.umap$layout[bsResiDat$seqClust50 %in% c(25,27,28,29),2],
+# #      col = 'black',
+# #      xlim = c(-7.4,10), ylim = c(-10.2, 4))
+# 
+# # Plot by cluster ID
+# clusLst = unique(bsResiDat$seqClust50)
+# clusLst = clusLst[order(clusLst)]
+# clusCols = colfunc(length(clusLst))
+# set.seed(1)
+# clusCols = clusCols[sample(1:length(clusCols), size = length(clusCols), replace = F)]
+# 
+# plot(x = neu.umap$layout[bsResiDat$seqClust50 == clusLst[1],1], y = neu.umap$layout[bsResiDat$seqClust50 == clusLst[1],2],
+#      pch = 19, cex = 1.5,
+#      col = alpha(clusCols[1], 0.6),
+#      xlab = 'UMAP 1', ylab = 'UMAP 2', main = "UMAP vis for 3' & 6' interactions",
+#      xlim = c(-7.8,7), ylim = c(-10, 7.8))
+# for (i in 2:length(clusLst)){
+#   par(new = T)
+#   plot(x = neu.umap$layout[bsResiDat$seqClust50 == clusLst[i],1], y = neu.umap$layout[bsResiDat$seqClust50 == clusLst[i],2],
+#        pch = 19, cex = 1.5,
+#        # col = alpha(ligColors[2], 0.6),
+#        col = alpha(clusCols[i], 0.6),
+#        xlab = '', ylab = '', main = '', axes = F,
+#        xlim = c(-7.8,7), ylim = c(-10, 7.8))
+# }
+# 
+# # par(new = T)
+# # plot(x = neu.umap$layout[bsResiDat$seqClust50 %in% c(25,27,28,29),1], y = neu.umap$layout[bsResiDat$seqClust50 %in% c(25,27,28,29),2],
+# #      col = alpha('black',0.4), cex = 1.5,
+# #      xlab = '', ylab = '', axes = F,
+# #      xlim = c(-7.4,10), ylim = c(-10.2, 4))
 # par(new = T)
-# plot(x = neu.umap$layout[bsResiDat$seqClust50 %in% c(25,27,28,29),1], y = neu.umap$layout[bsResiDat$seqClust50 %in% c(25,27,28,29),2],
+# plot(x = neu.umap$layout[bsResiDat$seqClust50 == 47,1], y = neu.umap$layout[bsResiDat$seqClust50 == 47,2],
 #      col = alpha('black',0.4), cex = 1.5,
 #      xlab = '', ylab = '', axes = F,
-#      xlim = c(-7.4,10), ylim = c(-10.2, 4))
-par(new = T)
-plot(x = neu.umap$layout[bsResiDat$seqClust50 == 47,1], y = neu.umap$layout[bsResiDat$seqClust50 == 47,2],
-     col = alpha('black',0.4), cex = 1.5,
-     xlab = '', ylab = '', axes = F,
-     xlim = c(-7.8,7), ylim = c(-10, 7.8))
-
-
-
-plot(0, axes = F, type = 'n', xlab = '',ylab='')
-legend(x = 'center', legend = clusLst, col = clusCols, pch = 19, bty = 'n')
+#      xlim = c(-7.8,7), ylim = c(-10, 7.8))
+# 
+# 
+# 
+# plot(0, axes = F, type = 'n', xlab = '',ylab='')
+# legend(x = 'center', legend = clusLst, col = clusCols, pch = 19, bty = 'n')
 
 
 ############################
@@ -303,7 +303,111 @@ legend(x = 'center', legend = clusLst, col = clusCols, pch = 19, bty = 'n')
 
 unique(bsResiDat$seqClust50[grepl('flu', bsResiDat$espece)])
 
-tag = bsResiDat$seqClust50 %in% c(25,27,28,29)
+tag = bsResiDat$seqClust50 %in% c(24,27,28,29)
+
+bsResiDat[tag, c('pdb', 'iupac', 'bsiteSequence', 'longname')]
+
+dropTag = row.names(bsResiDat) %in% c('1RV0_NDG:H:642', '1RV0_NDG:J:640', '1RV0_NDG:L:644', # Drop leftover glycans from N-glycosylation sites (1RVT and 1RV0), and non-canonical binding sites (1HGG)
+                                    '1RVT_NDG:H:742', '1RVT_NDG:J:740', '1RVT_NDG:L:744',
+                                    '1HGG_BGC:I:1', '1HGG_BGC:L:1', '1HGG_BGC:O:1')
+sum(tag)
+tag = tag & !dropTag
+
+tag23 = tag23 & tag
+tag26 = tag26 & tag
+
+###################
+# Run HA 26 vs background and HA 23 vs background WMW
+bsResiDat[tag23,1:4]
+bsResiDat[tag26,1:4]
+
+# Prep weights and feature matrix
+clusWeight = nrow(bsResiDat)/length(unique(bsResiDat$seqClust50)) # The proportion of the total weight allotted to each cluster
+cWeights = rep(0, nrow(bsResiDat)) # weights based on cluster membership only (all binding sites with each cluster receives the same weight)
+cuWeights = rep(0,nrow(bsResiDat)) # weights based on cluster membership and UniProt ID (all clusters get the same weight, and all unique lectins within each cluster also receive the same weight)
+
+for (i in 1:length(unique(bsResiDat$seqClust50))){
+  clus = unique(bsResiDat$seqClust50)[i]
+  tag = bsResiDat$seqClust50 == clus
+  cWeights[tag] = clusWeight/sum(tag) # Equally divide allotted weight between all binding sites within a given cluster
+  
+  lectinWeight = clusWeight / length(unique(bsResiDat$uniparc[tag])) # Weight allotted to each lectin
+  for(j in 1:length(unique(bsResiDat$uniparc[tag]))){ # Further distribute weights within clusters based on uniprot ids
+    uniTag = bsResiDat$uniparc[tag] == unique(bsResiDat$uniparc[tag])[j]
+    cuWeights[tag][uniTag] = lectinWeight / sum(uniTag)
+  }
+}
+round(sum(cWeights),5) == nrow(bsResiDat) # Sum of weights is equal to number of binding sites
+round(sum(cuWeights),5) == nrow(bsResiDat) # Sum of weights is equal to number of binding sites
+
+
+for (i in 1:ncol(ligTags)){
+  cat(colnames(ligTags)[i], '\n')
+  cat('\t', sum(cuWeights[ligTags[,i]]), '\n')
+}
+
+
+neuTags = cbind(tag26, tag23)
+colnames(neuTags) = c('a26_NeuAc', 'a23_NeuAc')
+
+wmwFeats = cbind(predFeats,neuTags)
+
+des <- svydesign(ids = ~1, data = wmwFeats, weights = 1/cuWeights)
+
+
+neuStats = as.data.frame(matrix(0, nrow = ncol(predFeats), ncol = (ncol(neuTags)*4)))
+row.names(neuStats) = colnames(predFeats)
+colnames(neuStats) = c(paste(colnames(neuTags), 'p', sep = '_'), paste(colnames(neuTags), 'FC', sep = '_'), paste(colnames(neuTags), 'effectSize', sep = '_'), paste(colnames(neuTags), 'adj', sep = '_'))
+
+colnames(ligSpefic_feat_means) = colnames(neuTags)
+row.names(ligSpefic_feat_means) = colnames(predFeats)
+
+scaledFeats = predFeats  # Scale features between 0 & 1
+for(i in 1:ncol(scaledFeats)){
+  if ((max(scaledFeats[,i]) - min(scaledFeats[,i]) == 0)){
+  } else{
+    scaledFeats[,i] = (scaledFeats[,i] - min(scaledFeats[,i])) / (max(scaledFeats[,i]) - min(scaledFeats[,i]))
+  }
+}
+
+
+for(i in 1:ncol(neuTags)){
+  
+  des_w = subset(des, subset = neuTags[,i]) # temporary design object holding all interactions with the ligand of interest
+  des_wo = subset(des, subset = neuTags[,(-1*i)]) # same as above but OTHER the ligands of interest
+
+  for(k in 1:ncol(predFeats)){ # for each feature k
+    ligTest = svyranktest(formula = as.formula(paste(colnames(predFeats)[k], ' ~ ', colnames(neuTags)[i], sep = '')), # Wilcoxon–Mann–Whitney test, sample sizes can be small (~5% of 230 clusters ~= 10), no reason to assume distribution is normal as it likely isn't
+                          design = des, 
+                          test = 'wilcoxon') 
+    
+    if (ligTest$p.value != 0){
+      neuStats[k, grepl('_p$', colnames(neuStats))][i] = ligTest$p.value # Raw p-value
+    } else{
+      neuStats[k, grepl('_p$', colnames(neuStats))][i] = 5e-324 # If p-value is too small and R rounds to 0, reset as the smallest positive double as referenced by "?.Machine"
+    }
+    
+    neuStats[k, grepl('_effectSize$', colnames(neuStats))][i] = ligTest$estimate # common language effect size (0.5 transformed to 0)
+    
+    neuStats[k, grepl('_FC$', colnames(neuStats))][i] = svymean(predFeats[neuTags[,i],k], des_w)[1] / svymean(predFeats[neuTags[,(-1*i)],k], des_wo)[1] # Fold change in weighted means
+  }
+  
+  neuStats[,grepl('_adj$', colnames(neuStats))][,i] = p.adjust(neuStats[grepl('_p$', colnames(neuStats))][,i], method = "BH") # Benjamini-Hochberg MHT correction (FDR)
+}
+
+
+# neuStats = neuStats[,grepl('^a26_NeuAc', colnames(neuStats))]
+
+sum(neuStats[,grepl('_adj$', colnames(neuStats))] < 1e-16)
+neuStats[neuStats[,grepl('_adj$', colnames(neuStats))] < 1e-16,]
+
+
+haStats = neuStats
+
+###################
+
+tag = tag26 | tag23
+
 bsResiDat = bsResiDat[tag,]
 predFeats = predFeats[tag,]
 tag23 = tag23[tag]
@@ -314,18 +418,6 @@ bsResiDat[tag26, c('pdb', 'iupac', 'bsiteSequence', 'longname')]
 
 sum(tag)
 
-# Drop leftover glycans from N-glycosylation sites (1RVT and 1RV0), and non-canonical binding sites (1HGG)
-tag = row.names(bsResiDat) %in% c('1RV0_NDG:H:642', '1RV0_NDG:J:640', '1RV0_NDG:L:644',
-                                  '1RVT_NDG:H:742', '1RVT_NDG:J:740', '1RVT_NDG:L:744',
-                                  '1HGG_BGC:I:1', '1HGG_BGC:L:1', '1HGG_BGC:O:1')
-
-tag = !tag
-sum(tag)
-
-bsResiDat = bsResiDat[tag,]
-predFeats = predFeats[tag,]
-tag23 = tag23[tag]
-tag26 = tag26[tag]
 
 scaledFeats = predFeats  # Scale features between 0 & 1
 zeroCol = rep(F, ncol(predFeats))
@@ -698,17 +790,20 @@ dev.off()
 
 neuStats = neuStats[,!grepl('^a23', colnames(neuStats))]
 
-stats = stats[,(grepl('NeuAc', colnames(stats)) | grepl('Sialic', colnames(stats)))]
+colnames(haStats) = gsub('NeuAc', 'NeuAc_Background', colnames(haStats))
 
-stats = cbind(stats, neuStats)
+stats = stats[,grepl('Sialic', colnames(stats))]
 
-sigFeats = neuStats[,grepl('_adj$', colnames(neuStats))] < 0.01
+stats = cbind(stats, haStats, neuStats)
 
-hSigFeats = rbind(rep(F,length(sigFeats)),rep(F,length(sigFeats)),rep(F,length(sigFeats)),sigFeats)
+sigFeats = stats[,grepl('_adj$', colnames(stats))] < 0.01
+
+# hSigFeats = rbind(rep(F,length(sigFeats)),rep(F,length(sigFeats)),rep(F,length(sigFeats)),sigFeats)
+hSigFeats = t(sigFeats)
 
 allFeatCorrs = cor(stats[,grepl('_effectSize$', colnames(stats))], stats[,grepl('_effectSize$', colnames(stats))], method = 'pearson')
 row.names(allFeatCorrs)  = gsub('_effectSize$', '', row.names(allFeatCorrs))
-row.names(allFeatCorrs)[3:4] = c("3' SL", "6' vs 3' NeuAc")
+row.names(allFeatCorrs) = c("Terminal NeuAc vs all", "6' HA vs all", "3' HA vs all", "6' HA vs 3' HA")
 colnames(allFeatCorrs) = row.names(allFeatCorrs)
 
 corrplot::corrplot(allFeatCorrs)
@@ -796,16 +891,12 @@ pheatmap(resiFeat_stats,
          # clustering_distance_rows = 'correlation',
          display_numbers = ifelse((hSigFeats)[,resiFeatTag] , "\u2022", ""),
          fontsize_number = 20, number_color = 'black',
-         labels_row = c('Sialic acid v all',
-                        'NeuAc vs all',
-                        'SL vs all',
-                        
-                        "6' vs 3' NeuAc (HA)"),
+         labels_row = c("Terminal NeuAc vs all", "6' HA vs all", "3' HA vs all", "6' HA vs 3' HA"),
          annotation_col = resiAnnot,
          annotation_colors = resiAnnot_cols,
          # legend_breaks = c(1,5),
          main = '',
-         gaps_row = c(3),
+         gaps_row = c(1,3),
          breaks = breakLst,
          show_colnames = T,
          fontsize_col = 7,
@@ -858,16 +949,12 @@ pheatmap(pocketFeat_stats,
          # clustering_distance_rows = 'correlation',
          display_numbers = ifelse((hSigFeats)[,pocketFeatTag] , "\u2022", ""),
          fontsize_number = 20, number_color = 'black',
-         labels_row = c('Sialic acid v all',
-                        'NeuAc vs all',
-                        'SL vs all',
-                        
-                        "6' vs 3' NeuAc (HA)"),
+         labels_row = c("Terminal NeuAc vs all", "6' HA vs all", "3' HA vs all", "6' HA vs 3' HA"),
          annotation_col = pockAnnot,
          annotation_colors = pockAnnot_cols,
          # legend_breaks = c(1,5),
          main = '',
-         gaps_row = c(3),
+         gaps_row = c(1,3),
          breaks = breakLst,
          show_colnames = T,
          fontsize_col = 9,
@@ -896,13 +983,9 @@ pheatmap(plipFeat_stats,
          cluster_rows = F,
          display_numbers = ifelse((hSigFeats)[,1:11] , "\u2022", ""),
          fontsize_number = 20, number_color = 'black',
-         labels_row = c('Sialic acid v all',
-                        'NeuAc vs all',
-                        'SL vs all',
-                        
-                        "6' vs 3' NeuAc (HA)"),
+         labels_row = c("Terminal NeuAc vs all", "6' HA vs all", "3' HA vs all", "6' HA vs 3' HA"),
          main = '',
-         gaps_row = c(3),
+         gaps_row = c(1,3),
          breaks = breakLst,
          show_colnames = T,
          fontsize_col = 9,
