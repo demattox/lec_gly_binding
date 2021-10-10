@@ -2,8 +2,10 @@
 
 Project to identify and map features of lectin binding sites and associations with affinity or specificity towards particular glycans
 ---
-This repository was used to conduct the analyses published here: https://www.biorxiv.org/content/10.1101/2021.06.14.448374v1
+This repository was used to conduct the analyses published here: https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1009470
 If you found this repo helpful, please consider citing us :)
+
+Mattox DE, Bailey-Kellogg C (2021) Comprehensive analysis of lectin-glycan interactions reveals determinants of lectin specificity. PLoS Comput Biol 17(10): e1009470. https://doi.org/10.1371/journal.pcbi.1009470
 
 ## Overview
 1. Quick notes
